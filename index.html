@@ -49,7 +49,7 @@
       justify-content: center;
       border: 1px solid #334155;
     }
-    #reader { width: 100%; max-width: 450px; border-radius: 12px; overflow: hidden; }
+    #reader { width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; }
     .scanner-tip { margin-top: 14px; color: #94a3b8; font-size: 1rem; }
 
     .result-pane {
@@ -120,7 +120,7 @@
   <div class="main-container">
     <div class="scanner-pane">
       <div id="reader"></div>
-      <p class="scanner-tip">명찰 뒷면 QR 스티커를 비춰주세요</p>
+      <p class="scanner-tip">명찰 QR 스티커를 카메라에 비춰주세요</p>
     </div>
 
     <div class="result-pane" id="resultCard">
@@ -136,45 +136,48 @@
   </div>
 
   <script>
-    // ⚠ 2단계 6번에서 복사한 본인의 웹 앱 주소를 아래 큰따옴표 안에 넣으세요!
+    // 혜영 선생님의 구글 웹앱 주소가 완벽하게 연결되어 있습니다.
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzLF1Qw6ZtwWp3MsKakjIsOxUXRSmjqbxOvUBQ7QzAUw7IPacjHAJuL2FjpCMzj8b7t/exec";
 
     let isProcessing = false;
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx = null;
 
     function playSound(type) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const now = audioCtx.currentTime;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
 
-      if (type === 'SUCCESS') {
-        const notes = [523.25, 659.25, 783.99]; // 맑은 도-미-솔 3단 차임벨
-        notes.forEach((freq, idx) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + idx * 0.1);
-          gain.gain.setValueAtTime(0, now + idx * 0.1);
-          gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.1 + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now + idx * 0.1);
-          osc.stop(now + idx * 0.1 + 0.4);
-        });
-      } else {
-        [0, 0.18].forEach((delay) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(311.13, now + delay); // 경고 삐-삐-
-          gain.gain.setValueAtTime(0.35, now + delay);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.15);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now + delay);
-          osc.stop(now + delay + 0.15);
-        });
-      }
+        if (type === 'SUCCESS') {
+          const notes = [523.25, 659.25, 783.99];
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+            gain.gain.setValueAtTime(0, now + idx * 0.1);
+            gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.1 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.1);
+            osc.stop(now + idx * 0.1 + 0.4);
+          });
+        } else {
+          [0, 0.18].forEach((delay) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(311.13, now + delay);
+            gain.gain.setValueAtTime(0.35, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.15);
+          });
+        }
+      } catch(e) { console.log(e); }
     }
 
     async function onScanSuccess(decodedText) {
@@ -223,7 +226,7 @@
         } else if (res.status === "ALREADY_EATEN") {
           card.className = "result-pane state-warning";
           banner.className = "status-banner fail";
-          banner.innerText = "⚠ 이미 식사 완료된 학생입니다!";
+          banner.innerText = "⚠️ 이미 식사 완료된 학생입니다!";
           playSound('WARNING');
         } else if (res.status === "NOT_APPLIED") {
           card.className = "result-pane state-warning";
@@ -251,9 +254,15 @@
       }, 2300);
     }
 
+    // 카메라 인식 해상도 및 QR 스캔 박스 확대
     const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-      fps: 15, 
-      qrbox: { width: 260, height: 260 },
+      fps: 20, 
+      qrbox: function(viewfinderWidth, viewfinderHeight) {
+        let minEdgePercentage = 0.75;
+        let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+        let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+        return { width: qrboxSize, height: qrboxSize };
+      },
       rememberLastUsedCamera: true
     });
     html5QrcodeScanner.render(onScanSuccess);

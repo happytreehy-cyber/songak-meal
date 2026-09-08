@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>송악고등학교 석식 출입관리시스템</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- html5-qrcode 최신 안정화 라이브러리 -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", sans-serif; }
     body { background-color: #0b1120; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -18,165 +19,162 @@
       border-bottom: 3px solid #facc15;
     }
     .header-left { display: flex; align-items: center; gap: 14px; }
-    .school-badge { background: #2563eb; color: #fff; font-weight: 900; font-size: 1.15rem; padding: 6px 14px; border-radius: 8px; }
-    .header-title { font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
-    .clock-badge { background: #0f172a; border: 2px solid #38bdf8; color: #38bdf8; font-size: 1.2rem; font-weight: 800; padding: 6px 16px; border-radius: 8px; }
+    .badge { background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 8px; font-weight: bold; font-size: 16px; }
+    .main-title { font-size: 22px; font-weight: bold; letter-spacing: -0.5px; }
+    .time-box { background: #0f172a; padding: 6px 14px; border-radius: 8px; border: 1px solid #38bdf8; color: #38bdf8; font-family: monospace; font-size: 16px; font-weight: bold; }
 
-    .header-stats { display: flex; gap: 14px; }
-    .stat-pill {
-      background: #0f172a;
-      padding: 8px 18px;
-      border-radius: 12px;
-      cursor: pointer;
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .stat-card {
       display: flex;
-      gap: 10px;
       align-items: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      transition: transform 0.15s, background 0.2s;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      border: 2px solid transparent;
     }
-    .stat-pill:active { transform: scale(0.95); }
-    
-    .pill-total { border: 3px solid #facc15; }
-    .pill-total .stat-label { color: #facc15; }
-    .pill-total .stat-val { color: #ffffff; }
+    .stat-total { background: #1e293b; border-color: #eab308; color: #fef08a; }
+    .stat-done { background: #064e3b; border-color: #10b981; color: #a7f3d0; }
+    .stat-rem { background: #451a03; border-color: #f97316; color: #fed7aa; }
 
-    .pill-eat { border: 3px solid #22c55e; }
-    .pill-eat .stat-label { color: #4ade80; }
-    .pill-eat .stat-val { color: #4ade80; }
-
-    .pill-remain { border: 3px solid #f97316; background: #2a1205; }
-    .pill-remain .stat-label { color: #fb923c; font-weight: 900; }
-    .pill-remain .stat-val { color: #ffedd5; font-weight: 900; }
-
-    .stat-label { font-size: 1.15rem; font-weight: 800; }
-    .stat-val { font-weight: 900; font-size: 1.75rem; }
-
-    .main-container { flex: 1; display: flex; padding: 14px; gap: 16px; height: calc(100vh - 75px); }
-
-    .scanner-pane {
-      flex: 1.3;
-      background: #1e293b;
-      border-radius: 18px;
+    main {
+      flex: 1;
+      display: flex;
+      gap: 16px;
       padding: 16px;
+      overflow: hidden;
+    }
+
+    /* 왼쪽 카메라 영역 */
+    .scanner-panel {
+      flex: 1.1;
+      background: #1e293b;
+      border-radius: 12px;
+      border: 1px solid #334155;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 3px solid #334155;
+      overflow: hidden;
       position: relative;
     }
     #reader {
-      width: 100% !important;
-      height: 90% !important;
-      border-radius: 14px;
-      overflow: hidden;
-      border: none !important;
+      flex: 1;
+      width: 100%;
+      height: 100%;
       background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
     #reader video {
       width: 100% !important;
       height: 100% !important;
       object-fit: cover !important;
-      border-radius: 12px;
     }
-    .scanner-tip { margin-top: 10px; color: #38bdf8; font-weight: 900; font-size: 1.2rem; }
+    .scanner-footer {
+      background: #0f172a;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: #38bdf8;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
 
-    .result-pane {
-      flex: 1;
+    /* 오른쪽 학생 정보 표시 패널 */
+    .info-panel {
+      flex: 0.9;
       background: #1e293b;
-      border-radius: 18px;
-      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid #334155;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border: 4px solid #475569;
-      transition: all 0.2s ease;
-      position: relative;
+      padding: 24px;
+      text-align: center;
     }
-
-    .result-pane.state-success { background: #064e3b !important; border-color: #22c55e !important; }
-    .result-pane.state-warning { background: #7f1d1d !important; border-color: #ef4444 !important; }
-
-    .photo-container {
-      width: 220px;
-      height: 270px;
-      border-radius: 14px;
-      border: 4px solid #facc15;
+    .photo-box {
+      width: 200px;
+      height: 240px;
+      border: 3px solid #facc15;
+      border-radius: 12px;
       background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 16px;
     }
-    .photo-container img { width: 100%; height: 100%; object-fit: cover; }
-    .photo-none { color: #94a3b8; font-size: 1.2rem; font-weight: 700; }
-
-    .student-name { font-size: 3rem; font-weight: 900; margin-bottom: 4px; }
-    .student-id { font-size: 1.6rem; color: #cbd5e1; font-weight: 800; margin-bottom: 18px; }
-
-    .status-banner {
-      width: 92%;
-      padding: 16px 20px;
-      border-radius: 50px;
-      font-size: 1.7rem;
-      font-weight: 900;
-      text-align: center;
-      background: #334155;
-      color: #cbd5e1;
-    }
-    .status-banner.pass { background: #22c55e; color: #022c22; }
-    .status-banner.fail { background: #ef4444; color: #ffffff; }
-
-    .recent-log { position: absolute; bottom: 12px; font-size: 1rem; color: #94a3b8; font-weight: 600; }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.75);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-card {
-      background: #1e293b;
-      border: 4px solid #facc15;
-      border-radius: 20px;
-      padding: 30px;
-      width: 90%;
-      max-width: 440px;
-      text-align: center;
-    }
-    .modal-title { font-size: 1.8rem; font-weight: 900; color: #facc15; margin-bottom: 24px; }
-    .grade-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 20px;
-      margin-bottom: 12px;
-      background: #0f172a;
-      border-radius: 12px;
-      border: 1px solid #334155;
-      font-size: 1.3rem;
-      font-weight: 800;
-    }
-    .grade-num { font-size: 1.8rem; font-weight: 900; color: #38bdf8; }
-    .btn-close {
-      margin-top: 16px;
+    .photo-box img {
       width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .photo-placeholder {
+      font-size: 18px;
+      color: #94a3b8;
+      font-weight: bold;
+    }
+    .status-msg {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #f8fafc;
+    }
+    .student-id {
+      font-size: 22px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      font-weight: bold;
+    }
+    .action-badge {
+      width: 85%;
       padding: 14px;
-      background: #facc15;
-      color: #0f172a;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.3rem;
-      font-weight: 900;
+      background: #334155;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+    }
+    .recent-log {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* 성공 / 거절 상태 효과 */
+    .status-pass { color: #22c55e !important; }
+    .status-fail { color: #ef4444 !important; }
+    .panel-pass { border: 2px solid #22c55e !important; box-shadow: 0 0 25px rgba(34, 197, 94, 0.3); }
+    .panel-fail { border: 2px solid #ef4444 !important; box-shadow: 0 0 25px rgba(239, 68, 68, 0.3); }
+
+    /* 클릭 시작 안내 레이어 */
+    #startOverlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(11, 17, 32, 0.88);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
       cursor: pointer;
+    }
+    #startOverlay button {
+      background: #2563eb;
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
     }
   </style>
 </head>
@@ -184,235 +182,223 @@
 
   <header>
     <div class="header-left">
-      <span class="school-badge">송악고</span>
-      <span class="header-title">석식 출입관리시스템</span>
-      <span class="clock-badge" id="liveClock">-</span>
+      <div class="badge">송악고</div>
+      <div class="main-title">석식 출입관리시스템</div>
+      <div class="time-box" id="clock">00:00:00</div>
     </div>
-    <div class="header-stats">
-      <div class="stat-pill pill-total" onclick="openDetail('total')">
-        <span class="stat-label">📋 총신청</span>
-        <span class="stat-val" id="totalCount">-</span>
-      </div>
-      <div class="stat-pill pill-eat" onclick="openDetail('eaten')">
-        <span class="stat-label">🍚 식사완료</span>
-        <span class="stat-val eat" id="eatenCount">0</span>
-      </div>
-      <div class="stat-pill pill-remain" onclick="openDetail('remain')">
-        <span class="stat-label">⏳ 미식사</span>
-        <span class="stat-val" id="remainCount">-</span>
-      </div>
+    <div class="header-right">
+      <div class="stat-card stat-total">📋 총신청 <span id="totalCount">-</span></div>
+      <div class="stat-card stat-done">🍱 식사완료 <span id="doneCount">0</span></div>
+      <div class="stat-card stat-rem">⏳ 미식사 <span id="remCount">-</span></div>
     </div>
   </header>
 
-  <div class="main-container">
-    <div class="scanner-pane">
-      <div id="reader"></div>
-      <p class="scanner-tip" id="scanTip">⚡ 카메라 자동 연결 중...</p>
+  <main>
+    <!-- 카메라 스캐너 -->
+    <div class="scanner-panel" id="scannerCard">
+      <div id="reader">
+        <div id="startOverlay">
+          <button onclick="initScanner()">📷 카메라 켜기</button>
+          <div style="margin-top: 12px; color: #94a3b8; font-size: 14px;">화면을 터치하면 카메라가 시작됩니다</div>
+        </div>
+      </div>
+      <div class="scanner-footer">
+        ⚡ 대형 스캔 모드: 화면 어디든 스쳐도 바로 인식됩니다
+      </div>
     </div>
 
-    <div class="result-pane" id="resultCard">
-      <div class="photo-container">
-        <img id="studentPhoto" src="" alt="증명사진" style="display: none;">
-        <span id="photoNone" class="photo-none">사진 대기</span>
+    <!-- 인식 상태 창 -->
+    <div class="info-panel" id="infoPanel">
+      <div class="photo-box" id="photoBox">
+        <div class="photo-placeholder" id="photoText">사진 대기</div>
       </div>
-      <div class="student-name" id="studentName">대기 중</div>
-      <div class="student-id" id="studentId">학번 대기</div>
-      <div class="status-banner" id="statusBanner">명찰 QR을 스캔하세요</div>
+      <div class="status-msg" id="statusMsg">대기 중</div>
+      <div class="student-id" id="studentSub">명찰 QR을 비춰주세요</div>
+      <div class="action-badge" id="actionMsg">스캔 준비 완료</div>
       <div class="recent-log" id="recentLog">최근 기록: 없음</div>
     </div>
-  </div>
-
-  <div class="modal-overlay" id="detailModal" onclick="closeDetail(event)">
-    <div class="modal-card">
-      <div class="modal-title" id="modalTitle">상세 인원 현황</div>
-      <div class="grade-row"><span>1학년</span><span class="grade-num" id="modalG1">0명</span></div>
-      <div class="grade-row"><span>2학년</span><span class="grade-num" id="modalG2">0명</span></div>
-      <div class="grade-row"><span>3학년</span><span class="grade-num" id="modalG3">0명</span></div>
-      <button class="btn-close" onclick="document.getElementById('detailModal').style.display='none'">닫기</button>
-    </div>
-  </div>
+  </main>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzLF1Qw6ZtwWp3MsKakjIsOxUXRSmjqbxOvUBQ7QzAUw7IPacjHAJuL2FjpCMzj8b7t/exec";
+    // 1. Apps Script 웹 앱 배포 URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLF1Qw6ZtwWp3MsKakjIsOxUXRSmjqbxOvUBQ7QzAUw7IPacjHAJuL2FjpCMzj8b7t/exec";
 
+    let html5QrCode = null;
     let isProcessing = false;
-    let audioCtx = null;
-    let currentStats = {
-      total: { all: 0, g1: 0, g2: 0, g3: 0 },
-      eaten: { all: 0, g1: 0, g2: 0, g3: 0 },
-      remain: { all: 0, g1: 0, g2: 0, g3: 0 }
-    };
+    let completedStudents = new Set();
 
+    // 상단 시계 실시간 갱신
     function updateClock() {
       const now = new Date();
-      const yr = now.getFullYear();
-      const mo = String(now.getMonth() + 1).padStart(2, '0');
-      const da = String(now.getDate()).padStart(2, '0');
-      const hr = String(now.getHours()).padStart(2, '0');
-      const mi = String(now.getMinutes()).padStart(2, '0');
-      const se = String(now.getSeconds()).padStart(2, '0');
-      document.getElementById('liveClock').innerText = `${yr}-${mo}-${da} ${hr}:${mi}:${se}`;
+      const pad = (n) => String(n).padStart(2, '0');
+      const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      document.getElementById("clock").innerText = timeStr;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    function openDetail(type) {
-      const modal = document.getElementById("detailModal");
-      const title = document.getElementById("modalTitle");
-      const g1 = document.getElementById("modalG1");
-      const g2 = document.getElementById("modalG2");
-      const g3 = document.getElementById("modalG3");
-
-      if (type === 'total') title.innerText = "📋 총 신청자 학년별 인원";
-      else if (type === 'eaten') title.innerText = "🍚 식사 완료 학년별 인원";
-      else if (type === 'remain') title.innerText = "⏳ 미식사 학년별 인원";
-
-      g1.innerText = `${currentStats[type].g1}명`;
-      g2.innerText = `${currentStats[type].g2}명`;
-      g3.innerText = `${currentStats[type].g3}명`;
-
-      modal.style.display = "flex";
-    }
-
-    function closeDetail(e) {
-      if (e.target.id === 'detailModal') {
-        document.getElementById('detailModal').style.display = 'none';
-      }
-    }
-
-    function playSound(type) {
+    // 카메라 시작 함수 (PC/스마트폰 완벽 대응)
+    async function initScanner() {
+      document.getElementById("startOverlay").style.display = "none";
+      
       try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const now = audioCtx.currentTime;
-
-        if (type === 'SUCCESS') {
-          const notes = [523.25, 659.25, 783.99];
-          notes.forEach((freq, idx) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + idx * 0.1);
-            gain.gain.setValueAtTime(0, now + idx * 0.1);
-            gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.1 + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + idx * 0.1);
-            osc.stop(now + idx * 0.1 + 0.4);
-          });
-        } else {
-          [0, 0.18].forEach((delay) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(311.13, now + delay);
-            gain.gain.setValueAtTime(0.35, now + delay);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.15);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + delay);
-            osc.stop(now + delay + 0.15);
-          });
-        }
-      } catch(e) { console.log(e); }
-    }
-
-    async function onScanSuccess(decodedText) {
-      if (isProcessing) return;
-      isProcessing = true;
-
-      const card = document.getElementById("resultCard");
-      const banner = document.getElementById("statusBanner");
-      banner.className = "status-banner";
-      banner.innerText = "조회 중...";
-
-      try {
-        const response = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ studentId: decodedText })
-        });
-        const res = await response.json();
-
-        document.getElementById("studentId").innerText = res.studentId ? `학번: ${res.studentId}` : `학번: ${decodedText}`;
-        document.getElementById("studentName").innerText = res.name || "-";
-
-        const img = document.getElementById("studentPhoto");
-        const placeholder = document.getElementById("photoNone");
-        if (res.photoUrl) {
-          img.src = res.photoUrl;
-          img.style.display = "block";
-          placeholder.style.display = "none";
-        } else {
-          img.style.display = "none";
-          placeholder.style.display = "block";
+        if (html5QrCode) {
+          try { await html5QrCode.stop(); } catch(e) {}
         }
 
-        if (res.stats) {
-          currentStats = res.stats;
-          document.getElementById("totalCount").innerText = `${res.stats.total.all}명`;
-          document.getElementById("eatenCount").innerText = `${res.stats.eaten.all}명`;
-          document.getElementById("remainCount").innerText = `${res.stats.remain.all}명`;
-        }
+        html5QrCode = new Html5Qrcode("reader");
 
-        if (res.status === "SUCCESS") {
-          card.className = "result-pane state-success";
-          banner.className = "status-banner pass";
-          banner.innerText = "✓ 정상 승인 (맛있게 드세요!)";
-          playSound('SUCCESS');
-          document.getElementById("recentLog").innerText = `최근 승인: ${res.name} (${new Date().toLocaleTimeString()})`;
-        } else if (res.status === "ALREADY_EATEN") {
-          card.className = "result-pane state-warning";
-          banner.className = "status-banner fail";
-          banner.innerText = "⚠️ 이미 식사 완료된 학생입니다!";
-          playSound('WARNING');
-        } else if (res.status === "NOT_APPLIED") {
-          card.className = "result-pane state-warning";
-          banner.className = "status-banner fail";
-          banner.innerText = "⛔ 석식 미신청자입니다";
-          playSound('WARNING');
-        } else {
-          card.className = "result-pane state-warning";
-          banner.className = "status-banner fail";
-          banner.innerText = "명단에 없는 학번입니다";
-          playSound('WARNING');
-        }
+        // 고감도 초고속 스캔 옵션 (프레임 25fps + 넓은 영역)
+        const config = {
+          fps: 25,
+          qrbox: (w, h) => {
+            const size = Math.min(w, h);
+            return { width: Math.floor(size * 0.85), height: Math.floor(size * 0.85) };
+          },
+          aspectRatio: 1.0,
+          videoConstraints: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+
+        // 1순위: 후면 카메라 또는 기본 카메라 자동 감지
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          onScanSuccess,
+          onScanError
+        );
+        console.log("카메라 정상 구동 완료");
 
       } catch (err) {
-        banner.className = "status-banner fail";
-        banner.innerText = "통신 연결 오류";
-        playSound('WARNING');
-      }
+        console.warn("기본 환경 카메라 실패, 대체 모드 시도:", err);
+        try {
+          // 2순위 fallback: 등록된 첫 번째 카메라로 직접 연결
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            let camId = devices[0].id;
+            const backCam = devices.find(d => d.label.toLowerCase().includes("back") || d.label.toLowerCase().includes("environment"));
+            if (backCam) camId = backCam.id;
 
-      setTimeout(() => {
-        card.className = "result-pane";
-        banner.className = "status-banner";
-        banner.innerText = "명찰 QR을 스캔하세요";
-        isProcessing = false;
-      }, 2000);
+            await html5QrCode.start(camId, { fps: 20 }, onScanSuccess, onScanError);
+          } else {
+            throw new Error("카메라 장치 없음");
+          }
+        } catch (fallbackErr) {
+          document.getElementById("startOverlay").style.display = "flex";
+          alert("카메라 권한을 허용해 주시거나 [카메라 켜기] 버튼을 눌러주세요.");
+        }
+      }
     }
 
-    // 브라우저 표준 환경으로 카메라를 즉시 다이렉트 시작 (권한 차단 방지)
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-      { facingMode: "user" },
-      { fps: 25 },
-      onScanSuccess
-    ).then(() => {
-      document.getElementById("scanTip").innerText = "⚡ 대형 스캔 모드: 화면 어디든 스쳐도 바로 인식됩니다";
-    }).catch(err => {
-      // 전면 카메라 실패 시 기본 카메라로 재시도
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 25 },
-        onScanSuccess
-      ).then(() => {
-        document.getElementById("scanTip").innerText = "⚡ 대형 스캔 모드: 화면 어디든 스쳐도 바로 인식됩니다";
-      }).catch(finalErr => {
-        document.getElementById("scanTip").innerText = "카메라를 켤 수 없습니다. (브라우저 또는 다른 앱 사용 중)";
-      });
+    // QR 인식 성공 시 처리 (학생 검증)
+    async function onScanSuccess(decodedText) {
+      const studentId = String(decodedText).trim();
+      if (!studentId || isProcessing) return;
+
+      isProcessing = true;
+      showProcessingUI(studentId);
+
+      try {
+        const response = await fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}`);
+        const result = await response.json();
+
+        if (result.success) {
+          showApprovedUI(result.student);
+          completedStudents.add(studentId);
+          updateCounts();
+        } else {
+          showRejectedUI(result.message, result.student);
+        }
+      } catch (err) {
+        showErrorUI("통신 에러가 발생했습니다.");
+      }
+
+      // 1.5초 후 다음 학생 스캔 대기 상태로 복귀
+      setTimeout(() => {
+        resetUI();
+        isProcessing = false;
+      }, 1500);
+    }
+
+    function onScanError(errorMessage) {
+      // 프레임 탐색 에러 무시
+    }
+
+    // UI 처리 함수들
+    function showProcessingUI(id) {
+      document.getElementById("statusMsg").innerText = "확인 중...";
+      document.getElementById("statusMsg").className = "status-msg";
+      document.getElementById("studentSub").innerText = "학번: " + id;
+      document.getElementById("actionMsg").innerText = "데이터 조회 중";
+    }
+
+    function showApprovedUI(student) {
+      const infoPanel = document.getElementById("infoPanel");
+      infoPanel.className = "info-panel panel-pass";
+
+      document.getElementById("statusMsg").innerText = "식사 승인 ✅";
+      document.getElementById("statusMsg").className = "status-msg status-pass";
+      document.getElementById("studentSub").innerText = `${student.id} ${student.name}`;
+      document.getElementById("actionMsg").innerText = "맛있게 드세요!";
+      document.getElementById("actionMsg").style.background = "#059669";
+      document.getElementById("recentLog").innerText = `최근 통과: ${student.id} ${student.name}`;
+
+      if (student.photoUrl) {
+        document.getElementById("photoBox").innerHTML = `<img src="${student.photoUrl}" alt="사진">`;
+      } else {
+        document.getElementById("photoBox").innerHTML = `<div class="photo-placeholder" style="color:#10b981;">승인 완료</div>`;
+      }
+    }
+
+    function showRejectedUI(msg, student) {
+      const infoPanel = document.getElementById("infoPanel");
+      infoPanel.className = "info-panel panel-fail";
+
+      document.getElementById("statusMsg").innerText = "출입 차단 ❌";
+      document.getElementById("statusMsg").className = "status-msg status-fail";
+      document.getElementById("studentSub").innerText = student ? `${student.id} ${student.name}` : "미신청 학생";
+      document.getElementById("actionMsg").innerText = msg || "석식 미신청자입니다";
+      document.getElementById("actionMsg").style.background = "#dc2626";
+
+      document.getElementById("photoBox").innerHTML = `<div class="photo-placeholder" style="color:#ef4444;">승인 거부</div>`;
+    }
+
+    function showErrorUI(msg) {
+      document.getElementById("statusMsg").innerText = "오류 발생 ⚠️";
+      document.getElementById("statusMsg").className = "status-msg status-fail";
+      document.getElementById("actionMsg").innerText = msg;
+    }
+
+    function resetUI() {
+      const infoPanel = document.getElementById("infoPanel");
+      infoPanel.className = "info-panel";
+      document.getElementById("statusMsg").innerText = "대기 중";
+      document.getElementById("statusMsg").className = "status-msg";
+      document.getElementById("studentSub").innerText = "명찰 QR을 비춰주세요";
+      document.getElementById("actionMsg").innerText = "명찰 QR을 스캔하세요";
+      document.getElementById("actionMsg").style.background = "#334155";
+      document.getElementById("photoBox").innerHTML = `<div class="photo-placeholder">사진 대기</div>`;
+    }
+
+    function updateCounts() {
+      document.getElementById("doneCount").innerText = completedStudents.size;
+    }
+
+    // 페이지 로드 시 카메라 즉시 켜기 시도
+    window.addEventListener("DOMContentLoaded", () => {
+      initScanner();
     });
+
+    // 브라우저 정책상 자동재생이 차단되었을 때 클릭 한 번으로 풀리도록 보장
+    document.body.addEventListener("click", () => {
+      const video = document.querySelector("#reader video");
+      if (!video || video.paused) {
+        initScanner();
+      }
+    }, { once: true });
   </script>
 </body>
 </html>

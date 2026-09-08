@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>송악고등학교 석식 출입관리시스템</title>
-  <!-- html5-qrcode 최신 안정화 라이브러리 -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", sans-serif; }
@@ -46,7 +45,6 @@
       overflow: hidden;
     }
 
-    /* 왼쪽 카메라 영역 */
     .scanner-panel {
       flex: 1.1;
       background: #1e293b;
@@ -85,7 +83,6 @@
       gap: 8px;
     }
 
-    /* 오른쪽 학생 정보 표시 패널 */
     .info-panel {
       flex: 0.9;
       background: #1e293b;
@@ -97,7 +94,7 @@
       justify-content: center;
       padding: 24px;
       text-align: center;
-      transition: all 0.25s ease;
+      transition: all 0.2s ease;
     }
     .photo-box {
       width: 200px;
@@ -108,31 +105,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       overflow: hidden;
     }
-    .photo-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .photo-placeholder {
-      font-size: 18px;
-      color: #94a3b8;
-      font-weight: bold;
-    }
-    .status-msg {
-      font-size: 32px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      color: #f8fafc;
-    }
-    .student-id {
-      font-size: 22px;
-      color: #94a3b8;
-      margin-bottom: 24px;
-      font-weight: bold;
-    }
+    .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-placeholder { font-size: 18px; color: #94a3b8; font-weight: bold; }
+    .status-msg { font-size: 32px; font-weight: 800; margin-bottom: 8px; color: #f8fafc; }
+    .student-id { font-size: 22px; color: #94a3b8; margin-bottom: 20px; font-weight: bold; }
     .action-badge {
       width: 85%;
       padding: 14px;
@@ -143,18 +122,17 @@
       color: #cbd5e1;
       margin-bottom: 12px;
     }
-    .recent-log {
-      font-size: 13px;
-      color: #64748b;
-    }
+    .recent-log { font-size: 13px; color: #64748b; }
 
-    /* 통과 / 차단 시각 효과 */
+    /* 통과 / 중복 / 차단 효과 */
     .status-pass { color: #22c55e !important; }
+    .status-warn { color: #f59e0b !important; }
     .status-fail { color: #ef4444 !important; }
-    .panel-pass { border: 2px solid #22c55e !important; box-shadow: 0 0 25px rgba(34, 197, 94, 0.35); }
-    .panel-fail { border: 2px solid #ef4444 !important; box-shadow: 0 0 25px rgba(239, 68, 68, 0.35); }
 
-    /* 클릭 시작 안내 레이어 */
+    .panel-pass { border: 2px solid #22c55e !important; box-shadow: 0 0 25px rgba(34, 197, 94, 0.4); }
+    .panel-warn { border: 2px solid #f59e0b !important; box-shadow: 0 0 25px rgba(245, 158, 11, 0.4); }
+    .panel-fail { border: 2px solid #ef4444 !important; box-shadow: 0 0 25px rgba(239, 68, 68, 0.4); }
+
     #startOverlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -167,14 +145,8 @@
       cursor: pointer;
     }
     #startOverlay button {
-      background: #2563eb;
-      color: #fff;
-      font-size: 20px;
-      font-weight: bold;
-      padding: 14px 28px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
+      background: #2563eb; color: #fff; font-size: 20px; font-weight: bold;
+      padding: 14px 28px; border: none; border-radius: 10px; cursor: pointer;
       box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
     }
   </style>
@@ -195,20 +167,18 @@
   </header>
 
   <main>
-    <!-- 카메라 스캐너 패널 -->
     <div class="scanner-panel" id="scannerCard">
       <div id="reader">
         <div id="startOverlay">
           <button onclick="initScanner()">📷 카메라 켜기</button>
-          <div style="margin-top: 12px; color: #94a3b8; font-size: 14px;">화면을 터치하면 카메라가 시작됩니다</div>
+          <div style="margin-top: 12px; color: #94a3b8; font-size: 14px;">화면을 클릭하면 카메라와 소리가 시작됩니다</div>
         </div>
       </div>
-      <div class="scanner-footer">
-        ⚡ 대형 스캔 모드: 화면 어디든 스쳐도 바로 인식됩니다
+      <div class="scanner-footer" id="scannerFooter">
+        ⚡ 로컬 초고속 모드: 스치면 0.05초 만에 즉시 승인
       </div>
     </div>
 
-    <!-- 검증 결과 패널 -->
     <div class="info-panel" id="infoPanel">
       <div class="photo-box" id="photoBox">
         <div class="photo-placeholder" id="photoText">사진 대기</div>
@@ -221,16 +191,20 @@
   </main>
 
   <script>
-    // 1. Google Apps Script Web App URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLF1Qw6ZtwWp3MsKakjIsOxUXRSmjqbxOvUBQ7QzAUw7IPacjHAJuL2FjpCMzj8b7t/exec";
 
     let html5QrCode = null;
     let isProcessing = false;
-    let completedStudents = new Set();
+    let studentDB = {}; 
+    
+    // ★ 당일 식사 완료 학생 학번 및 통과 시간 기록 (중복 방지용)
+    let completedMap = new Map(); 
+    let totalApplicantCount = 0;
 
-    // 2. 브라우저 내장 Web Audio API 효과음 생성기 (외부 파일 다운로드 불필요)
+    // ==========================================
+    // 🔔 맑은 2단 차임벨 '띵~동♪' 사운드
+    // ==========================================
     let audioCtx = null;
-
     function getAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -241,74 +215,88 @@
       return audioCtx;
     }
 
-    // 통과 알림음: 경쾌한 '삑!' (고음 988Hz)
-    function playSuccessSound() {
+    function playDingDong() {
       try {
         const ctx = getAudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(987.77, ctx.currentTime);
-
-        gain.gain.setValueAtTime(0.35, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start();
-        osc.stop(ctx.currentTime + 0.16);
-      } catch (e) {
-        console.warn("오디오 재생 실패:", e);
-      }
+        const now = ctx.currentTime;
+        playChimeNote(ctx, 784, now, 0.35);        // 높은 솔 (G5)
+        playChimeNote(ctx, 659.25, now + 0.16, 0.55); // 미 (E5)
+      } catch (e) {}
     }
 
-    // 경고 알림음: 낮은 톤의 '삐-삐-' 경고 (300Hz 2회 반복)
+    function playChimeNote(ctx, freq, startTime, duration) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.4, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    // 중복 / 거절 경고음: 삐-삐-
     function playFailSound() {
       try {
         const ctx = getAudioContext();
-        [0, 0.18].forEach(delay => {
+        [0, 0.16].forEach(delay => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
-
-          osc.type = "square";
-          osc.frequency.setValueAtTime(320, ctx.currentTime + delay);
-
-          gain.gain.setValueAtTime(0.25, ctx.currentTime + delay);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.12);
-
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(260, ctx.currentTime + delay);
+          gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.13);
           osc.connect(gain);
           gain.connect(ctx.destination);
-
           osc.start(ctx.currentTime + delay);
-          osc.stop(ctx.currentTime + delay + 0.12);
+          osc.stop(ctx.currentTime + delay + 0.13);
         });
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // 🚀 학생 명단 사전 로딩
+    // ==========================================
+    async function loadStudentDatabase() {
+      try {
+        document.getElementById("actionMsg").innerText = "학생 명단 동기화 중...";
+        const res = await fetch(`${SCRIPT_URL}?action=getAll`);
+        const json = await res.json();
+        
+        if (json.success) {
+          studentDB = json.data;
+          totalApplicantCount = Object.values(studentDB).filter(s => s.isApplied).length;
+          document.getElementById("totalCount").innerText = totalApplicantCount;
+          updateCounts();
+          document.getElementById("actionMsg").innerText = "스캔 준비 완료 (고속 모드)";
+        }
       } catch (e) {
-        console.warn("오디오 재생 실패:", e);
+        document.getElementById("actionMsg").innerText = "명찰 QR을 스캔하세요";
       }
     }
 
-    // 3. 상단 시계 갱신
     function updateClock() {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
-      const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-      document.getElementById("clock").innerText = timeStr;
+      document.getElementById("clock").innerText = 
+        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 4. 카메라 스캐너 초기화 (PC/태블릿/모바일 자동 대응)
+    // ==========================================
+    // 📷 카메라 초기화
+    // ==========================================
     async function initScanner() {
       document.getElementById("startOverlay").style.display = "none";
-      getAudioContext(); // 사용자 클릭 시점에 오디오 엔진 활성화
-      
+      getAudioContext();
+
       try {
         if (html5QrCode) {
           try { await html5QrCode.stop(); } catch(e) {}
         }
-
         html5QrCode = new Html5Qrcode("reader");
 
         const config = {
@@ -325,76 +313,92 @@
           }
         };
 
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          onScanSuccess,
-          onScanError
-        );
+        await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
       } catch (err) {
-        console.warn("기본 카메라 실패, 연결 가능한 첫 번째 카메라 시도:", err);
         try {
           const devices = await Html5Qrcode.getCameras();
           if (devices && devices.length > 0) {
             let camId = devices[0].id;
             const backCam = devices.find(d => d.label.toLowerCase().includes("back") || d.label.toLowerCase().includes("environment"));
             if (backCam) camId = backCam.id;
-
-            await html5QrCode.start(camId, { fps: 20 }, onScanSuccess, onScanError);
-          } else {
-            throw new Error("카메라 장치를 찾을 수 없음");
+            await html5QrCode.start(camId, { fps: 20 }, onScanSuccess, () => {});
           }
-        } catch (fallbackErr) {
+        } catch (e) {
           document.getElementById("startOverlay").style.display = "flex";
         }
       }
     }
 
-    // 5. QR 감지 시 백엔드 검증 처리
-    async function onScanSuccess(decodedText) {
+    // ==========================================
+    // ⚡ QR 감지 및 중복 검증 로직
+    // ==========================================
+    function onScanSuccess(decodedText) {
       const studentId = String(decodedText).trim();
       if (!studentId || isProcessing) return;
 
       isProcessing = true;
-      showProcessingUI(studentId);
 
-      try {
-        const response = await fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}`);
-        const result = await response.json();
-
-        if (result.success) {
-          playSuccessSound(); // 식사 승인 삑 소리
-          showApprovedUI(result.student);
-          completedStudents.add(studentId);
-          updateCounts();
-        } else {
-          playFailSound(); // 식사 거절 삐-삐- 경고음
-          showRejectedUI(result.message, result.student);
-        }
-      } catch (err) {
-        playFailSound();
-        showErrorUI("시트 통신 에러가 발생했습니다.");
+      // 1. [중복 체크] 이미 오늘 식사 확인을 마친 학생인 경우
+      if (completedMap.has(studentId)) {
+        playFailSound(); // 경고음 삐-삐-
+        const firstTime = completedMap.get(studentId);
+        const student = (studentDB && studentDB[studentId]) ? studentDB[studentId] : { id: studentId, name: "" };
+        showDuplicateUI(student, firstTime);
+        setTimeout(() => { resetUI(); isProcessing = false; }, 1800);
+        return;
       }
 
-      // 1.5초 표시 후 다음 스캔 대기 상태로 초기화
-      setTimeout(() => {
-        resetUI();
-        isProcessing = false;
-      }, 1500);
+      // 2. [로컬 캐시 확인] 정상 신청자인 경우 즉시 승인!
+      if (studentDB && studentDB[studentId]) {
+        const student = studentDB[studentId];
+        if (student.isApplied) {
+          const nowStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          completedMap.set(studentId, nowStr); // 중복 방지 등록
+
+          playDingDong(); // 🔔 띵~동♪
+          showApprovedUI(student);
+          updateCounts();
+
+          // 구글 시트 전송
+          fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}`).catch(()=>{});
+        } else {
+          playFailSound(); // 미신청 차단음
+          showRejectedUI("석식 미신청 학생입니다", student);
+        }
+        
+        setTimeout(() => { resetUI(); isProcessing = false; }, 1400);
+        return;
+      }
+
+      // 3. 캐시에 없는 경우 서버 직접 조회
+      fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}`)
+        .then(res => res.json())
+        .then(result => {
+          if (result.success) {
+            const nowStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            completedMap.set(studentId, nowStr);
+
+            playDingDong();
+            showApprovedUI(result.student);
+            updateCounts();
+          } else {
+            playFailSound();
+            showRejectedUI(result.message, result.student);
+          }
+        })
+        .catch(() => {
+          playFailSound();
+          showErrorUI("통신 에러가 발생했습니다.");
+        })
+        .finally(() => {
+          setTimeout(() => { resetUI(); isProcessing = false; }, 1400);
+        });
     }
 
-    function onScanError(errorMessage) {
-      // 프레임 탐색 중 발생하는 경미한 오류 무시
-    }
-
+    // ==========================================
     // UI 반응 함수
-    function showProcessingUI(id) {
-      document.getElementById("statusMsg").innerText = "확인 중...";
-      document.getElementById("statusMsg").className = "status-msg";
-      document.getElementById("studentSub").innerText = "학번: " + id;
-      document.getElementById("actionMsg").innerText = "데이터 조회 중";
-    }
-
+    // ==========================================
+    // 1) 정상 승인 UI
     function showApprovedUI(student) {
       const infoPanel = document.getElementById("infoPanel");
       infoPanel.className = "info-panel panel-pass";
@@ -413,6 +417,21 @@
       }
     }
 
+    // 2) ★ 중복 체크 경고 UI
+    function showDuplicateUI(student, time) {
+      const infoPanel = document.getElementById("infoPanel");
+      infoPanel.className = "info-panel panel-warn";
+
+      document.getElementById("statusMsg").innerText = "중복 체크 ⚠️";
+      document.getElementById("statusMsg").className = "status-msg status-warn";
+      document.getElementById("studentSub").innerText = `${student.id} ${student.name || ''}`;
+      document.getElementById("actionMsg").innerText = `이미 확인된 학생 (${time} 통과)`;
+      document.getElementById("actionMsg").style.background = "#d97706";
+
+      document.getElementById("photoBox").innerHTML = `<div class="photo-placeholder" style="color:#f59e0b;">이미 통과함</div>`;
+    }
+
+    // 3) 미신청 차단 UI
     function showRejectedUI(msg, student) {
       const infoPanel = document.getElementById("infoPanel");
       infoPanel.className = "info-panel panel-fail";
@@ -444,11 +463,14 @@
     }
 
     function updateCounts() {
-      document.getElementById("doneCount").innerText = completedStudents.size;
+      document.getElementById("doneCount").innerText = completedMap.size;
+      if (totalApplicantCount > 0) {
+        document.getElementById("remCount").innerText = Math.max(0, totalApplicantCount - completedMap.size);
+      }
     }
 
-    // 6. 실행 리스너 (브라우저 자동실행 정책 충족)
     window.addEventListener("DOMContentLoaded", () => {
+      loadStudentDatabase();
       initScanner();
     });
 

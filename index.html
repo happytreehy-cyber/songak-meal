@@ -32,7 +32,12 @@
       font-size: 15px;
       font-weight: bold;
       border: 2px solid transparent;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease, filter 0.2s ease;
     }
+    .stat-card:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .stat-card:active { transform: translateY(1px); }
     .stat-total { background: #1e293b; border-color: #eab308; color: #fef08a; }
     .stat-done { background: #064e3b; border-color: #10b981; color: #a7f3d0; }
     .stat-rem { background: #451a03; border-color: #f97316; color: #fed7aa; }
@@ -45,9 +50,8 @@
       overflow: hidden;
     }
 
-    /* ★ 넓고 시원한 와이드 전면 카메라 스캐너 */
     .scanner-panel {
-      flex: 1.25;
+      flex: 1.15;
       background: #1e293b;
       border-radius: 12px;
       border: 1px solid #334155;
@@ -73,25 +77,30 @@
       object-fit: cover;
     }
 
-    /* 가로막는 박스 제거 -> 와이드 감지 테두리 & 스캐닝 레이저 */
-    .wide-scanner-border {
+    /* 초고속 타겟 조준창 */
+    .scan-target-box {
       position: absolute;
-      inset: 16px;
-      border: 2px dashed rgba(34, 197, 94, 0.4);
-      border-radius: 12px;
+      width: 250px;
+      height: 250px;
+      border: 3px solid #22c55e;
+      border-radius: 16px;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.42), 0 0 20px #22c55e;
       pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .laser-line {
-      width: 96%;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, #22c55e, #4ade80, #22c55e, transparent);
-      box-shadow: 0 0 12px #22c55e;
+      width: 90%;
+      height: 2px;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
       position: absolute;
-      animation: wideLaser 2.2s infinite ease-in-out alternate;
+      animation: laserMove 1.8s infinite alternate ease-in-out;
     }
-    @keyframes wideLaser {
-      0% { top: 10%; opacity: 0.3; }
-      100% { top: 90%; opacity: 1; }
+    @keyframes laserMove {
+      0% { transform: translateY(-110px); opacity: 0.3; }
+      100% { transform: translateY(110px); opacity: 1; }
     }
 
     .scanner-footer {
@@ -103,9 +112,8 @@
       font-weight: bold;
     }
 
-    /* 우측 정보 패널 */
     .info-panel {
-      flex: 0.75;
+      flex: 0.85;
       background: #1e293b;
       border-radius: 12px;
       border: 1px solid #334155;
@@ -153,6 +161,51 @@
     .panel-warn { border: 2px solid #f59e0b !important; box-shadow: 0 0 28px rgba(245, 158, 11, 0.45); }
     .panel-fail { border: 2px solid #ef4444 !important; box-shadow: 0 0 28px rgba(239, 68, 68, 0.45); }
 
+    /* ★ 1, 2, 3학년별 상세 현황 모달 팝업 창 */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(11, 17, 32, 0.85);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-content {
+      background: #1e293b;
+      border: 2px solid #38bdf8;
+      border-radius: 16px;
+      width: 480px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #334155;
+    }
+    .modal-title { font-size: 20px; font-weight: bold; color: #38bdf8; }
+    .modal-close {
+      background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer;
+    }
+    .grade-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 15px;
+    }
+    .grade-table th {
+      background: #0f172a; padding: 10px; color: #94a3b8; font-weight: 600;
+    }
+    .grade-table td {
+      padding: 12px; border-bottom: 1px solid #334155; font-weight: bold;
+    }
+    .grade-table tr:last-child td { border-bottom: none; font-size: 16px; }
+
     #startOverlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -178,10 +231,11 @@
       <div class="main-title">석식 출입관리시스템</div>
       <div class="time-box" id="clock">00:00:00</div>
     </div>
+    <!-- 클릭 시 학년별 현황 팝업 호출 -->
     <div class="header-right">
-      <div class="stat-card stat-total">📋 총신청 <span id="totalCount">-</span></div>
-      <div class="stat-card stat-done">🍱 식사완료 <span id="doneCount">0</span></div>
-      <div class="stat-card stat-rem">⏳ 미식사 <span id="remCount">-</span></div>
+      <div class="stat-card stat-total" onclick="openGradeModal('총신청')">📋 총신청 <span id="totalCount">-</span></div>
+      <div class="stat-card stat-done" onclick="openGradeModal('식사완료')">🍱 식사완료 <span id="doneCount">0</span></div>
+      <div class="stat-card stat-rem" onclick="openGradeModal('미식사')">⏳ 미식사 <span id="remCount">-</span></div>
     </div>
   </header>
 
@@ -189,18 +243,16 @@
     <div class="scanner-panel">
       <div class="video-wrapper" id="videoBox">
         <video id="webcam" playsinline autoplay muted></video>
-
-        <!-- 와이드 전면 스캐닝 가이드 -->
-        <div class="wide-scanner-border"></div>
-        <div class="laser-line"></div>
-
+        <div class="scan-target-box">
+          <div class="laser-line"></div>
+        </div>
         <div id="startOverlay">
           <button onclick="startApp()">📷 카메라 시작하기</button>
           <div style="margin-top: 12px; color: #94a3b8; font-size: 14px;">화면을 터치하면 스캐너가 켜집니다</div>
         </div>
       </div>
       <div class="scanner-footer">
-        ⚡ 초광폭 전면 감지 모드: 화면 어디든 QR을 대충 스쳐도 즉시 인식됩니다
+        ⚡ 고속 하드웨어 가속: 초록창에 QR을 가볍게 비춰주세요
       </div>
     </div>
 
@@ -210,15 +262,38 @@
       </div>
       <div class="status-msg" id="statusMsg">대기 중</div>
       <div class="student-id" id="studentSub">명찰 QR을 비춰주세요</div>
-      <div class="action-badge" id="actionMsg">초고속 광폭 엔진 준비 완료</div>
+      <div class="action-badge" id="actionMsg">초고속 엔진 가동 완료</div>
       <div class="recent-log" id="recentLog">최근 기록: 없음</div>
     </div>
   </main>
 
+  <!-- ★ 1, 2, 3학년 현황 팝업 창 -->
+  <div class="modal-backdrop" id="gradeModal" onclick="closeGradeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">학년별 상세 현황</div>
+        <button class="modal-close" onclick="closeGradeModal()">✕</button>
+      </div>
+      <table class="grade-table">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>총 신청</th>
+            <th>식사 완료</th>
+            <th>미식사</th>
+          </tr>
+        </thead>
+        <tbody id="gradeModalBody">
+          <!-- 스크립트로 자동 계산되어 출력 -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLF1Qw6ZtwWp3MsKakjIsOxUXRSmjqbxOvUBQ7QzAUw7IPacjHAJuL2FjpCMzj8b7t/exec";
 
-    let isScanLocked = false; // ★ 연타 방지 하드웨어 잠금
+    let isScanLocked = false;
     let lastScannedId = "";
     let lastScanTime = 0;
     let studentDB = {};
@@ -231,12 +306,8 @@
     // ==========================================
     let audioCtx = null;
     function getAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
       return audioCtx;
     }
 
@@ -279,7 +350,7 @@
     }
 
     // ==========================================
-    // 🚀 신청자 사전 로딩
+    // 🚀 신청자 사전 로딩 및 카운트
     // ==========================================
     async function loadStudentDatabase() {
       try {
@@ -295,7 +366,7 @@
     }
 
     // ==========================================
-    // 📷 초광폭 카메라 실행
+    // 📷 초고속 하드웨어 가속 스캐너
     // ==========================================
     async function startCamera() {
       try {
@@ -324,25 +395,22 @@
           if (isScanLocked || videoElem.readyState < 2) return;
           try {
             const codes = await detector.detect(videoElem);
-            if (codes.length > 0) {
-              handleQRScan(codes[0].rawValue);
-            }
+            if (codes.length > 0) handleQRScan(codes[0].rawValue);
           } catch (e) {}
         }, 50);
       } else {
         const html5Qr = new Html5Qrcode("videoBox");
-        html5Qr.start({ facingMode: "environment" }, { fps: 25 }, (text) => handleQRScan(text), () => {});
+        html5Qr.start({ facingMode: "environment" }, { fps: 25, qrbox: 250 }, (text) => handleQRScan(text), () => {});
       }
     }
 
     // ==========================================
-    // ⚡ 2번 찍힘 원천 차단 + 분기 로직
+    // ⚡ 중복 방지 및 스캔 분기
     // ==========================================
     function handleQRScan(rawValue) {
       const studentId = String(rawValue).replace(/\s+/g, "");
       const now = Date.now();
 
-      // ★ 1. 스캔 즉시 락 & 동일 학번 3초 내 연속 감지 100% 무시
       if (isScanLocked) return;
       if (studentId === lastScannedId && (now - lastScanTime) < 3000) return;
 
@@ -350,47 +418,39 @@
       lastScannedId = studentId;
       lastScanTime = now;
 
-      // 1) 당일 이미 통과한 학생이 다시 찍었을 때 (중복)
+      // 1) 중복 식사 스캔
       if (completedMap.has(studentId)) {
         playDuplicateSound();
         const passTime = completedMap.get(studentId);
         const stu = studentDB[studentId] || { id: studentId, name: "" };
         showDuplicateUI(stu, passTime);
-
-        // ★ 이상감지 기록 시트로 비동기 전송
         fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}&type=DUPLICATE`).catch(()=>{});
-
-        setTimeout(() => { resetUI(); isScanLocked = false; }, 2000);
+        setTimeout(() => { resetUI(); isScanLocked = false; }, 1800);
         return;
       }
 
-      // 2) 정상 석식 신청자인 경우 (0.01초 즉시 승인)
+      // 2) 정상 승인
       if (studentDB && studentDB[studentId]) {
         const stu = studentDB[studentId];
         if (stu.isApplied) {
           const nowStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
           completedMap.set(studentId, nowStr);
 
-          playDingDong(); // 🔔 띵~동♪
+          playDingDong();
           showApprovedUI(stu);
           updateCounts();
 
-          // 정상 승인은 블랙박스 + 출석부 O 전송 (단 1회)
           fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}&type=NORMAL`).catch(()=>{});
         } else {
-          // 미신청 학생이 찍었을 때
           playRejectSound();
           showRejectedUI("석식 미신청 학생입니다", stu);
-
-          // ★ 이상감지 기록 시트로 전송
           fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}&type=UNAPPLIED`).catch(()=>{});
         }
-
-        setTimeout(() => { resetUI(); isScanLocked = false; }, 1800);
+        setTimeout(() => { resetUI(); isScanLocked = false; }, 1600);
         return;
       }
 
-      // 3) 캐시에 없는 미등록 학번인 경우
+      // 3) 캐시 미등록 학번
       showProcessingUI(studentId);
       fetch(`${SCRIPT_URL}?id=${encodeURIComponent(studentId)}&type=NORMAL`)
         .then(res => res.json())
@@ -411,8 +471,72 @@
           showErrorUI("통신 에러가 발생했습니다.");
         })
         .finally(() => {
-          setTimeout(() => { resetUI(); isScanLocked = false; }, 1800);
+          setTimeout(() => { resetUI(); isScanLocked = false; }, 1600);
         });
+    }
+
+    // ==========================================
+    // 📊 학년별 통계 모달창 계산 및 열기/닫기
+    // ==========================================
+    function openGradeModal(title) {
+      document.getElementById("modalTitle").innerText = `📊 ${title} - 학년별 상세 현황`;
+      
+      const stats = {
+        1: { total: 0, done: 0 },
+        2: { total: 0, done: 0 },
+        3: { total: 0, done: 0 }
+      };
+
+      // 총 신청 학생 집계
+      Object.values(studentDB).forEach(s => {
+        if (s.isApplied) {
+          const g = s.id.charAt(0);
+          if (stats[g]) stats[g].total++;
+        }
+      });
+
+      // 완료 학생 집계
+      completedMap.forEach((_, id) => {
+        const g = id.charAt(0);
+        if (stats[g]) stats[g].done++;
+      });
+
+      let tbodyHtml = "";
+      let grandTotal = 0, grandDone = 0;
+
+      [1, 2, 3].forEach(g => {
+        const t = stats[g].total;
+        const d = stats[g].done;
+        const r = Math.max(0, t - d);
+        grandTotal += t; grandDone += d;
+
+        tbodyHtml += `
+          <tr>
+            <td style="color: #38bdf8;">${g}학년</td>
+            <td>${t}명</td>
+            <td style="color: #10b981;">${d}명</td>
+            <td style="color: #f97316;">${r}명</td>
+          </tr>
+        `;
+      });
+
+      // 합계 행
+      const grandRem = Math.max(0, grandTotal - grandDone);
+      tbodyHtml += `
+        <tr style="background: #0f172a; color: #facc15;">
+          <td>총합계</td>
+          <td>${grandTotal}명</td>
+          <td style="color: #4ade80;">${grandDone}명</td>
+          <td style="color: #fb923c;">${grandRem}명</td>
+        </tr>
+      `;
+
+      document.getElementById("gradeModalBody").innerHTML = tbodyHtml;
+      document.getElementById("gradeModal").style.display = "flex";
+    }
+
+    function closeGradeModal() {
+      document.getElementById("gradeModal").style.display = "none";
     }
 
     // UI 반응 함수

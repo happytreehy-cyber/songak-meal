@@ -7,15 +7,18 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background-color: #0b0f19;
       color: #ffffff;
-      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
       display: flex;
       flex-direction: column;
       padding: 10px 16px;
-      overflow: hidden;
     }
 
     /* 상단 탑바 */
@@ -24,7 +27,7 @@
       justify-content: space-between;
       align-items: center;
       padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       flex-shrink: 0;
     }
     .brand-group {
@@ -41,16 +44,16 @@
       border-radius: 6px;
     }
     .title-text {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.5px;
     }
     .clock-tag {
       background: #1e293b;
       color: #38bdf8;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 20px;
       border: 1px solid #334155;
     }
@@ -65,7 +68,7 @@
       gap: 5px;
       font-size: 0.8rem;
       font-weight: 700;
-      padding: 4px 10px;
+      padding: 5px 10px;
       border-radius: 6px;
     }
     .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
@@ -74,15 +77,16 @@
     
     .btn-cam {
       background: #1f2937;
-      color: #94a3b8;
-      border: 1px solid #374151;
-      padding: 4px 10px;
+      color: #cbd5e1;
+      border: 1px solid #475569;
+      padding: 5px 12px;
       border-radius: 6px;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
       cursor: pointer;
     }
 
-    /* 메인 좌우 2분할 레이아웃 */
+    /* 메인 2분할 가로 레이아웃 */
     .main-content {
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
@@ -92,7 +96,7 @@
       min-height: 0;
     }
 
-    /* 좌측 스캐너 패널 */
+    /* 좌측 카메라 스캐너 */
     .scanner-card {
       position: relative;
       background: #000;
@@ -119,7 +123,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 60%;
+      width: 58%;
       aspect-ratio: 1/1;
       border: 3px solid #22c55e;
       border-radius: 20px;
@@ -150,15 +154,15 @@
       text-align: center;
     }
     .photo-box {
-      width: 140px;
-      height: 180px;
-      border: 2px solid #eab308; /* 노란색 테두리 */
+      width: 150px;
+      height: 195px;
+      border: 2px solid #eab308; /* 시그니처 노란 테두리 */
       border-radius: 14px;
       background: #1a2234;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.95rem;
+      font-size: 1rem;
       color: #94a3b8;
       margin-bottom: 24px;
       overflow: hidden;
@@ -170,7 +174,7 @@
       object-fit: cover;
     }
     .status-main {
-      font-size: 2.1rem;
+      font-size: 2.2rem;
       font-weight: 800;
       letter-spacing: -0.5px;
       margin-bottom: 6px;
@@ -181,15 +185,15 @@
     .status-err { color: #f87171; }
     
     .status-sub {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       color: #94a3b8;
       margin-bottom: 24px;
     }
     .engine-tag {
       background: #1e293b;
       color: #64748b;
-      font-size: 0.8rem;
-      padding: 6px 16px;
+      font-size: 0.85rem;
+      padding: 8px 18px;
       border-radius: 20px;
       border: 1px solid #334155;
     }
@@ -212,14 +216,12 @@
   </header>
 
   <main class="main-content">
-    <!-- 좌측: 카메라 뷰 -->
     <div class="scanner-card">
       <video id="video" playsinline></video>
       <div class="scan-target"></div>
       <div class="scanner-tip">⚡ 고속 하드웨어 가속: 초록창에 QR을 가볍게 비춰주세요</div>
     </div>
 
-    <!-- 우측: 결과 카드 -->
     <div class="info-card">
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-main status-standby" id="statusTitle">대기 중</div>
@@ -231,11 +233,10 @@
   <canvas id="canvas"></canvas>
 
   <script>
-    // 1. Google Apps Script Web App URL
     const GAS_URL = "여기에_구글_웹앱_URL을_넣으세요";
     const PHOTO_BASE_URL = "./photos/";
 
-    let currentFacingMode = "user"; // 첫 세팅: 나를 바라보는 전면 카메라
+    let currentFacingMode = "user"; // 기본 시작: 전면 카메라
     let videoStream = null;
     let isProcessing = false;
 
@@ -243,7 +244,6 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-    // 실시간 시계 업데이트
     function updateClock() {
       const d = new Date();
       const pad = n => String(n).padStart(2, '0');
@@ -253,7 +253,6 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 0.1초 고속 비프음 생성기
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function beep(freq = 880, duration = 0.12) {
       try {
@@ -267,7 +266,6 @@
       } catch(e) {}
     }
 
-    // 전면 카메라 우선 시작
     async function startCamera(facingMode) {
       if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
@@ -292,7 +290,7 @@
 
         requestAnimationFrame(fastScanLoop);
       } catch (err) {
-        console.error("카메라 오류:", err);
+        console.error("카메라 에러:", err);
       }
     }
 
@@ -301,10 +299,8 @@
       startCamera(currentFacingMode);
     }
 
-    // 신용카드 결제기급 0.1초 광폭 고속 프레임 스캔
     function fastScanLoop() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        // 연산 속도 극대화를 위한 다운샘플링 캔버스
         canvas.height = video.videoHeight;
         canvas.width = video.videoWidth;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -321,7 +317,6 @@
       requestAnimationFrame(fastScanLoop);
     }
 
-    // 초고속 승인 처리
     async function handleFastMatch(rawCode) {
       isProcessing = true;
 
@@ -333,7 +328,6 @@
       titleEl.innerText = "조회 중...";
       subEl.innerText = rawCode;
 
-      // 사진 즉각 매칭 시도
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
 
@@ -342,7 +336,7 @@
         const data = await res.json();
 
         if (data.status === "SUCCESS") {
-          beep(880, 0.15); // 성공 삑!
+          beep(880, 0.15);
           titleEl.className = "status-main status-ok";
           titleEl.innerText = "식사 승인";
           subEl.innerText = `${data.name || ''} (${data.studentId})`;
@@ -353,12 +347,12 @@
             document.getElementById("cntLeft").innerText = data.stats.left;
           }
         } else if (data.status === "DUPLICATE") {
-          beep(440, 0.25); // 중복 삑-
+          beep(440, 0.25);
           titleEl.className = "status-main status-dup";
           titleEl.innerText = "중복 식사";
           subEl.innerText = data.message || "이미 식사 확인되었습니다";
         } else {
-          beep(300, 0.3); // 경고 삑-
+          beep(300, 0.3);
           titleEl.className = "status-main status-err";
           titleEl.innerText = "미신청 학생";
           subEl.innerText = data.message || "석식 신청 명단에 없습니다";
@@ -369,7 +363,6 @@
         titleEl.innerText = "승인 (로컬)";
       }
 
-      // 1.5초 딜레이 후 대기 복귀
       setTimeout(() => {
         isProcessing = false;
         titleEl.className = "status-main status-standby";

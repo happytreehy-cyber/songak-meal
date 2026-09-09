@@ -8,75 +8,41 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #0b0f19;
-      color: #ffffff;
+      width: 100%; height: 100%; overflow: hidden;
+      background-color: #0b0f19; color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       transition: background-color 0.2s ease;
     }
     body {
-      display: flex;
-      flex-direction: column;
-      padding: 10px 16px;
-      border: 6px solid transparent;
-      transition: border-color 0.2s ease, background-color 0.2s ease;
+      display: flex; flex-direction: column; padding: 10px 16px;
+      border: 6px solid transparent; transition: border-color 0.2s ease, background-color 0.2s ease;
     }
 
-    /* 사양서 기준 화면 전체 플래시 */
+    /* 사양서 기준 화면 색상 */
     body.flash-ok { background-color: #064e3b !important; border-color: #10b981 !important; }
     body.flash-dup, body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
 
-    /* 상단 탑바 및 복구된 도우미 탭 영역 */
     header {
-      position: relative;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      flex-shrink: 0;
-      z-index: 100;
+      position: relative; display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0; z-index: 100;
     }
     .brand-group { display: flex; align-items: center; gap: 10px; }
     .badge-school { background: #2563eb; color: #fff; font-weight: 700; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; }
-    .title-text { font-size: 1.1rem; font-weight: 700; }
-    
-    /* 도우미 탭 네비게이션 복구 */
-    .nav-tabs { display: flex; gap: 5px; }
-    .nav-tab {
-      background: #1e293b; color: #94a3b8; text-decoration: none; font-size: 0.75rem; font-weight: 600;
-      padding: 4px 8px; border-radius: 6px; border: 1px solid #334155; transition: all 0.2s; cursor: pointer;
-    }
-    .nav-tab:hover, .nav-tab.active { background: #2563eb; color: #fff; border-color: #3b82f6; }
-
-    .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: 1px solid #334155; }
+    .title-text { font-size: 1.15rem; font-weight: 700; }
+    .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid #334155; }
     
     .stats-group { display: flex; gap: 8px; align-items: center; }
     .stat-badge {
-      display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 700;
+      display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700;
       padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none;
     }
     .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
     .stat-done  { background: #133924; color: #4ade80; border: 1px solid #166534; }
     .stat-left  { background: #3a1919; color: #f87171; border: 1px solid #991b1b; }
-    .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 
-    /* 메인 2분할 가로 레이아웃 */
-    .main-content {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 16px;
-      flex: 1;
-      margin-top: 10px;
-      min-height: 0;
-    }
-
-    .scanner-card {
-      position: relative; background: #000; border-radius: 12px; overflow: hidden;
-      border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center;
-    }
+    .main-content { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; flex: 1; margin-top: 10px; min-height: 0; }
+    .scanner-card { position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; }
     video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     .video-rear { transform: scaleX(1) !important; }
     canvas { display: none; }
@@ -86,10 +52,7 @@
       width: 58%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
       box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
     }
-    .scanner-tip {
-      position: absolute; bottom: 12px; width: 100%; text-align: center;
-      font-size: 0.8rem; color: #eab308; font-weight: 500; pointer-events: none;
-    }
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.8rem; color: #eab308; font-weight: 500; pointer-events: none; }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
@@ -104,7 +67,7 @@
 
     .status-alert-banner {
       width: 100%; padding: 10px 8px; border-radius: 8px;
-      font-size: 1.55rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3;
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3;
     }
     .banner-standby { background: transparent; color: #f8fafc; }
     .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #4ade80; }
@@ -114,7 +77,6 @@
     .status-sub { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 16px; min-height: 1.4rem; }
     .engine-tag { background: #1e293b; color: #64748b; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #334155; }
 
-    /* 우측 상단 모달 */
     .right-top-modal {
       position: absolute; top: 50px; right: 16px; width: 320px; background: #182234;
       border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000;
@@ -131,15 +93,6 @@
     <div class="brand-group">
       <span class="badge-school">송악고</span>
       <span class="title-text">석식 시스템</span>
-      
-      <!-- 상단 도우미 탭 완전 복구 -->
-      <div class="nav-tabs">
-        <a href="#" class="nav-tab active">출석체크</a>
-        <a href="https://docs.google.com/spreadsheets" target="_blank" class="nav-tab">급식도우미</a>
-        <a href="#" class="nav-tab" onclick="alert('QR 도우미: 명찰 바코드가 인식되지 않을 시 수동 검색을 지원합니다.')">QR도우미</a>
-        <a href="#" class="nav-tab" onclick="alert('날짜생성: 스프레드시트 1행 날짜 열을 확인하세요.')">날짜생성</a>
-      </div>
-
       <span class="clock-tag" id="liveClock">2026-09-09 00:00:00</span>
     </div>
     
@@ -268,7 +221,8 @@
       requestAnimationFrame(fastScanLoop);
     }
 
-    function applySpecificationFeedback(statusType, studentName, studentId) {
+    // 사양서 기준 100% 매칭 피드백 함수
+    function applyFeedback(statusType, studentName, studentId) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
       const subEl = document.getElementById("statusSub");
@@ -289,7 +243,7 @@
         document.body.classList.add("flash-dup");
         banner.classList.add("banner-dup");
         banner.innerText = "⚠ 중복 식사 감지!";
-        infoEl.innerText = `${studentId} ${studentName}`;
+        infoEl.innerText = `${studentId} ${studentName || ''}`;
         subEl.innerText = "이미 식사한 학생입니다";
         target.style.borderColor = "#ef4444";
         playWarningBeep();
@@ -317,16 +271,17 @@
         const data = await res.json();
 
         if (data.status === "SUCCESS") {
-          applySpecificationFeedback("SUCCESS", data.name, data.studentId);
+          applyFeedback("SUCCESS", data.name, data.studentId);
           if (data.stats) updateStatsDisplay(data.stats);
         } else if (data.status === "DUPLICATE") {
-          applySpecificationFeedback("DUPLICATE", data.name, data.studentId);
+          applyFeedback("DUPLICATE", data.name, data.studentId);
           if (data.stats) updateStatsDisplay(data.stats);
         } else {
-          applySpecificationFeedback("NOT_FOUND", "", studentId);
+          applyFeedback("NOT_FOUND", "", studentId);
+          if (data.stats) updateStatsDisplay(data.stats);
         }
       } catch (err) {
-        applySpecificationFeedback("SUCCESS", "학생", studentId);
+        applyFeedback("SUCCESS", "학생", studentId);
       }
 
       setTimeout(() => {

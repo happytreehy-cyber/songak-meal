@@ -3,170 +3,263 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>송악고등학교 석식 급식 확인 시스템</title>
-  <!-- jsQR 라이브러리 로드 -->
+  <title>송악고 석식 출입관리시스템</title>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #121212;
+      background-color: #0b0f19;
       color: #ffffff;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 16px;
+      padding: 12px 16px;
     }
+
+    /* 상단 탑바 */
     header {
-      width: 100%;
-      max-width: 600px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1f2937;
     }
-    h1 { font-size: 1.2rem; font-weight: 700; color: #4ade80; }
-    .btn-switch {
-      background: #27272a;
-      color: #e4e4e7;
-      border: 1px solid #3f3f46;
-      padding: 8px 12px;
-      border-radius: 8px;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge-school {
+      background: #2563eb;
+      color: #fff;
+      font-weight: 700;
       font-size: 0.85rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .system-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .clock-pill {
+      background: #1e293b;
+      color: #38bdf8;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid #334155;
+    }
+    .stats-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 6px;
+    }
+    .stat-total { background: #3b2a1a; color: #fbbf24; border: 1px solid #78350f; }
+    .stat-done  { background: #143823; color: #4ade80; border: 1px solid #166534; }
+    .stat-left  { background: #3a1d1d; color: #f87171; border: 1px solid #991b1b; }
+    .btn-camera {
+      background: #1f2937;
+      color: #94a3b8;
+      border: 1px solid #374151;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
       cursor: pointer;
     }
-    .scanner-container {
+
+    /* 메인 2열 그리드 */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+      flex: 1;
+      margin-top: 14px;
+    }
+
+    /* 왼쪽 스캐너 뷰 */
+    .scanner-panel {
       position: relative;
-      width: 100%;
-      max-width: 600px;
-      aspect-ratio: 4/3;
       background: #000;
-      border-radius: 16px;
+      border-radius: 12px;
       overflow: hidden;
-      border: 2px solid #27272a;
+      border: 1px solid #1f2937;
+      display: flex;
+      flex-direction: column;
     }
     video {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      /* 전면 카메라는 거울 모드로 반전 표시 */
-      transform: scaleX(-1);
+      transform: scaleX(-1); /* 전면 기본: 거울 모드 */
     }
     .video-rear {
-      transform: scaleX(1) !important;
+      transform: scaleX(1) !important; /* 후면 전환 시 원본 유지 */
     }
     canvas { display: none; }
-    .scan-guide {
+    .target-guide {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 65%;
+      width: 58%;
       aspect-ratio: 1/1;
-      border: 2px dashed rgba(74, 222, 128, 0.7);
-      border-radius: 16px;
+      border: 2.5px solid #22c55e;
+      border-radius: 20px;
+      box-shadow: 0 0 0 3000px rgba(0, 0, 0, 0.45);
       pointer-events: none;
-      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.35);
     }
-    .result-card {
+    .scanner-footer {
+      position: absolute;
+      bottom: 12px;
+      left: 0;
       width: 100%;
-      max-width: 600px;
-      margin-top: 16px;
-      background: #18181b;
-      border-radius: 16px;
-      padding: 20px;
-      border: 1px solid #27272a;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      min-height: 140px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #eab308;
+      pointer-events: none;
     }
-    .photo-box {
-      width: 90px;
-      height: 115px;
-      background: #27272a;
-      border-radius: 8px;
-      overflow: hidden;
+
+    /* 오른쪽 학생/결과 카드 */
+    .info-panel {
+      background: #111827;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .photo-frame {
+      width: 130px;
+      height: 165px;
+      border-radius: 14px;
+      border: 2px solid #eab308;
+      background: #1f2937;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8rem;
-      color: #71717a;
-      flex-shrink: 0;
-      border: 1px solid #3f3f46;
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-bottom: 20px;
+      overflow: hidden;
     }
-    .photo-box img {
+    .photo-frame img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    .info-box { flex: 1; }
-    .status-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      margin-bottom: 6px;
+    .status-text {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
     }
-    .status-standby { background: #27272a; color: #a1a1aa; }
-    .status-ok { background: #166534; color: #4ade80; }
-    .status-error { background: #991b1b; color: #f87171; }
-    .student-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 2px; }
-    .student-id { font-size: 0.95rem; color: #a1a1aa; }
+    .status-standby { color: #f3f4f6; }
+    .status-ok { color: #4ade80; }
+    .status-dup { color: #fbbf24; }
+    .status-err { color: #f87171; }
+    .student-meta {
+      font-size: 1.05rem;
+      color: #94a3b8;
+      margin-bottom: 20px;
+    }
+    .engine-pill {
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: 1px solid #334155;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>송악고 급식 확인기</h1>
-    <button class="btn-switch" id="switchBtn" onclick="toggleCamera()">카메라 전환 (후면)</button>
+    <div class="brand">
+      <span class="badge-school">송악고</span>
+      <span class="system-title">석식 출입관리시스템</span>
+      <span class="clock-pill" id="liveClock">2026-09-09 00:00:00</span>
+    </div>
+    <div class="stats-group">
+      <div class="stat-badge stat-total">📊 총신청 <span id="cntTotal">4</span></div>
+      <div class="stat-badge stat-done">🍱 식사완료 <span id="cntDone">0</span></div>
+      <div class="stat-badge stat-left">⏳ 미식사 <span id="cntLeft">4</span></div>
+      <button class="btn-camera" id="camSwitchBtn" onclick="toggleCamera()">카메라 전환</button>
+    </div>
   </header>
 
-  <div class="scanner-container">
-    <video id="video" playsinline></video>
-    <div class="scan-guide"></div>
+  <div class="main-grid">
+    <!-- 좌측 카메라 뷰 -->
+    <div class="scanner-panel">
+      <video id="video" playsinline></video>
+      <div class="target-guide"></div>
+      <div class="scanner-footer">⚡ 고속 하드웨어 가속: 초록창에 QR을 가볍게 비춰주세요</div>
+    </div>
+
+    <!-- 우측 정보 카드 -->
+    <div class="info-panel">
+      <div class="photo-frame" id="photoBox">사진 대기</div>
+      <div id="statusTitle" class="status-text status-standby">대기 중</div>
+      <div id="studentSub" class="student-meta">명찰 QR을 비춰주세요</div>
+      <div class="engine-pill" id="engineStatus">초고속 엔진 가동 완료</div>
+    </div>
   </div>
 
   <canvas id="canvas"></canvas>
 
-  <div class="result-card">
-    <div class="photo-box" id="photoBox">사진</div>
-    <div class="info-box">
-      <div id="statusBadge" class="status-badge status-standby">대기 중</div>
-      <div id="studentName" class="student-name">-</div>
-      <div id="studentId" class="student-id">QR 코드를 화면에 비춰주세요</div>
-    </div>
-  </div>
-
   <script>
-    // 1. Google Apps Script 배포 URL (배포 후 주소 입력)
+    // 1. Google Apps Script 배포 URL (기존 시스템 URL 그대로 유지)
     const GAS_URL = "여기에_구글_웹앱_URL을_넣으세요";
-    
-    // 2. GitHub Photos 기본 경로 (학번.jpeg 파일 매칭)
     const PHOTO_BASE_URL = "./photos/";
 
-    let currentFacingMode = "user"; // 기본 전면 카메라 (나를 바라봄)
+    let currentFacingMode = "user"; // 첫 세팅: 나를 바라보는 전면 카메라
     let videoStream = null;
     let isProcessing = false;
+
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    // 오디오 피드백 설정
+    // 시계 갱신
+    function updateClock() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const timeStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      document.getElementById("liveClock").innerText = timeStr;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 오디오 비프음
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 880, duration = 0.15) {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      osc.frequency.value = freq;
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      osc.start();
-      osc.stop(audioContext.currentTime + duration);
+      try {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + duration);
+      } catch (e) {}
     }
 
-    // 카메라 시작 (전면 우선)
+    // 카메라 시작 (전면 기본)
     async function startCamera(facingMode) {
       if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
@@ -183,98 +276,98 @@
         video.srcObject = videoStream;
         await video.play();
 
-        // 전면 카메라일 때만 좌우 거울 반전 스타일 적용
         if (facingMode === "user") {
           video.classList.remove("video-rear");
         } else {
           video.classList.add("video-rear");
         }
 
-        requestAnimationFrame(tick);
+        requestAnimationFrame(scanLoop);
       } catch (err) {
-        console.error("카메라 접근 오류:", err);
-        alert("카메라를 켤 수 없습니다. 권한을 확인해 주세요.");
+        console.error("카메라 오류:", err);
       }
     }
 
-    // 카메라 전/후면 전환 토글
+    // 카메라 전환 (전면 ↔ 후면)
     function toggleCamera() {
       currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-      const switchBtn = document.getElementById("switchBtn");
-      switchBtn.innerText = currentFacingMode === "user" ? "카메라 전환 (후면)" : "카메라 전환 (전면)";
       startCamera(currentFacingMode);
     }
 
-    // QR 프레임 스캔 루프
-    function tick() {
+    // QR 프레임 스캔
+    function scanLoop() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.height = video.videoHeight;
         canvas.width = video.videoWidth;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imgData.data, imgData.width, imgData.height, {
           inversionAttempts: "dontInvert"
         });
 
         if (code && code.data && !isProcessing) {
-          handleScan(code.data.trim());
+          handleQR(code.data.trim());
         }
       }
-      requestAnimationFrame(tick);
+      requestAnimationFrame(scanLoop);
     }
 
-    // QR 인식 후 처리 로직
-    async function handleScan(qrText) {
+    // QR 판독 및 출석 처리
+    async function handleQR(rawCode) {
       isProcessing = true;
 
-      // 화면 즉시 반응
-      const badge = document.getElementById("statusBadge");
-      const nameEl = document.getElementById("studentName");
-      const idEl = document.getElementById("studentId");
-      const photoBox = document.getElementById("photoBox");
+      const titleEl = document.getElementById("statusTitle");
+      const subEl = document.getElementById("studentSub");
+      const photoEl = document.getElementById("photoBox");
 
-      badge.className = "status-badge status-standby";
-      badge.innerText = "조회 중...";
-      nameEl.innerText = "데이터 확인 중";
-      idEl.innerText = qrText;
+      titleEl.className = "status-text status-standby";
+      titleEl.innerText = "조회 중...";
+      subEl.innerText = rawCode;
+
+      const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
+      photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.innerText='사진 없음';">`;
 
       try {
-        // 사진 사전 로드 (학번.jpeg 경로)
-        const studentId = qrText.split(/[^0-9]/)[0] || qrText;
-        photoBox.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.alt='사진 없음';">`;
+        const res = await fetch(`${GAS_URL}?id=${encodeURIComponent(rawCode)}`);
+        const data = await res.json();
 
-        // Apps Script 출석 마킹 요청 전송
-        const response = await fetch(`${GAS_URL}?id=${encodeURIComponent(qrText)}`);
-        const result = await response.json();
-
-        if (result.status === "SUCCESS") {
-          playBeep(880, 0.15); // 성공 비프
-          badge.className = "status-badge status-ok";
-          badge.innerText = "식사 승인";
-          nameEl.innerText = result.name || "학생";
-          idEl.innerText = `${result.studentId} (${result.grade}학년 ${result.classNum}반)`;
+        if (data.status === "SUCCESS") {
+          playBeep(880, 0.15);
+          titleEl.className = "status-text status-ok";
+          titleEl.innerText = "식사 승인";
+          subEl.innerText = `${data.name || ''} (${data.studentId})`;
+          
+          if (data.stats) {
+            document.getElementById("cntTotal").innerText = data.stats.total;
+            document.getElementById("cntDone").innerText = data.stats.done;
+            document.getElementById("cntLeft").innerText = data.stats.left;
+          }
+        } else if (data.status === "DUPLICATE") {
+          playBeep(440, 0.25);
+          titleEl.className = "status-text status-dup";
+          titleEl.innerText = "중복 식사";
+          subEl.innerText = data.message || "이미 체크된 학생입니다";
         } else {
-          playBeep(330, 0.3); // 경고 비프
-          badge.className = "status-badge status-error";
-          badge.innerText = result.message || "확인 불가";
+          playBeep(300, 0.3);
+          titleEl.className = "status-text status-err";
+          titleEl.innerText = "미신청 학생";
+          subEl.innerText = data.message || "석식 명단에 없습니다";
         }
-      } catch (e) {
-        // 서버 연결 실패 시에도 QR 학번 기본 표시
+      } catch (err) {
         playBeep(880, 0.15);
-        badge.className = "status-badge status-ok";
-        badge.innerText = "확인 완료 (로컬)";
+        titleEl.className = "status-text status-ok";
+        titleEl.innerText = "승인 (로컬)";
       }
 
-      // 2초 딜레이 후 다음 학생 스캔 허용 (중복 스캔 방지)
       setTimeout(() => {
         isProcessing = false;
-        badge.className = "status-badge status-standby";
-        badge.innerText = "대기 중";
+        titleEl.className = "status-text status-standby";
+        titleEl.innerText = "대기 중";
+        subEl.innerText = "명찰 QR을 비춰주세요";
       }, 2000);
     }
 
-    // 실행 시작
     window.addEventListener("DOMContentLoaded", () => {
       startCamera(currentFacingMode);
     });

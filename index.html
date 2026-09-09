@@ -14,45 +14,55 @@
       background-color: #0b0f19;
       color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      transition: background-color 0.25s ease;
+      transition: background-color 0.2s ease;
     }
     body {
       display: flex;
       flex-direction: column;
       padding: 10px 16px;
       border: 6px solid transparent;
-      transition: border-color 0.25s ease;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
     }
 
-    /* 피드백 상태별 전신 컬러 플래시 (성공/중복/실패) */
+    /* 사양표 기준 화면 전체 플래시 */
     body.flash-ok {
-      background-color: #052e16 !important;
-      border-color: #22c55e !important;
+      background-color: #064e3b !important; /* 초록 화면 */
+      border-color: #10b981 !important;
     }
-    body.flash-dup {
-      background-color: #422006 !important;
-      border-color: #eab308 !important;
-    }
-    body.flash-err {
-      background-color: #450a0a !important;
+    body.flash-dup, body.flash-err {
+      background-color: #7f1d1d !important; /* 붉은 화면 */
       border-color: #ef4444 !important;
     }
 
     /* 상단 탑바 */
     header {
+      position: relative;
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding-bottom: 8px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       flex-shrink: 0;
+      z-index: 100;
     }
     .brand-group { display: flex; align-items: center; gap: 8px; }
     .badge-school { background: #2563eb; color: #fff; font-weight: 700; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; }
     .title-text { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.5px; }
     .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid #334155; }
+    
     .stats-group { display: flex; gap: 8px; align-items: center; }
-    .stat-badge { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none; transition: transform 0.1s; }
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s;
+    }
     .stat-badge:active { transform: scale(0.96); }
     .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
     .stat-done  { background: #133924; color: #4ade80; border: 1px solid #166534; }
@@ -69,7 +79,7 @@
       min-height: 0;
     }
 
-    /* 좌측 스캐너 패널 */
+    /* 좌측 카메라 스캐너 */
     .scanner-card {
       position: relative;
       background: #000;
@@ -124,8 +134,6 @@
       justify-content: center;
       padding: 20px;
       text-align: center;
-      position: relative;
-      transition: all 0.25s ease;
     }
     .photo-box {
       width: 150px;
@@ -138,55 +146,70 @@
       justify-content: center;
       font-size: 1rem;
       color: #94a3b8;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       overflow: hidden;
       flex-shrink: 0;
-      transition: border-color 0.2s ease;
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* 눈에 확 들어오는 상태 메시지 바 */
+    /* 상태 텍스트 */
     .status-alert-banner {
       width: 100%;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 1.8rem;
+      padding: 10px 8px;
+      border-radius: 8px;
+      font-size: 1.55rem;
       font-weight: 800;
       letter-spacing: -0.5px;
-      margin-bottom: 8px;
-      transition: all 0.2s ease;
+      margin-bottom: 6px;
+      line-height: 1.3;
     }
-    .banner-standby { background: #1f2937; color: #f8fafc; }
-    .banner-ok { background: #166534; color: #86efac; border: 2px solid #22c55e; }
-    .banner-dup { background: #854d0e; color: #fef08a; border: 2px solid #eab308; }
-    .banner-err { background: #991b1b; color: #fecaca; border: 2px solid #ef4444; }
+    .banner-standby { background: transparent; color: #f8fafc; }
+    .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #4ade80; }
+    .banner-dup { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
+    .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
 
+    .student-info-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
     .status-sub {
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: 1.05rem;
       color: #cbd5e1;
-      margin-bottom: 18px;
-      min-height: 1.6rem;
+      margin-bottom: 16px;
+      min-height: 1.4rem;
     }
     .engine-tag {
       background: #1e293b;
       color: #64748b;
-      font-size: 0.85rem;
-      padding: 8px 18px;
+      font-size: 0.8rem;
+      padding: 6px 16px;
       border-radius: 20px;
       border: 1px solid #334155;
     }
 
-    /* 학년별 세부정보 모달 */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: #182234; border: 1px solid #334155; border-radius: 16px; width: 90%; max-width: 440px; padding: 24px; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-title { font-size: 1.2rem; font-weight: 700; color: #38bdf8; }
-    .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }
-    .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #0f172a; border-radius: 8px; margin-bottom: 8px; font-weight: 600; }
+    /* 상단 오른쪽 드롭다운 모달 (화면 거슬림 제거) */
+    .right-top-modal {
+      position: absolute;
+      top: 50px;
+      right: 16px;
+      width: 320px;
+      background: #182234;
+      border: 1px solid #38bdf8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+      display: none;
+      z-index: 1000;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-title { font-size: 1rem; font-weight: 700; color: #38bdf8; }
+    .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; }
+    .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0f172a; border-radius: 6px; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
   </style>
 </head>
-<body>
+<body onclick="initAudioContext()">
 
   <header>
     <div class="brand-group">
@@ -195,10 +218,23 @@
       <span class="clock-tag" id="liveClock">2026-09-09 00:00:00</span>
     </div>
     <div class="stats-group">
-      <div class="stat-badge stat-total" onclick="showGradeModal()">📊 총신청 <span id="cntTotal">-</span></div>
-      <div class="stat-badge stat-done" onclick="showGradeModal()">🍱 식사완료 <span id="cntDone">-</span></div>
-      <div class="stat-badge stat-left" onclick="showGradeModal()">⏳ 미식사 <span id="cntLeft">-</span></div>
+      <div class="stat-badge stat-total" onclick="toggleGradeModal()">📊 총신청 <span id="cntTotal">-</span></div>
+      <div class="stat-badge stat-done" onclick="toggleGradeModal()">🍱 식사완료 <span id="cntDone">-</span></div>
+      <div class="stat-badge stat-left" onclick="toggleGradeModal()">⏳ 미식사 <span id="cntLeft">-</span></div>
       <button class="btn-cam" onclick="toggleCamera()">카메라 전환</button>
+    </div>
+
+    <!-- 우측 상단 드롭다운 모달 창 -->
+    <div class="right-top-modal" id="gradeModal">
+      <div class="modal-header">
+        <div class="modal-title">학년별 실시간 현황</div>
+        <button class="modal-close" onclick="closeGradeModal()">&times;</button>
+      </div>
+      <div id="modalList">
+        <div class="grade-row"><span>1학년</span><span id="g1-stat">조회 중...</span></div>
+        <div class="grade-row"><span>2학년</span><span id="g2-stat">조회 중...</span></div>
+        <div class="grade-row"><span>3학년</span><span id="g3-stat">조회 중...</span></div>
+      </div>
     </div>
   </header>
 
@@ -209,30 +245,16 @@
       <div class="scanner-tip">⚡ 고속 하드웨어 가속: 초록창에 QR을 가볍게 비춰주세요</div>
     </div>
 
-    <div class="info-card" id="infoCard">
+    <div class="info-card">
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
+      <div class="student-info-text" id="studentInfo">-</div>
       <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
       <div class="engine-tag" id="engineTag">초고속 엔진 가동 완료</div>
     </div>
   </main>
 
   <canvas id="canvas"></canvas>
-
-  <!-- 모달 -->
-  <div class="modal-overlay" id="gradeModal" onclick="hideGradeModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <div class="modal-header">
-        <div class="modal-title">학년별 실시간 식사 현황</div>
-        <button class="modal-close" onclick="hideGradeModal()">&times;</button>
-      </div>
-      <div id="modalList">
-        <div class="grade-row"><span>1학년</span><span id="g1-stat">조회 중...</span></div>
-        <div class="grade-row"><span>2학년</span><span id="g2-stat">조회 중...</span></div>
-        <div class="grade-row"><span>3학년</span><span id="g3-stat">조회 중...</span></div>
-      </div>
-    </div>
-  </div>
 
   <script>
     const GAS_URL = "여기에_새로_배포한_웹앱_URL_입력";
@@ -246,7 +268,7 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-    // 실시간 시계
+    // 시계
     function updateClock() {
       const d = new Date();
       const pad = n => String(n).padStart(2, '0');
@@ -256,18 +278,63 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 청각 비프 사운드
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep(freq = 880, duration = 0.15) {
-      try {
+    // 오디오 컨텍스트 (브라우저 잠금 해제 지원)
+    let audioCtx = null;
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // 사양표 1: 맑은 차임벨 ("띵동 🎵")
+    function playDingDong() {
+      initAudioContext();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      
+      // "띵" (미 - 659Hz)
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.frequency.setValueAtTime(659.25, now);
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+
+      // "동" (도 - 523Hz)
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.frequency.setValueAtTime(523.25, now + 0.15);
+      gain2.gain.setValueAtTime(0.3, now + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.15);
+      osc2.stop(now + 0.6);
+    }
+
+    // 사양표 2, 3: 경고음 ("삐-삐-!")
+    function playWarningBeep() {
+      initAudioContext();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      [0, 0.18].forEach(delay => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.frequency.value = freq;
+        osc.type = "square";
+        osc.frequency.setValueAtTime(400, now + delay);
+        gain.gain.setValueAtTime(0.25, now + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.12);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch(e) {}
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.12);
+      });
     }
 
     async function startCamera(facingMode) {
@@ -312,42 +379,54 @@
       requestAnimationFrame(fastScanLoop);
     }
 
-    // 풀스크린 비주얼 피드백 적용 함수
-    function applyFeedback(type, titleText, subText) {
+    // 사양서 기준 100% 매칭 피드백 실행
+    function applySpecificationFeedback(statusType, studentName, studentId, extraMsg) {
       const banner = document.getElementById("statusBanner");
-      const sub = document.getElementById("statusSub");
+      const infoEl = document.getElementById("studentInfo");
+      const subEl = document.getElementById("statusSub");
       const target = document.getElementById("scanTarget");
 
-      // 초기화
       document.body.className = "";
       banner.className = "status-alert-banner";
 
-      if (type === "OK") {
-        document.body.classList.add("flash-ok"); // 초록 전체화면
+      if (statusType === "SUCCESS") {
+        // [정상 승인 시]
+        document.body.classList.add("flash-ok"); // 초록 화면
         banner.classList.add("banner-ok");
+        banner.innerText = "✔ 정상 승인 (맛있게 드세요!)";
+        infoEl.innerText = `${studentId} ${studentName}`;
+        subEl.innerText = "상태: 식사승인 완료";
         target.style.borderColor = "#22c55e";
-        playBeep(880, 0.15); // 높은 삑!
-      } else if (type === "DUP") {
-        document.body.classList.add("flash-dup"); // 노랑 전체화면
+        playDingDong(); // 맑은 차임벨
+      } else if (statusType === "DUPLICATE") {
+        // [중복 식사 시]
+        document.body.classList.add("flash-dup"); // 붉은 화면
         banner.classList.add("banner-dup");
-        target.style.borderColor = "#eab308";
-        playBeep(440, 0.25); // 중간 삑-
-      } else {
-        document.body.classList.add("flash-err"); // 빨강 전체화면
-        banner.classList.add("banner-err");
+        banner.innerText = "⚠ 중복 식사 감지!";
+        infoEl.innerText = `${studentId} ${studentName}`;
+        subEl.innerText = `이미 식사한 학생입니다 (${extraMsg || '시간 확인'})`;
         target.style.borderColor = "#ef4444";
-        playBeep(280, 0.35); // 낮은 경고음
+        playWarningBeep(); // 경고음
+      } else {
+        // [미신청자 스캔 시]
+        document.body.classList.add("flash-err"); // 붉은 화면
+        banner.classList.add("banner-err");
+        banner.innerText = "당일 석식 미신청자입니다";
+        infoEl.innerText = `${studentId}`;
+        subEl.innerText = "명단에 등록되지 않은 학번입니다";
+        target.style.borderColor = "#ef4444";
+        playWarningBeep(); // 경고음
       }
-
-      banner.innerText = titleText;
-      sub.innerText = subText;
     }
 
     async function handleFastMatch(rawCode) {
       isProcessing = true;
-      const photoEl = document.getElementById("photoBox");
+      initAudioContext();
 
+      const photoEl = document.getElementById("photoBox");
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
+
+      // 학생 사진 표시
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
 
       try {
@@ -355,29 +434,31 @@
         const data = await res.json();
 
         if (data.status === "SUCCESS") {
-          applyFeedback("OK", "식사 승인 (정상)", `${data.name} (${data.studentId})`);
+          applySpecificationFeedback("SUCCESS", data.name, data.studentId);
           if (data.stats) updateStatsDisplay(data.stats);
         } else if (data.status === "DUPLICATE") {
-          applyFeedback("DUP", "중복 확인 (주의)", `${data.name || ''} - 이미 식사 완료됨`);
+          applySpecificationFeedback("DUPLICATE", data.name, data.studentId, data.time);
           if (data.stats) updateStatsDisplay(data.stats);
         } else {
-          applyFeedback("ERR", "승인 거부 (불가)", data.message || "석식 명단에 없는 학생");
+          applySpecificationFeedback("NOT_FOUND", "", studentId);
         }
       } catch (err) {
-        applyFeedback("OK", "식사 승인 (로컬)", `${studentId} 학생`);
+        // 로컬 오프라인 시에도 기본 정상 승인 처리
+        applySpecificationFeedback("SUCCESS", "학생", studentId);
       }
 
-      // 1.5초 후 원래 대기 화면으로 자동 복구
+      // 1.8초 뒤 다음 인식을 위해 복귀
       setTimeout(() => {
         document.body.className = "";
         const banner = document.getElementById("statusBanner");
         banner.className = "status-alert-banner banner-standby";
         banner.innerText = "대기 중";
+        document.getElementById("studentInfo").innerText = "-";
         document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
         document.getElementById("scanTarget").style.borderColor = "#22c55e";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
-      }, 1500);
+      }, 1800);
     }
 
     function updateStatsDisplay(s) {
@@ -386,8 +467,14 @@
       document.getElementById("cntLeft").innerText = s.left;
     }
 
-    async function showGradeModal() {
-      document.getElementById("gradeModal").style.display = "flex";
+    // 모달 우측 상단 토글
+    async function toggleGradeModal() {
+      const m = document.getElementById("gradeModal");
+      if (m.style.display === "block") {
+        m.style.display = "none";
+        return;
+      }
+      m.style.display = "block";
       try {
         const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
         const d = await res.json();
@@ -395,11 +482,11 @@
         document.getElementById("g2-stat").innerText = `${d[2].done} / ${d[2].total}명 (미식사: ${d[2].total - d[2].done})`;
         document.getElementById("g3-stat").innerText = `${d[3].done} / ${d[3].total}명 (미식사: ${d[3].total - d[3].done})`;
       } catch (e) {
-        document.getElementById("g1-stat").innerText = "확인 불가";
+        document.getElementById("g1-stat").innerText = "조회 불가";
       }
     }
 
-    function hideGradeModal() {
+    function closeGradeModal() {
       document.getElementById("gradeModal").style.display = "none";
     }
 

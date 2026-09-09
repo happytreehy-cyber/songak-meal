@@ -24,17 +24,11 @@
       transition: border-color 0.2s ease, background-color 0.2s ease;
     }
 
-    /* 사양표 기준 화면 전체 플래시 */
-    body.flash-ok {
-      background-color: #064e3b !important; /* 초록 화면 */
-      border-color: #10b981 !important;
-    }
-    body.flash-dup, body.flash-err {
-      background-color: #7f1d1d !important; /* 붉은 화면 */
-      border-color: #ef4444 !important;
-    }
+    /* 사양서 기준 화면 전체 플래시 */
+    body.flash-ok { background-color: #064e3b !important; border-color: #10b981 !important; }
+    body.flash-dup, body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
 
-    /* 상단 탑바 */
+    /* 상단 탑바 및 복구된 도우미 탭 영역 */
     header {
       position: relative;
       display: flex;
@@ -45,29 +39,29 @@
       flex-shrink: 0;
       z-index: 100;
     }
-    .brand-group { display: flex; align-items: center; gap: 8px; }
+    .brand-group { display: flex; align-items: center; gap: 10px; }
     .badge-school { background: #2563eb; color: #fff; font-weight: 700; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; }
-    .title-text { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.5px; }
-    .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid #334155; }
+    .title-text { font-size: 1.1rem; font-weight: 700; }
+    
+    /* 도우미 탭 네비게이션 복구 */
+    .nav-tabs { display: flex; gap: 5px; }
+    .nav-tab {
+      background: #1e293b; color: #94a3b8; text-decoration: none; font-size: 0.75rem; font-weight: 600;
+      padding: 4px 8px; border-radius: 6px; border: 1px solid #334155; transition: all 0.2s; cursor: pointer;
+    }
+    .nav-tab:hover, .nav-tab.active { background: #2563eb; color: #fff; border-color: #3b82f6; }
+
+    .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: 1px solid #334155; }
     
     .stats-group { display: flex; gap: 8px; align-items: center; }
     .stat-badge {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 5px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.1s;
+      display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 700;
+      padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none;
     }
-    .stat-badge:active { transform: scale(0.96); }
     .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
     .stat-done  { background: #133924; color: #4ade80; border: 1px solid #166534; }
     .stat-left  { background: #3a1919; color: #f87171; border: 1px solid #991b1b; }
-    .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 
     /* 메인 2분할 가로 레이아웃 */
     .main-content {
@@ -79,129 +73,51 @@
       min-height: 0;
     }
 
-    /* 좌측 카메라 스캐너 */
     .scanner-card {
-      position: relative;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid #1f2937;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: relative; background: #000; border-radius: 12px; overflow: hidden;
+      border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center;
     }
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-    }
+    video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     .video-rear { transform: scaleX(1) !important; }
     canvas { display: none; }
 
     .scan-target {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 58%;
-      aspect-ratio: 1/1;
-      border: 3.5px solid #22c55e;
-      border-radius: 20px;
-      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45);
-      pointer-events: none;
-      transition: border-color 0.2s ease;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 58%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
     }
     .scanner-tip {
-      position: absolute;
-      bottom: 12px;
-      width: 100%;
-      text-align: center;
-      font-size: 0.8rem;
-      color: #eab308;
-      font-weight: 500;
-      pointer-events: none;
+      position: absolute; bottom: 12px; width: 100%; text-align: center;
+      font-size: 0.8rem; color: #eab308; font-weight: 500; pointer-events: none;
     }
 
-    /* 우측 정보 패널 */
     .info-card {
-      background: #111827;
-      border-radius: 12px;
-      border: 1px solid #1f2937;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      text-align: center;
+      background: #111827; border-radius: 12px; border: 1px solid #1f2937;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
     }
     .photo-box {
-      width: 150px;
-      height: 195px;
-      border: 2.5px solid #eab308;
-      border-radius: 14px;
-      background: #1a2234;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      color: #94a3b8;
-      margin-bottom: 16px;
-      overflow: hidden;
-      flex-shrink: 0;
+      width: 150px; height: 195px; border: 2.5px solid #eab308; border-radius: 14px;
+      background: #1a2234; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: #94a3b8; margin-bottom: 16px; overflow: hidden; flex-shrink: 0;
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* 상태 텍스트 */
     .status-alert-banner {
-      width: 100%;
-      padding: 10px 8px;
-      border-radius: 8px;
-      font-size: 1.55rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      margin-bottom: 6px;
-      line-height: 1.3;
+      width: 100%; padding: 10px 8px; border-radius: 8px;
+      font-size: 1.55rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3;
     }
     .banner-standby { background: transparent; color: #f8fafc; }
     .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #4ade80; }
-    .banner-dup { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
-    .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
+    .banner-dup, .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
 
-    .student-info-text {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 4px;
-    }
-    .status-sub {
-      font-size: 1.05rem;
-      color: #cbd5e1;
-      margin-bottom: 16px;
-      min-height: 1.4rem;
-    }
-    .engine-tag {
-      background: #1e293b;
-      color: #64748b;
-      font-size: 0.8rem;
-      padding: 6px 16px;
-      border-radius: 20px;
-      border: 1px solid #334155;
-    }
+    .student-info-text { font-size: 1.3rem; font-weight: 700; color: #ffffff; margin-bottom: 4px; }
+    .status-sub { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 16px; min-height: 1.4rem; }
+    .engine-tag { background: #1e293b; color: #64748b; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #334155; }
 
-    /* 상단 오른쪽 드롭다운 모달 (화면 거슬림 제거) */
+    /* 우측 상단 모달 */
     .right-top-modal {
-      position: absolute;
-      top: 50px;
-      right: 16px;
-      width: 320px;
-      background: #182234;
-      border: 1px solid #38bdf8;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
-      display: none;
-      z-index: 1000;
+      position: absolute; top: 50px; right: 16px; width: 320px; background: #182234;
+      border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000;
     }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .modal-title { font-size: 1rem; font-weight: 700; color: #38bdf8; }
@@ -214,9 +130,19 @@
   <header>
     <div class="brand-group">
       <span class="badge-school">송악고</span>
-      <span class="title-text">석식 출입관리시스템</span>
+      <span class="title-text">석식 시스템</span>
+      
+      <!-- 상단 도우미 탭 완전 복구 -->
+      <div class="nav-tabs">
+        <a href="#" class="nav-tab active">출석체크</a>
+        <a href="https://docs.google.com/spreadsheets" target="_blank" class="nav-tab">급식도우미</a>
+        <a href="#" class="nav-tab" onclick="alert('QR 도우미: 명찰 바코드가 인식되지 않을 시 수동 검색을 지원합니다.')">QR도우미</a>
+        <a href="#" class="nav-tab" onclick="alert('날짜생성: 스프레드시트 1행 날짜 열을 확인하세요.')">날짜생성</a>
+      </div>
+
       <span class="clock-tag" id="liveClock">2026-09-09 00:00:00</span>
     </div>
+    
     <div class="stats-group">
       <div class="stat-badge stat-total" onclick="toggleGradeModal()">📊 총신청 <span id="cntTotal">-</span></div>
       <div class="stat-badge stat-done" onclick="toggleGradeModal()">🍱 식사완료 <span id="cntDone">-</span></div>
@@ -224,7 +150,6 @@
       <button class="btn-cam" onclick="toggleCamera()">카메라 전환</button>
     </div>
 
-    <!-- 우측 상단 드롭다운 모달 창 -->
     <div class="right-top-modal" id="gradeModal">
       <div class="modal-header">
         <div class="modal-title">학년별 실시간 현황</div>
@@ -268,7 +193,6 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-    // 시계
     function updateClock() {
       const d = new Date();
       const pad = n => String(n).padStart(2, '0');
@@ -278,82 +202,51 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 오디오 컨텍스트 (브라우저 잠금 해제 지원)
     let audioCtx = null;
     function initAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    // 사양표 1: 맑은 차임벨 ("띵동 🎵")
+    // 띵동 차임벨
     function playDingDong() {
       initAudioContext();
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
-      
-      // "띵" (미 - 659Hz)
-      const osc1 = audioCtx.createOscillator();
-      const gain1 = audioCtx.createGain();
-      osc1.frequency.setValueAtTime(659.25, now);
-      gain1.gain.setValueAtTime(0.3, now);
+      const osc1 = audioCtx.createOscillator(); const gain1 = audioCtx.createGain();
+      osc1.frequency.setValueAtTime(659.25, now); gain1.gain.setValueAtTime(0.3, now);
       gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-      osc1.connect(gain1);
-      gain1.connect(audioCtx.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.35);
+      osc1.connect(gain1); gain1.connect(audioCtx.destination); osc1.start(now); osc1.stop(now + 0.35);
 
-      // "동" (도 - 523Hz)
-      const osc2 = audioCtx.createOscillator();
-      const gain2 = audioCtx.createGain();
-      osc2.frequency.setValueAtTime(523.25, now + 0.15);
-      gain2.gain.setValueAtTime(0.3, now + 0.15);
+      const osc2 = audioCtx.createOscillator(); const gain2 = audioCtx.createGain();
+      osc2.frequency.setValueAtTime(523.25, now + 0.15); gain2.gain.setValueAtTime(0.3, now + 0.15);
       gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-      osc2.connect(gain2);
-      gain2.connect(audioCtx.destination);
-      osc2.start(now + 0.15);
-      osc2.stop(now + 0.6);
+      osc2.connect(gain2); gain2.connect(audioCtx.destination); osc2.start(now + 0.15); osc2.stop(now + 0.6);
     }
 
-    // 사양표 2, 3: 경고음 ("삐-삐-!")
+    // 삐삐 경고음
     function playWarningBeep() {
       initAudioContext();
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
       [0, 0.18].forEach(delay => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "square";
-        osc.frequency.setValueAtTime(400, now + delay);
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = "square"; osc.frequency.setValueAtTime(400, now + delay);
         gain.gain.setValueAtTime(0.25, now + delay);
         gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.12);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now + delay);
-        osc.stop(now + delay + 0.12);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now + delay); osc.stop(now + delay + 0.12);
       });
     }
 
     async function startCamera(facingMode) {
       if (videoStream) videoStream.getTracks().forEach(track => track.stop());
       try {
-        const constraints = {
-          video: {
-            facingMode: { ideal: facingMode },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        };
+        const constraints = { video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } } };
         videoStream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = videoStream;
         await video.play();
-
         if (facingMode === "user") video.classList.remove("video-rear");
         else video.classList.add("video-rear");
-
         requestAnimationFrame(fastScanLoop);
       } catch (err) { console.error("카메라 에러:", err); }
     }
@@ -368,19 +261,14 @@
         canvas.height = video.videoHeight;
         canvas.width = video.videoWidth;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "dontInvert" });
-
-        if (code && code.data && !isProcessing) {
-          handleFastMatch(code.data.trim());
-        }
+        if (code && code.data && !isProcessing) handleFastMatch(code.data.trim());
       }
       requestAnimationFrame(fastScanLoop);
     }
 
-    // 사양서 기준 100% 매칭 피드백 실행
-    function applySpecificationFeedback(statusType, studentName, studentId, extraMsg) {
+    function applySpecificationFeedback(statusType, studentName, studentId) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
       const subEl = document.getElementById("statusSub");
@@ -390,32 +278,29 @@
       banner.className = "status-alert-banner";
 
       if (statusType === "SUCCESS") {
-        // [정상 승인 시]
-        document.body.classList.add("flash-ok"); // 초록 화면
+        document.body.classList.add("flash-ok");
         banner.classList.add("banner-ok");
         banner.innerText = "✔ 정상 승인 (맛있게 드세요!)";
         infoEl.innerText = `${studentId} ${studentName}`;
         subEl.innerText = "상태: 식사승인 완료";
         target.style.borderColor = "#22c55e";
-        playDingDong(); // 맑은 차임벨
+        playDingDong();
       } else if (statusType === "DUPLICATE") {
-        // [중복 식사 시]
-        document.body.classList.add("flash-dup"); // 붉은 화면
+        document.body.classList.add("flash-dup");
         banner.classList.add("banner-dup");
         banner.innerText = "⚠ 중복 식사 감지!";
         infoEl.innerText = `${studentId} ${studentName}`;
-        subEl.innerText = `이미 식사한 학생입니다 (${extraMsg || '시간 확인'})`;
+        subEl.innerText = "이미 식사한 학생입니다";
         target.style.borderColor = "#ef4444";
-        playWarningBeep(); // 경고음
+        playWarningBeep();
       } else {
-        // [미신청자 스캔 시]
-        document.body.classList.add("flash-err"); // 붉은 화면
+        document.body.classList.add("flash-err");
         banner.classList.add("banner-err");
         banner.innerText = "당일 석식 미신청자입니다";
         infoEl.innerText = `${studentId}`;
-        subEl.innerText = "명단에 등록되지 않은 학번입니다";
+        subEl.innerText = "승인 거부 (명단 없음)";
         target.style.borderColor = "#ef4444";
-        playWarningBeep(); // 경고음
+        playWarningBeep();
       }
     }
 
@@ -425,8 +310,6 @@
 
       const photoEl = document.getElementById("photoBox");
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
-
-      // 학생 사진 표시
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
 
       try {
@@ -437,17 +320,15 @@
           applySpecificationFeedback("SUCCESS", data.name, data.studentId);
           if (data.stats) updateStatsDisplay(data.stats);
         } else if (data.status === "DUPLICATE") {
-          applySpecificationFeedback("DUPLICATE", data.name, data.studentId, data.time);
+          applySpecificationFeedback("DUPLICATE", data.name, data.studentId);
           if (data.stats) updateStatsDisplay(data.stats);
         } else {
           applySpecificationFeedback("NOT_FOUND", "", studentId);
         }
       } catch (err) {
-        // 로컬 오프라인 시에도 기본 정상 승인 처리
         applySpecificationFeedback("SUCCESS", "학생", studentId);
       }
 
-      // 1.8초 뒤 다음 인식을 위해 복귀
       setTimeout(() => {
         document.body.className = "";
         const banner = document.getElementById("statusBanner");
@@ -467,13 +348,9 @@
       document.getElementById("cntLeft").innerText = s.left;
     }
 
-    // 모달 우측 상단 토글
     async function toggleGradeModal() {
       const m = document.getElementById("gradeModal");
-      if (m.style.display === "block") {
-        m.style.display = "none";
-        return;
-      }
+      if (m.style.display === "block") { m.style.display = "none"; return; }
       m.style.display = "block";
       try {
         const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
@@ -481,18 +358,12 @@
         document.getElementById("g1-stat").innerText = `${d[1].done} / ${d[1].total}명 (미식사: ${d[1].total - d[1].done})`;
         document.getElementById("g2-stat").innerText = `${d[2].done} / ${d[2].total}명 (미식사: ${d[2].total - d[2].done})`;
         document.getElementById("g3-stat").innerText = `${d[3].done} / ${d[3].total}명 (미식사: ${d[3].total - d[3].done})`;
-      } catch (e) {
-        document.getElementById("g1-stat").innerText = "조회 불가";
-      }
+      } catch (e) { document.getElementById("g1-stat").innerText = "조회 불가"; }
     }
 
-    function closeGradeModal() {
-      document.getElementById("gradeModal").style.display = "none";
-    }
+    function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      startCamera(currentFacingMode);
-    });
+    window.addEventListener("DOMContentLoaded", () => { startCamera(currentFacingMode); });
   </script>
 </body>
 </html>

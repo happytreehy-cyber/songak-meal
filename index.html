@@ -77,7 +77,7 @@
     .engine-tag { background: #1e293b; color: #64748b; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #334155; }
 
     .right-top-modal {
-      position: absolute; top: 50px; right: 16px; width: 320px; background: #182234;
+      position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
       border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000;
     }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -104,11 +104,13 @@
 
     <div class="right-top-modal" id="gradeModal">
       <div class="modal-header">
-        <div class="modal-title">실시간 식사 현황</div>
+        <div class="modal-title">학년별 실시간 현황</div>
         <button class="modal-close" onclick="closeGradeModal()">&times;</button>
       </div>
       <div id="modalList">
-        <div class="grade-row"><span>통계 연동 대기 중</span><span id="g1-stat">-</span></div>
+        <div class="grade-row"><span>1학년</span><span id="g1-stat">조회 중...</span></div>
+        <div class="grade-row"><span>2학년</span><span id="g2-stat">조회 중...</span></div>
+        <div class="grade-row"><span>3학년</span><span id="g3-stat">조회 중...</span></div>
       </div>
     </div>
   </header>
@@ -206,18 +208,17 @@
       startCamera(currentFacingMode);
     }
 
-    // 자동 실시간 통계 조회 (페이지 로드 시 및 5초마다 갱신)
     async function fetchStats() {
       try {
         const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
         const d = await res.json();
-        if (d) {
-          document.getElementById("cntTotal").innerText = d.total || 0;
-          document.getElementById("cntDone").innerText = d.done || 0;
-          document.getElementById("cntLeft").innerText = d.left || 0;
+        if (d && d.totalStats) {
+          document.getElementById("cntTotal").innerText = d.totalStats.total || 0;
+          document.getElementById("cntDone").innerText = d.totalStats.done || 0;
+          document.getElementById("cntLeft").innerText = d.totalStats.left || 0;
         }
       } catch (e) {
-        console.log("통계 로딩 대기 중...");
+        console.log("통계 대기 중...");
       }
     }
     setInterval(fetchStats, 5000);
@@ -332,8 +333,16 @@
       try {
         const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
         const d = await res.json();
-        document.getElementById("g1-stat").innerText = `완료: ${d.done}명 / 미식사: ${d.left}명 (총 ${d.total}명)`;
-      } catch (e) { document.getElementById("g1-stat").innerText = "조회 불가"; }
+        if (d) {
+          if (d[1]) document.getElementById("g1-stat").innerText = `완료: ${d[1].done}명 / 미식사: ${d[1].left}명 (총 ${d[1].total}명)`;
+          if (d[2]) document.getElementById("g2-stat").innerText = `완료: ${d[2].done}명 / 미식사: ${d[2].left}명 (총 ${d[2].total}명)`;
+          if (d[3]) document.getElementById("g3-stat").innerText = `완료: ${d[3].done}명 / 미식사: ${d[3].left}명 (총 ${d[3].total}명)`;
+        }
+      } catch (e) { 
+        document.getElementById("g1-stat").innerText = "조회 불가"; 
+        document.getElementById("g2-stat").innerText = "조회 불가"; 
+        document.getElementById("g3-stat").innerText = "조회 불가"; 
+      }
     }
 
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }

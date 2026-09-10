@@ -5,13 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
   
-  <!-- 💡 학교 전산망 차단 방지 2중 백업 스캐너 라이브러리 -->
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
-  <script>
-    if (typeof jsQR === 'undefined') {
-      document.write('<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"><\/script>');
-    }
-  </script>
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,14 +13,20 @@
       width: 100%; height: 100%; overflow: hidden;
       background-color: #0b0f19; color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: background-color 0.25s ease;
     }
     body {
       display: flex; flex-direction: column; padding: 10px 16px;
-      border: 6px solid transparent; transition: border-color 0.2s ease, background-color 0.2s ease;
+      border: 6px solid transparent; transition: border-color 0.25s ease, background-color 0.25s ease;
     }
 
-    body.flash-ok { background-color: #064e3b !important; border-color: #10b981 !important; }
-    body.flash-dup, body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
+    /* 💡 정상 승인 시 전체 화면 초록 플래시 */
+    body.flash-ok { background-color: #064e3b !important; border-color: #22c55e !important; }
+    body.flash-ok .info-card { background-color: #065f46 !important; border-color: #34d399 !important; }
+
+    /* 💡 중복 식사 / 미신청자 시 전체 화면 붉은 플래시 */
+    body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
+    body.flash-err .info-card { background-color: #991b1b !important; border-color: #f87171 !important; }
 
     header {
       position: relative; display: flex; justify-content: space-between; align-items: center;
@@ -61,11 +61,12 @@
       width: 55%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
       box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
     }
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.9rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.85rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
       display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
+      transition: background-color 0.25s ease, border-color 0.25s ease;
     }
     .photo-box {
       width: 150px; height: 195px; border: 2.5px solid #eab308; border-radius: 14px;
@@ -75,16 +76,16 @@
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
 
     .status-alert-banner {
-      width: 100%; padding: 10px 8px; border-radius: 8px;
-      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3;
+      width: 100%; padding: 12px 8px; border-radius: 8px;
+      font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; line-height: 1.3;
     }
     .banner-standby { background: transparent; color: #f8fafc; }
-    .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #4ade80; }
-    .banner-dup, .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
+    .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #86efac; }
+    .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #fca5a5; }
 
-    .student-info-text { font-size: 1.3rem; font-weight: 700; color: #ffffff; margin-bottom: 4px; }
-    .status-sub { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 16px; min-height: 1.4rem; }
-    .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
+    .student-info-text { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
+    .status-sub { font-size: 1.1rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
+    .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
 
     .right-top-modal {
       position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
@@ -129,16 +130,16 @@
     <div class="scanner-card">
       <video id="video" autoplay playsinline muted></video>
       <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 카메라와 30cm 정도 거리를 유지해 주세요</div>
+      <div class="scanner-tip">⚡ 카메라와 25~35cm 거리를 유지해 주세요</div>
     </div>
 
-    <div class="info-card">
+    <div class="info-card" id="infoCard">
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
-      <div class="status-sub" id="statusSub">하얀 여백이 있는 명찰을 비춰주세요</div>
-      <!-- 💡 스캐너가 살아있는지 눈으로 보여주는 실시간 심장박동 태그 -->
-      <div class="engine-tag" id="engineTag">카메라 준비 중...</div>
+      <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
+      <!-- 거슬리는 숫자 삭제! 깔끔한 상태 표시로 고정 -->
+      <div class="engine-tag" id="engineTag">● 석식 스캐너 가동 중</div>
     </div>
   </main>
 
@@ -153,7 +154,6 @@
     let isProcessing = false;
     let lastScannedId = "";
     let lastScanTime = 0;
-    let scanCount = 0;
     let lastScanTick = 0;
 
     const video = document.getElementById("video");
@@ -175,38 +175,54 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
+    // 🔔 맑은 차임벨 ("띵동♪")
     function playDingDong() {
       initAudioContext();
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
-      const osc1 = audioCtx.createOscillator(); const gain1 = audioCtx.createGain();
-      osc1.frequency.setValueAtTime(659.25, now); gain1.gain.setValueAtTime(0.3, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-      osc1.connect(gain1); gain1.connect(audioCtx.destination); osc1.start(now); osc1.stop(now + 0.35);
 
-      const osc2 = audioCtx.createOscillator(); const gain2 = audioCtx.createGain();
-      osc2.frequency.setValueAtTime(523.25, now + 0.15); gain2.gain.setValueAtTime(0.3, now + 0.15);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-      osc2.connect(gain2); gain2.connect(audioCtx.destination); osc2.start(now + 0.15); osc2.stop(now + 0.6);
+      const osc1 = audioCtx.createOscillator(); 
+      const gain1 = audioCtx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(659.25, now); // E5 (미)
+      gain1.gain.setValueAtTime(0.35, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.connect(gain1); gain1.connect(audioCtx.destination);
+      osc1.start(now); osc1.stop(now + 0.35);
+
+      const osc2 = audioCtx.createOscillator(); 
+      const gain2 = audioCtx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(523.25, now + 0.15); // C5 (도)
+      gain2.gain.setValueAtTime(0.35, now + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+      osc2.connect(gain2); gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.15); osc2.stop(now + 0.65);
     }
 
+    // 🚨 둔탁한 경고음 ("삐-삐-!")
     function playWarningBeep() {
       initAudioContext();
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
       [0, 0.18].forEach(delay => {
-        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-        osc.type = "square"; osc.frequency.setValueAtTime(400, now + delay);
-        gain.gain.setValueAtTime(0.25, now + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.12);
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now + delay); osc.stop(now + delay + 0.12);
+        const osc = audioCtx.createOscillator(); 
+        const gain = audioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(360, now + delay);
+        gain.gain.setValueAtTime(0.28, now + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.13);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(now + delay); osc.stop(now + delay + 0.13);
       });
     }
 
     async function startCamera(facingMode) {
       if (videoStream) videoStream.getTracks().forEach(track => track.stop());
       try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } } });
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
       } catch (err1) {
         try {
           videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -243,7 +259,7 @@
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 [핵심] 절대 멈추지 않고 실시간으로 숫자가 올라가는 진단형 스캔 루프
+    // 💡 중앙 고화질 크롭 + 풀프레임 듀얼 감지
     function scanLoop() {
       requestAnimationFrame(scanLoop);
 
@@ -251,49 +267,51 @@
       if (!video || video.readyState < 2 || video.videoWidth === 0) return;
 
       const now = Date.now();
-      // 초당 약 8~10회 스캔 (태블릿 CPU 과열 방지)
       if (now - lastScanTick < 120) return;
       lastScanTick = now;
 
-      scanCount++;
-      document.getElementById("engineTag").innerText = `⚡ 스캔 감시 중 (${scanCount}회)`;
-
-      if (typeof jsQR === 'undefined') {
-        document.getElementById("engineTag").innerText = "⚠ 스캐너 라이브러리 로딩 실패 (새로고침 필요)";
-        return;
-      }
+      if (typeof jsQR === 'undefined') return;
 
       try {
-        // 해상도가 너무 거대할 때만 가볍게 조절 (모서리 뭉개짐 없음)
-        let w = video.videoWidth;
-        let h = video.videoHeight;
-        if (w > 1000) {
-          h = Math.round(h * (1000 / w));
-          w = 1000;
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        
+        // 1순위: 초록 박스 부근(화면 65%)을 잘라내어 선명하게 확대 스캔
+        const cropSize = Math.round(Math.min(vw, vh) * 0.65);
+        const sx = Math.round((vw - cropSize) / 2);
+        const sy = Math.round((vh - cropSize) / 2);
+
+        if (canvasElement.width !== cropSize || canvasElement.height !== cropSize) {
+          canvasElement.width = cropSize;
+          canvasElement.height = cropSize;
         }
 
-        if (canvasElement.width !== w || canvasElement.height !== h) {
-          canvasElement.width = w;
-          canvasElement.height = h;
-        }
+        ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, cropSize, cropSize);
+        let imgData = ctx.getImageData(0, 0, cropSize, cropSize);
+        let code = jsQR(imgData.data, cropSize, cropSize, { inversionAttempts: "attemptBoth" });
 
-        // 1. 기본 화면 스캔
-        ctx.drawImage(video, 0, 0, w, h);
-        let imgData = ctx.getImageData(0, 0, w, h);
-        let code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
-
-        // 2. 웹캠 거울모드로 뒤집혔을 때를 대비한 반전 스캔
+        // 2순위: 혹시 웹캠 거울모드로 반전된 경우
         if (!code) {
           ctx.save();
-          ctx.translate(w, 0);
+          ctx.translate(cropSize, 0);
           ctx.scale(-1, 1);
-          ctx.drawImage(video, 0, 0, w, h);
+          ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, cropSize, cropSize);
           ctx.restore();
-          imgData = ctx.getImageData(0, 0, w, h);
-          code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
+          imgData = ctx.getImageData(0, 0, cropSize, cropSize);
+          code = jsQR(imgData.data, cropSize, cropSize, { inversionAttempts: "attemptBoth" });
         }
 
-        // 💡 QR 발견 즉시 0.01초 만에 실행!
+        // 3순위: 전체 화면에서 멀리 비춘 경우
+        if (!code) {
+          const sw = 640;
+          const sh = Math.round(sw * (vh / vw));
+          canvasElement.width = sw;
+          canvasElement.height = sh;
+          ctx.drawImage(video, 0, 0, sw, sh);
+          imgData = ctx.getImageData(0, 0, sw, sh);
+          code = jsQR(imgData.data, sw, sh, { inversionAttempts: "dontInvert" });
+        }
+
         if (code && code.data && code.data.trim() !== "") {
           const rawId = code.data.trim();
           if (rawId !== lastScannedId || (now - lastScanTime > 3500)) {
@@ -302,12 +320,11 @@
             sendToServer(rawId);
           }
         }
-      } catch (e) {
-        console.warn("스캔 루프 예외 건너뜀:", e);
-      }
+      } catch (e) {}
     }
 
-    function applyFeedback(statusType, studentName, studentId, customMsg) {
+    // 💡 3가지 상황을 엄격히 구분하여 화면과 소리를 제어하는 핵심 함수
+    function applyFeedback(statusType, studentName, studentId, mealTime, customMsg) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
       const subEl = document.getElementById("statusSub");
@@ -316,26 +333,30 @@
       banner.className = "status-alert-banner";
 
       if (statusType === "SUCCESS") {
+        // 1. 정상 승인
         document.body.classList.add("flash-ok");
         banner.classList.add("banner-ok");
-        banner.innerText = "✔ 정상 승인 (맛있게 드세요!)";
+        banner.innerText = "✓ 정상 승인 (맛있게 드세요!)";
         infoEl.innerText = `${studentId} ${studentName}`;
-        subEl.innerText = "출석부 동그라미 & 블랙박스 기록 완료";
-        playDingDong();
+        subEl.innerText = "상태: 식사승인 완료";
+        playDingDong(); // 맑은 차임벨
       } else if (statusType === "DUPLICATE") {
-        document.body.classList.add("flash-dup");
-        banner.classList.add("banner-dup");
+        // 2. 중복 식사
+        document.body.classList.add("flash-err");
+        banner.classList.add("banner-err");
         banner.innerText = "⚠ 중복 식사 감지!";
         infoEl.innerText = `${studentId} ${studentName || ''}`;
-        subEl.innerText = "이미 식사 처리가 완료된 학생입니다";
-        playWarningBeep();
+        const timeText = mealTime ? `(식사 시간: ${mealTime})` : "";
+        subEl.innerText = `“이미 식사한 학생입니다" ${timeText}`;
+        playWarningBeep(); // 둔탁한 경고음
       } else {
+        // 3. 미신청자
         document.body.classList.add("flash-err");
         banner.classList.add("banner-err");
         banner.innerText = customMsg || "당일 석식 미신청자입니다";
         infoEl.innerText = `${studentId}`;
-        subEl.innerText = customMsg || "승인 거부 (명단 없음)";
-        playWarningBeep();
+        subEl.innerText = "승인 거부 (명단 없음)";
+        playWarningBeep(); // 둔탁한 경고음
       }
     }
 
@@ -345,14 +366,13 @@
 
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
       
-      // 💡 [핵심] 카메라가 QR을 읽자마자 학번을 화면에 즉시 띄워 선생님을 안심시켜 드립니다!
-      document.getElementById("studentInfo").innerText = `${studentId} (인식 성공!)`;
-      document.getElementById("statusBanner").className = "status-alert-banner banner-ok";
-      document.getElementById("statusBanner").innerText = "✔ QR 감지! 출석 처리 중...";
-      document.getElementById("statusSub").innerText = "구글 시트에 출석 기록을 전송하고 있습니다...";
-      playDingDong(); // 0.01초 만에 딩동 소리 발사!
+      // 확인 중일 때는 소리를 내지 않고 대기 상태만 안내
+      document.getElementById("studentInfo").innerText = `${studentId}`;
+      document.getElementById("statusBanner").className = "status-alert-banner banner-standby";
+      document.getElementById("statusBanner").innerText = "확인 중...";
+      document.getElementById("statusSub").innerText = "출석 정보를 조회하고 있습니다";
 
-      // 사진 미리 로드 시도
+      // 사진 표시 (나중에 photos 폴더에 학번.jpeg 넣으시면 바로 뜹니다)
       const photoEl = document.getElementById("photoBox");
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
 
@@ -360,22 +380,24 @@
         const res = await fetch(`${GAS_URL}?id=${encodeURIComponent(rawCode)}`);
         const data = await res.json();
 
+        // 서버 응답 결과에 따라 3가지 상태를 완벽히 분기
         if (data.status === "SUCCESS") {
-          applyFeedback("SUCCESS", data.name, data.studentId);
+          applyFeedback("SUCCESS", data.name, data.studentId, data.time);
           if (data.stats) updateStatsDisplay(data.stats);
         } else if (data.status === "DUPLICATE") {
-          applyFeedback("DUPLICATE", data.name, data.studentId);
+          applyFeedback("DUPLICATE", data.name, data.studentId, data.time);
           if (data.stats) updateStatsDisplay(data.stats);
         } else if (data.status === "NOT_FOUND") {
-          applyFeedback("NOT_FOUND", "", studentId);
+          applyFeedback("NOT_FOUND", "", studentId, null, "당일 석식 미신청자입니다");
           if (data.stats) updateStatsDisplay(data.stats);
         } else {
-          applyFeedback("ERROR", "", studentId, data.message);
+          applyFeedback("ERROR", "", studentId, null, data.message);
         }
       } catch (err) {
-        applyFeedback("ERROR", "", studentId, "서버 연결 오류");
+        applyFeedback("ERROR", "", studentId, null, "서버 연결 오류 (네트워크 확인)");
       }
 
+      // 2초 동안 결과 화면을 유지한 후 대기 상태로 복귀
       setTimeout(() => {
         document.body.className = "";
         const banner = document.getElementById("statusBanner");
@@ -385,7 +407,7 @@
         document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
-      }, 1600);
+      }, 2000);
     }
 
     function updateStatsDisplay(s) {

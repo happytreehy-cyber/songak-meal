@@ -18,7 +18,6 @@
       border: 6px solid transparent; transition: border-color 0.2s ease, background-color 0.2s ease;
     }
 
-    /* 사양서 기준 화면 색상 */
     body.flash-ok { background-color: #064e3b !important; border-color: #10b981 !important; }
     body.flash-dup, body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
 
@@ -97,21 +96,19 @@
     </div>
     
     <div class="stats-group">
-      <div class="stat-badge stat-total" onclick="toggleGradeModal()">📊 총신청 <span id="cntTotal">-</span></div>
-      <div class="stat-badge stat-done" onclick="toggleGradeModal()">🍱 식사완료 <span id="cntDone">-</span></div>
-      <div class="stat-badge stat-left" onclick="toggleGradeModal()">⏳ 미식사 <span id="cntLeft">-</span></div>
+      <div class="stat-badge stat-total" onclick="toggleGradeModal()">📊 총신청 <span id="cntTotal">0</span></div>
+      <div class="stat-badge stat-done" onclick="toggleGradeModal()">🍱 식사완료 <span id="cntDone">0</span></div>
+      <div class="stat-badge stat-left" onclick="toggleGradeModal()">⏳ 미식사 <span id="cntLeft">0</span></div>
       <button class="btn-cam" onclick="toggleCamera()">카메라 전환</button>
     </div>
 
     <div class="right-top-modal" id="gradeModal">
       <div class="modal-header">
-        <div class="modal-title">학년별 실시간 현황</div>
+        <div class="modal-title">실시간 식사 현황</div>
         <button class="modal-close" onclick="closeGradeModal()">&times;</button>
       </div>
       <div id="modalList">
-        <div class="grade-row"><span>1학년</span><span id="g1-stat">조회 중...</span></div>
-        <div class="grade-row"><span>2학년</span><span id="g2-stat">조회 중...</span></div>
-        <div class="grade-row"><span>3학년</span><span id="g3-stat">조회 중...</span></div>
+        <div class="grade-row"><span>통계 연동 대기 중</span><span id="g1-stat">-</span></div>
       </div>
     </div>
   </header>
@@ -141,6 +138,8 @@
     let currentFacingMode = "user";
     let videoStream = null;
     let isProcessing = false;
+    let lastScannedId = "";
+    let lastScanTime = 0;
 
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
@@ -161,7 +160,6 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    // 띵동 차임벨
     function playDingDong() {
       initAudioContext();
       if (!audioCtx) return;
@@ -177,7 +175,6 @@
       osc2.connect(gain2); gain2.connect(audioCtx.destination); osc2.start(now + 0.15); osc2.stop(now + 0.6);
     }
 
-    // 삐삐 경고음
     function playWarningBeep() {
       initAudioContext();
       if (!audioCtx) return;
@@ -209,6 +206,23 @@
       startCamera(currentFacingMode);
     }
 
+    // 자동 실시간 통계 조회 (페이지 로드 시 및 5초마다 갱신)
+    async function fetchStats() {
+      try {
+        const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
+        const d = await res.json();
+        if (d) {
+          document.getElementById("cntTotal").innerText = d.total || 0;
+          document.getElementById("cntDone").innerText = d.done || 0;
+          document.getElementById("cntLeft").innerText = d.left || 0;
+        }
+      } catch (e) {
+        console.log("통계 로딩 대기 중...");
+      }
+    }
+    setInterval(fetchStats, 5000);
+    fetchStats();
+
     function fastScanLoop() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.height = video.videoHeight;
@@ -216,12 +230,20 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "dontInvert" });
-        if (code && code.data && !isProcessing) handleFastMatch(code.data.trim());
+        
+        if (code && code.data) {
+          const rawId = code.data.trim();
+          const now = Date.now();
+          if (!isProcessing && (rawId !== lastScannedId || (now - lastScanTime > 3000))) {
+            lastScannedId = rawId;
+            lastScanTime = now;
+            handleFastMatch(rawId);
+          }
+        }
       }
       requestAnimationFrame(fastScanLoop);
     }
 
-    // 사양서 기준 100% 매칭 피드백 함수
     function applyFeedback(statusType, studentName, studentId) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
@@ -310,15 +332,13 @@
       try {
         const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
         const d = await res.json();
-        document.getElementById("g1-stat").innerText = `${d[1].done} / ${d[1].total}명 (미식사: ${d[1].total - d[1].done})`;
-        document.getElementById("g2-stat").innerText = `${d[2].done} / ${d[2].total}명 (미식사: ${d[2].total - d[2].done})`;
-        document.getElementById("g3-stat").innerText = `${d[3].done} / ${d[3].total}명 (미식사: ${d[3].total - d[3].done})`;
+        document.getElementById("g1-stat").innerText = `완료: ${d.done}명 / 미식사: ${d.left}명 (총 ${d.total}명)`;
       } catch (e) { document.getElementById("g1-stat").innerText = "조회 불가"; }
     }
 
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
 
-    window.addEventListener("DOMContentLoaded", () => { startCamera(currentFacingMode); });
+    window.addEventListener("DOMContentLoaded", () => { startCamera(currentFacingMode); fetchStats(); });
   </script>
 </body>
 </html>

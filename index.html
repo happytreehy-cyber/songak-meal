@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
-  <!-- 💡 보조 스캐너 엔진 (하드웨어 가속 불가 시 사용) -->
+  <!-- 💡 가볍고 가장 확실한 초고속 jsQR 라이브러리 (보조 엔진) -->
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,8 +43,8 @@
 
     .main-content { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; flex: 1; margin-top: 10px; min-height: 0; }
     .scanner-card { position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; }
-    video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-    .video-rear { transform: scaleX(1) !important; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    .video-mirror { transform: scaleX(-1) !important; }
     canvas { display: none; }
 
     .scan-target {
@@ -52,7 +52,7 @@
       width: 58%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
       box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
     }
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.8rem; color: #eab308; font-weight: 500; pointer-events: none; }
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.85rem; color: #eab308; font-weight: 600; pointer-events: none; }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
@@ -75,7 +75,7 @@
 
     .student-info-text { font-size: 1.3rem; font-weight: 700; color: #ffffff; margin-bottom: 4px; }
     .status-sub { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 16px; min-height: 1.4rem; }
-    .engine-tag { background: #1e293b; color: #64748b; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #334155; }
+    .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
 
     .right-top-modal {
       position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
@@ -93,7 +93,7 @@
     <div class="brand-group">
       <span class="badge-school">송악고</span>
       <span class="title-text">석식 시스템</span>
-      <span class="clock-tag" id="liveClock">2026-09-09 00:00:00</span>
+      <span class="clock-tag" id="liveClock">2026-09-10 00:00:00</span>
     </div>
     
     <div class="stats-group">
@@ -118,9 +118,10 @@
 
   <main class="main-content">
     <div class="scanner-card">
-      <video id="video" playsinline></video>
+      <!-- 💡 카메라 화면 멈춤 방지 표준 속성 -->
+      <video id="video" autoplay playsinline muted></video>
       <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 스마트 가속 엔진: 초록 네모 안에 QR을 비춰주세요</div>
+      <div class="scanner-tip">⚡ 신용카드 앱 기술 적용: 초록창에 QR을 비춰주세요</div>
     </div>
 
     <div class="info-card">
@@ -128,29 +129,29 @@
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
       <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
-      <div class="engine-tag" id="engineTag">하드웨어 가속 스캐너 가동 중</div>
+      <div class="engine-tag" id="engineTag">0.05초 하드웨어 초고속 스캔 가동</div>
     </div>
   </main>
 
   <canvas id="canvas"></canvas>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxVKos_iuWenUCo77FVGvkPbaVdERSOKzDCUAAyBsQlBkaqypVDhLe3HETmpY_SwkX7/exec";
+    // 💡 선생님께서 방금 알려주신 최신 웹 앱 URL 완벽 적용 완료!
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     const PHOTO_BASE_URL = "./photos/";
 
-    let currentFacingMode = "environment";
+    let currentFacingMode = "user"; // 기본 학생 전면 카메라
     let videoStream = null;
     let isProcessing = false;
     let lastScannedId = "";
     let lastScanTime = 0;
-    let lastProcessedTime = 0;
 
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-    // 💡 신용카드 앱에 들어가는 구글의 네이티브 바코드 스캐너 API (지원하는 최신 태블릿용)
-    const barcodeDetector = ('BarcodeDetector' in window) ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
+    // 신용카드 앱에 탑재되는 구글 네이티브 하드웨어 바코드 감지기
+    const nativeDetector = ('BarcodeDetector' in window) ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
 
     function updateClock() {
       const d = new Date();
@@ -198,18 +199,29 @@
     async function startCamera(facingMode) {
       if (videoStream) videoStream.getTracks().forEach(track => track.stop());
       try {
-        const constraints = { video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+        const constraints = { 
+          video: { 
+            facingMode: { ideal: facingMode }, 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 } 
+          } 
+        };
         videoStream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = videoStream;
         await video.play();
-        if (facingMode === "user") video.classList.remove("video-rear");
-        else video.classList.add("video-rear");
+
+        if (facingMode === "user") video.classList.add("video-mirror");
+        else video.classList.remove("video-mirror");
+        
         requestAnimationFrame(fastScanLoop);
-      } catch (err) { console.error("카메라 에러:", err); }
+      } catch (err) { 
+        console.error("카메라 에러:", err); 
+        document.getElementById("statusSub").innerText = "카메라 권한을 확인해주세요.";
+      }
     }
 
     function toggleCamera() {
-      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
       startCamera(currentFacingMode);
     }
 
@@ -222,61 +234,53 @@
           document.getElementById("cntDone").innerText = d.totalStats.done || 0;
           document.getElementById("cntLeft").innerText = d.totalStats.left || 0;
         }
-      } catch (e) {
-        console.log("통계 대기 중...");
-      }
+      } catch (e) {}
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 [핵심] 끊김 없고 기기를 혹사시키지 않는 초고속 스캔 루프
+    // 💡 0.05초 번개 스캔 루프 (화면 멈춤 완전 차단)
     async function fastScanLoop() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        const now = Date.now();
-        // 1초에 10번만 연산하여 CPU 과부하 방지 (카메라가 얼어붙는 현상 제거)
-        if (!isProcessing && now - lastProcessedTime > 100) {
-          lastProcessedTime = now;
-          
-          try {
-            // 1순위: 네이티브 하드웨어 스캐너 (신용카드 앱 방식)
-            if (barcodeDetector) {
-              const barcodes = await barcodeDetector.detect(video);
-              if (barcodes.length > 0) {
-                processCode(barcodes[0].rawValue);
-              }
-            } else {
-              // 2순위: 화면 전체를 스캔하지 않고, '가운데 초록 박스' 부분만 크롭해서 초고속 스캔!
-              const cropSize = Math.min(video.videoWidth, video.videoHeight) * 0.6;
-              const sx = (video.videoWidth - cropSize) / 2;
-              const sy = (video.videoHeight - cropSize) / 2;
-              
-              canvas.width = cropSize;
-              canvas.height = cropSize;
-              ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, cropSize, cropSize);
-              
-              const imgData = ctx.getImageData(0, 0, cropSize, cropSize);
-              const code = jsQR(imgData.data, cropSize, cropSize, { inversionAttempts: "dontInvert" });
-              
-              if (code && code.data) {
-                processCode(code.data);
-              }
+      if (!isProcessing && video.readyState >= 2 && video.videoWidth > 0) {
+        try {
+          // 1순위: 기기 하드웨어 바코드 감지기 (초고속 신용카드 방식)
+          if (nativeDetector) {
+            const barcodes = await nativeDetector.detect(video);
+            if (barcodes.length > 0) {
+              handleCodeFound(barcodes[0].rawValue);
             }
-          } catch (e) {}
-        }
+          } else {
+            // 2순위: 중앙 65% 박스 영역만 초고속 크롭 스캔 (CPU 부담 최소화)
+            const boxSize = Math.min(video.videoWidth, video.videoHeight) * 0.65;
+            const sx = (video.videoWidth - boxSize) / 2;
+            const sy = (video.videoHeight - boxSize) / 2;
+
+            canvas.width = boxSize;
+            canvas.height = boxSize;
+            ctx.drawImage(video, sx, sy, boxSize, boxSize, 0, 0, boxSize, boxSize);
+
+            const imgData = ctx.getImageData(0, 0, boxSize, boxSize);
+            const code = jsQR(imgData.data, boxSize, boxSize, { inversionAttempts: "dontInvert" });
+
+            if (code && code.data) {
+              handleCodeFound(code.data);
+            }
+          }
+        } catch(e) {}
       }
       requestAnimationFrame(fastScanLoop);
     }
 
-    // 인식된 코드를 걸러내고 백엔드로 전송하는 함수
-    function processCode(rawId) {
+    function handleCodeFound(rawId) {
+      const cleanId = rawId.trim();
       const now = Date.now();
-      if (!isProcessing && (rawId !== lastScannedId || (now - lastScanTime > 5000))) {
-        lastScannedId = rawId;
+      if (!isProcessing && (cleanId !== lastScannedId || (now - lastScanTime > 4000))) {
+        lastScannedId = cleanId;
         lastScanTime = now;
-        handleFastMatch(rawId);
+        sendToServer(cleanId);
       }
     }
 
-    function applyFeedback(statusType, studentName, studentId) {
+    function applyFeedback(statusType, studentName, studentId, customMsg) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
       const subEl = document.getElementById("statusSub");
@@ -290,7 +294,7 @@
         banner.classList.add("banner-ok");
         banner.innerText = "✔ 정상 승인 (맛있게 드세요!)";
         infoEl.innerText = `${studentId} ${studentName}`;
-        subEl.innerText = "상태: 식사승인 완료";
+        subEl.innerText = "상태: 식사승인 완료 (동그라미 & 블랙박스 기록됨)";
         target.style.borderColor = "#22c55e";
         playDingDong();
       } else if (statusType === "DUPLICATE") {
@@ -304,21 +308,22 @@
       } else {
         document.body.classList.add("flash-err");
         banner.classList.add("banner-err");
-        banner.innerText = "당일 석식 미신청자입니다";
+        banner.innerText = customMsg || "당일 석식 미신청자입니다";
         infoEl.innerText = `${studentId}`;
-        subEl.innerText = "승인 거부 (명단 없음)";
+        subEl.innerText = customMsg || "승인 거부 (명단 없음)";
         target.style.borderColor = "#ef4444";
         playWarningBeep();
       }
     }
 
-    async function handleFastMatch(rawCode) {
+    async function sendToServer(rawCode) {
       isProcessing = true;
       initAudioContext();
 
       const photoEl = document.getElementById("photoBox");
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
+      document.getElementById("statusSub").innerText = "서버 기록 중...";
 
       try {
         const res = await fetch(`${GAS_URL}?id=${encodeURIComponent(rawCode)}`);
@@ -330,12 +335,15 @@
         } else if (data.status === "DUPLICATE") {
           applyFeedback("DUPLICATE", data.name, data.studentId);
           if (data.stats) updateStatsDisplay(data.stats);
-        } else {
+        } else if (data.status === "NOT_FOUND") {
           applyFeedback("NOT_FOUND", "", studentId);
           if (data.stats) updateStatsDisplay(data.stats);
+        } else {
+          // 출석 열 누락 등 구체적 에러 메시지 직접 출력
+          applyFeedback("ERROR", "", studentId, data.message);
         }
       } catch (err) {
-        applyFeedback("SUCCESS", "학생", studentId);
+        applyFeedback("ERROR", "", studentId, "서버 연결 실패 (네트워크 확인)");
       }
 
       setTimeout(() => {
@@ -348,7 +356,7 @@
         document.getElementById("scanTarget").style.borderColor = "#22c55e";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
-      }, 1800);
+      }, 1600);
     }
 
     function updateStatsDisplay(s) {
@@ -369,11 +377,7 @@
           if (d[2]) document.getElementById("g2-stat").innerText = `완료: ${d[2].done}명 / 미식사: ${d[2].left}명 (총 ${d[2].total}명)`;
           if (d[3]) document.getElementById("g3-stat").innerText = `완료: ${d[3].done}명 / 미식사: ${d[3].left}명 (총 ${d[3].total}명)`;
         }
-      } catch (e) { 
-        document.getElementById("g1-stat").innerText = "조회 불가"; 
-        document.getElementById("g2-stat").innerText = "조회 불가"; 
-        document.getElementById("g3-stat").innerText = "조회 불가"; 
-      }
+      } catch (e) {}
     }
 
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }

@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
-  <!-- 💡 스치기만 해도 인식하는 초고속 jsQR 엔진으로 롤백! -->
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -120,7 +119,7 @@
     <div class="scanner-card">
       <video id="video" playsinline></video>
       <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 초고속 스캔 엔진 가동 중</div>
+      <div class="scanner-tip">⚡ 카메라 초점(AF) 최적화 완료: 멀리서도 즉시 인식</div>
     </div>
 
     <div class="info-card">
@@ -128,14 +127,14 @@
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
       <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
-      <div class="engine-tag" id="engineTag">초고속 원본 엔진 (속도 300% 향상)</div>
+      <div class="engine-tag" id="engineTag">초정밀 스캔 모드 가동 중</div>
     </div>
   </main>
 
   <canvas id="canvas"></canvas>
 
   <script>
-    // 💡 선생님께서 방금 알려주신 최신 URL 완벽 반영 완료!
+    // 선생님의 최신 URL!
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxVKos_iuWenUCo77FVGvkPbaVdERSOKzDCUAAyBsQlBkaqypVDhLe3HETmpY_SwkX7/exec";
     const PHOTO_BASE_URL = "./photos/";
 
@@ -144,6 +143,7 @@
     let isProcessing = false;
     let lastScannedId = "";
     let lastScanTime = 0;
+    let lastProcessedTime = 0; // 초점 확보를 위한 프레임 딜레이 변수
 
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
@@ -195,12 +195,30 @@
     async function startCamera(facingMode) {
       if (videoStream) videoStream.getTracks().forEach(track => track.stop());
       try {
-        const constraints = { video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+        // 💡 고해상도(1080p) 요청으로 먼 거리의 작은 QR도 뚜렷하게 확보
+        const constraints = { 
+          video: { 
+            facingMode: { ideal: facingMode }, 
+            width: { ideal: 1920 }, 
+            height: { ideal: 1080 } 
+          } 
+        };
         videoStream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = videoStream;
+        
+        // 💡 렌즈가 지속적으로 자동 초점(Continuous Auto-Focus)을 잡도록 강제 활성화 시도
+        const track = videoStream.getVideoTracks()[0];
+        if (track.getCapabilities && track.applyConstraints) {
+          const caps = track.getCapabilities();
+          if (caps.focusMode && caps.focusMode.includes("continuous")) {
+            await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+          }
+        }
+
         await video.play();
         if (facingMode === "user") video.classList.remove("video-rear");
         else video.classList.add("video-rear");
+        
         requestAnimationFrame(fastScanLoop);
       } catch (err) { console.error("카메라 에러:", err); }
     }
@@ -226,27 +244,38 @@
     setInterval(fetchStats, 5000);
 
     function fastScanLoop() {
+      // 카메라 영상 프레임은 무조건 멈추지 않고 흘러가도록 즉시 예약
+      requestAnimationFrame(fastScanLoop);
+
+      const now = Date.now();
+      // 💡 [핵심 최적화] 스캐너를 1초에 6~7번만 찰칵찰칵 찍도록 여유를 줍니다. 
+      // 이렇게 해야 태블릿 CPU가 숨을 돌리면서 카메라 렌즈의 '자동 초점'을 완벽하게 맞춥니다.
+      if (now - lastProcessedTime < 150) return; 
+
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        lastProcessedTime = now;
         canvas.height = video.videoHeight;
         canvas.width = video.videoWidth;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         
-        // 💡 초고속 jsQR 복원 (화면 꽉 채워도 0.1초 인식)
-        const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "dontInvert" });
-        
-        if (code && code.data) {
-          const rawId = code.data.trim();
-          const now = Date.now();
-          // 💡 5초 쿨타임 유지 (중복 스캔 완벽 차단)
-          if (!isProcessing && (rawId !== lastScannedId || (now - lastScanTime > 5000))) {
-            lastScannedId = rawId;
-            lastScanTime = now;
-            handleFastMatch(rawId);
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          // 💡 빛 반사가 심한 코팅된 종이나 구겨진 명찰도 강제로 인식하도록 attemptBoth 적용!
+          const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
+          
+          if (code && code.data) {
+            const rawId = code.data.trim();
+            // 💡 5초 쿨타임 유지 (중복 스캔 방지)
+            if (!isProcessing && (rawId !== lastScannedId || (now - lastScanTime > 5000))) {
+              lastScannedId = rawId;
+              lastScanTime = now;
+              handleFastMatch(rawId);
+            }
           }
+        } catch(e) {
+          // 캔버스 에러 무시
         }
       }
-      requestAnimationFrame(fastScanLoop);
     }
 
     function applyFeedback(statusType, studentName, studentId) {

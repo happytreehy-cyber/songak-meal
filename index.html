@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
-  
-  <!-- 💡 어제 가장 확실하게 잘 찍혔던 순수 원본 jsQR 스캐너 -->
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
-  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -19,7 +16,6 @@
       display: flex; flex-direction: column; padding: 10px 16px;
       border: 6px solid transparent; transition: border-color 0.2s ease, background-color 0.2s ease;
     }
-
     body.flash-ok { background-color: #064e3b !important; border-color: #10b981 !important; }
     body.flash-dup, body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
 
@@ -33,31 +29,23 @@
     .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid #334155; }
     
     .stats-group { display: flex; gap: 8px; align-items: center; }
-    .stat-badge {
-      display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700;
-      padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none;
-    }
+    .stat-badge { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none; }
     .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
     .stat-done  { background: #133924; color: #4ade80; border: 1px solid #166534; }
     .stat-left  { background: #3a1919; color: #f87171; border: 1px solid #991b1b; }
     .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 
     .main-content { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; flex: 1; margin-top: 10px; min-height: 0; }
-    
-    /* 💡 비디오 창이 투명해지거나 사라지지 않도록 단단히 고정 */
-    .scanner-card { 
-      position: relative; background: #000; border-radius: 12px; overflow: hidden; 
-      border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; 
-    }
-    #video { width: 100%; height: 100%; object-fit: cover; }
+    .scanner-card { position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; }
+    video { width: 100%; height: 100%; object-fit: cover; }
     canvas { display: none; }
 
     .scan-target {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 55%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
+      width: 58%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
       box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
     }
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.9rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.85rem; color: #eab308; font-weight: 600; pointer-events: none; }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
@@ -70,10 +58,7 @@
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
 
-    .status-alert-banner {
-      width: 100%; padding: 10px 8px; border-radius: 8px;
-      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3;
-    }
+    .status-alert-banner { width: 100%; padding: 10px 8px; border-radius: 8px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3; }
     .banner-standby { background: transparent; color: #f8fafc; }
     .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #4ade80; }
     .banner-dup, .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
@@ -82,10 +67,7 @@
     .status-sub { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 16px; min-height: 1.4rem; }
     .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
 
-    .right-top-modal {
-      position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
-      border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000;
-    }
+    .right-top-modal { position: absolute; top: 50px; right: 16px; width: 340px; background: #182234; border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .modal-title { font-size: 1rem; font-weight: 700; color: #38bdf8; }
     .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; }
@@ -123,25 +105,24 @@
 
   <main class="main-content">
     <div class="scanner-card">
-      <!-- 💡 확실한 비디오 창 태그 -->
       <video id="video" autoplay playsinline muted></video>
       <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 카메라 화면 전체에서 QR을 즉시 감지합니다</div>
+      <div class="scanner-tip">⚡ 카메라와 명찰 거리를 30cm 정도 띄워주세요</div>
     </div>
 
     <div class="info-card">
+      <!-- 사진 공간 (사진은 나중에 photos 폴더에 학번.jpeg로 넣으시면 바로 뜹니다) -->
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
-      <div class="status-sub" id="statusSub">하얀 여백이 있는 QR을 비춰주세요</div>
-      <div class="engine-tag" id="engineTag">표준 순정 스캐너 가동 중</div>
+      <div class="status-sub" id="statusSub">웹캠의 초점이 맞도록 살짝 띄워주세요</div>
+      <div class="engine-tag" id="engineTag">웹캠 좌우반전 듀얼 스캔 가동 중</div>
     </div>
   </main>
 
   <canvas id="canvas"></canvas>
 
   <script>
-    // 선생님의 최신 URL 적용 완료
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     const PHOTO_BASE_URL = "./photos/";
 
@@ -178,7 +159,6 @@
       osc1.frequency.setValueAtTime(659.25, now); gain1.gain.setValueAtTime(0.3, now);
       gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
       osc1.connect(gain1); gain1.connect(audioCtx.destination); osc1.start(now); osc1.stop(now + 0.35);
-
       const osc2 = audioCtx.createOscillator(); const gain2 = audioCtx.createGain();
       osc2.frequency.setValueAtTime(523.25, now + 0.15); gain2.gain.setValueAtTime(0.3, now + 0.15);
       gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
@@ -198,35 +178,22 @@
       });
     }
 
-    // 💡 핵심 해결: 노트북, 태블릿 모두 100% 켜지는 무적의 카메라 스타트 엔진
     async function startCamera(facingMode) {
-      if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-      }
-      
+      if (videoStream) videoStream.getTracks().forEach(track => track.stop());
       try {
-        // 1순위: 전면 또는 후면 카메라 시도
         videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } } });
-      } catch (err1) {
+      } catch (e) {
         try {
-          // 2순위 (노트북/데스크탑 등 전후면 구분이 없는 기기일 경우): 무조건 켜지는 카메라 아무거나 가져오기!
           videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        } catch (err2) {
-          document.getElementById("statusSub").innerText = "카메라 권한을 허용해주세요!";
-          return;
+        } catch (e2) {
+          document.getElementById("statusSub").innerText = "카메라를 찾을 수 없습니다."; return;
         }
       }
-
       video.srcObject = videoStream;
-      video.setAttribute("playsinline", true);
-      video.play();
+      await video.play();
 
-      // 거울 모드 (노트북 웹캠이나 전면카메라일 때 좌우 반전)
-      if (facingMode === "user") {
-        video.style.transform = "scaleX(-1)";
-      } else {
-        video.style.transform = "scaleX(1)";
-      }
+      if (facingMode === "user") video.style.transform = "scaleX(-1)";
+      else video.style.transform = "scaleX(1)";
       
       requestAnimationFrame(scanLoop);
     }
@@ -249,24 +216,32 @@
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 화면이 까매지지 않는 어제 원본 스캔 루프
+    // 💡 [핵심 엔진] 노트북 거울 모드(좌우 반전)까지 완벽하게 잡아내는 듀얼 스캐너!
     function scanLoop() {
       if (video.readyState === video.HAVE_ENOUGH_DATA && !isProcessing) {
-        canvasElement.height = video.videoHeight;
         canvasElement.width = video.videoWidth;
+        canvasElement.height = video.videoHeight;
+        
+        // 1. 원본 화면 스캔 시도
         ctx.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-        
-        const imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height);
-        
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
+        let imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height);
+        let code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+
+        // 2. 만약 인식이 안 됐다면? 노트북 거울모드 특성상 '좌우 반전'해서 다시 시도!
+        if (!code) {
+          ctx.save();
+          ctx.translate(canvasElement.width, 0);
+          ctx.scale(-1, 1); // 좌우 휙 뒤집기
+          ctx.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+          ctx.restore();
+          imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height);
+          code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+        }
 
         if (code && code.data && code.data.trim() !== "") {
           const rawId = code.data.trim();
           const now = Date.now();
-          // 4초 쿨타임
-          if (rawId !== lastScannedId || (now - lastScanTime > 4000)) {
+          if (rawId !== lastScannedId || (now - lastScanTime > 3500)) {
             lastScannedId = rawId;
             lastScanTime = now;
             sendToServer(rawId);
@@ -310,7 +285,7 @@
 
     async function sendToServer(rawCode) {
       isProcessing = true;
-      initAudioContext(); // 소리 권한 강제 획득
+      initAudioContext();
 
       const photoEl = document.getElementById("photoBox");
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
@@ -343,10 +318,10 @@
         banner.className = "status-alert-banner banner-standby";
         banner.innerText = "대기 중";
         document.getElementById("studentInfo").innerText = "-";
-        document.getElementById("statusSub").innerText = "하얀 여백이 있는 명찰을 비춰주세요";
+        document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
-      }, 1600);
+      }, 1500);
     }
 
     function updateStatsDisplay(s) {
@@ -355,27 +330,8 @@
       document.getElementById("cntLeft").innerText = s.left;
     }
 
-    async function toggleGradeModal() {
-      const m = document.getElementById("gradeModal");
-      if (m.style.display === "block") { m.style.display = "none"; return; }
-      m.style.display = "block";
-      try {
-        const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
-        const d = await res.json();
-        if (d) {
-          if (d[1]) document.getElementById("g1-stat").innerText = `완료: ${d[1].done}명 / 미식사: ${d[1].left}명 (총 ${d[1].total}명)`;
-          if (d[2]) document.getElementById("g2-stat").innerText = `완료: ${d[2].done}명 / 미식사: ${d[2].left}명 (총 ${d[2].total}명)`;
-          if (d[3]) document.getElementById("g3-stat").innerText = `완료: ${d[3].done}명 / 미식사: ${d[3].left}명 (총 ${d[3].total}명)`;
-        }
-      } catch (e) {}
-    }
-
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
-
-    window.addEventListener("DOMContentLoaded", () => { 
-      startCamera(currentFacingMode); 
-      fetchStats(); 
-    });
+    window.addEventListener("DOMContentLoaded", () => { startCamera(currentFacingMode); fetchStats(); });
   </script>
 </body>
 </html>

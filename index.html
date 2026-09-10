@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
-  <!-- 💡 어제 가장 빠르고 시원하게 인식됐던 순수 원본 jsQR 엔진 -->
-  <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
+  
+  <!-- 💡 신용카드사 급 산업용 초고속 스캐너 엔진 (화면 왜곡 버그 원천 차단) -->
+  <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -41,16 +43,20 @@
     .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 
     .main-content { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; flex: 1; margin-top: 10px; min-height: 0; }
-    .scanner-card { position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; }
-    video { width: 100%; height: 100%; object-fit: cover; }
-    canvas { display: none; }
-
-    .scan-target {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 58%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
-      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
+    
+    .scanner-card { 
+      position: relative; background: #000; border-radius: 12px; overflow: hidden; 
+      border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; 
     }
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.85rem; color: #eab308; font-weight: 600; pointer-events: none; }
+    
+    /* 카메라 화면 꽉 채우기 */
+    #video { width: 100%; height: 100%; object-fit: cover; }
+    
+    /* QR 엔진이 자동으로 그려주는 노란색 인식 테두리 설정 */
+    .scan-region-highlight { border-radius: 12px; border-color: #22c55e !important; }
+    .scan-region-highlight-svg { stroke: #22c55e !important; }
+
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.9rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
@@ -85,7 +91,7 @@
     .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0f172a; border-radius: 6px; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
   </style>
 </head>
-<body>
+<body onclick="initAudioContext()" ontouchstart="initAudioContext()">
 
   <header>
     <div class="brand-group">
@@ -116,9 +122,8 @@
 
   <main class="main-content">
     <div class="scanner-card">
-      <video id="video" autoplay playsinline muted></video>
-      <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 화면 전체에서 빠르게 QR을 감지합니다</div>
+      <video id="video" playsinline></video>
+      <div class="scanner-tip">⚡ 화면 안의 파란 테두리에 QR을 맞춰주세요</div>
     </div>
 
     <div class="info-card">
@@ -126,26 +131,23 @@
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
       <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
-      <div class="engine-tag" id="engineTag">어제 버전(초고속 전체화면 스캔) 복구 완료</div>
+      <div class="engine-tag" id="engineTag">산업용 WebAssembly 엔진 가동 중</div>
     </div>
   </main>
 
-  <canvas id="canvas"></canvas>
-
   <script>
-    // 선생님의 최신 URL 적용 완료
+    // 선생님의 완벽하게 동작 중인 최신 웹 앱 URL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     const PHOTO_BASE_URL = "./photos/";
 
-    let currentFacingMode = "user"; 
-    let videoStream = null;
+    let qrScanner;
+    let currentFacingMode = "user"; // 전면 카메라 기본값
     let isProcessing = false;
     let lastScannedId = "";
     let lastScanTime = 0;
 
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    // 💡 엔진의 핵심 분석기를 가속화하는 워커 설정
+    QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
 
     function updateClock() {
       const d = new Date();
@@ -166,7 +168,6 @@
       }
     }
 
-    // 💡 번거로운 터치 요구 완전 제거. 스캔 즉시 알아서 재생 시도
     function playDingDong() {
       initAudioContext();
       if (!audioCtx) return;
@@ -195,36 +196,6 @@
       });
     }
 
-    async function startCamera(facingMode) {
-      if (videoStream) videoStream.getTracks().forEach(track => track.stop());
-      try {
-        // 어제 정상 작동하던 전체화면 HD 세팅
-        const constraints = { 
-          video: { 
-            facingMode: { ideal: facingMode }, 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 } 
-          } 
-        };
-        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = videoStream;
-        await video.play();
-
-        if (facingMode === "user") video.style.transform = "scaleX(-1)";
-        else video.style.transform = "scaleX(1)";
-        
-        requestAnimationFrame(scanLoop);
-      } catch (err) { 
-        console.error("카메라 에러:", err); 
-        document.getElementById("statusSub").innerText = "카메라 권한을 확인해주세요.";
-      }
-    }
-
-    function toggleCamera() {
-      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-      startCamera(currentFacingMode);
-    }
-
     async function fetchStats() {
       try {
         const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
@@ -238,35 +209,46 @@
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 어제 가장 빨랐던 화면 전체 1:1 풀스캔 복원! (뭉개짐 절대 없음)
-    function scanLoop() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA && !isProcessing) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-
-        if (code && code.data && code.data.trim() !== "") {
-          const rawId = code.data.trim();
+    // 💡 화면 왜곡 없이 카메라 센서 데이터를 직접 읽어오는 최첨단 엔진 초기화
+    function initScanner() {
+      const videoEl = document.getElementById('video');
+      
+      qrScanner = new QrScanner(
+        videoEl,
+        result => {
+          const rawId = result.data.trim();
           const now = Date.now();
-          // 동일 학생 4초 중복 방지
-          if (rawId !== lastScannedId || (now - lastScanTime > 4000)) {
+          
+          // 동일 학생 3.5초 중복 스캔 방지
+          if (!isProcessing && (rawId !== lastScannedId || (now - lastScanTime > 3500))) {
             lastScannedId = rawId;
             lastScanTime = now;
             sendToServer(rawId);
           }
+        },
+        {
+          highlightScanRegion: true,     // 화면에 파란색 스캔 인식 영역을 자동으로 예쁘게 그려줌
+          highlightCodeOutline: true,    // QR을 인식하는 순간 QR코드 모서리에 노란색 테두리 표시!
+          maxScansPerSecond: 15,         // 초당 15회 스캔으로 빠르면서도 CPU 과부하 방지
+          preferredCamera: currentFacingMode
         }
-      }
-      requestAnimationFrame(scanLoop);
+      );
+
+      qrScanner.start().catch(err => {
+        console.error(err);
+        document.getElementById("statusSub").innerText = "카메라를 켤 수 없습니다.";
+      });
+    }
+
+    function toggleCamera() {
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+      qrScanner.setCamera(currentFacingMode);
     }
 
     function applyFeedback(statusType, studentName, studentId, customMsg) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
       const subEl = document.getElementById("statusSub");
-      const target = document.getElementById("scanTarget");
 
       document.body.className = "";
       banner.className = "status-alert-banner";
@@ -276,8 +258,7 @@
         banner.classList.add("banner-ok");
         banner.innerText = "✔ 정상 승인 (맛있게 드세요!)";
         infoEl.innerText = `${studentId} ${studentName}`;
-        subEl.innerText = "출석부 및 블랙박스 기록 완료";
-        target.style.borderColor = "#22c55e";
+        subEl.innerText = "출석부 동그라미 & 블랙박스 기록 완료";
         playDingDong();
       } else if (statusType === "DUPLICATE") {
         document.body.classList.add("flash-dup");
@@ -285,7 +266,6 @@
         banner.innerText = "⚠ 중복 식사 감지!";
         infoEl.innerText = `${studentId} ${studentName || ''}`;
         subEl.innerText = "이미 식사 처리가 완료된 학생입니다";
-        target.style.borderColor = "#ef4444";
         playWarningBeep();
       } else {
         document.body.classList.add("flash-err");
@@ -293,13 +273,13 @@
         banner.innerText = customMsg || "당일 석식 미신청자입니다";
         infoEl.innerText = `${studentId}`;
         subEl.innerText = customMsg || "승인 거부 (명단 없음)";
-        target.style.borderColor = "#ef4444";
         playWarningBeep();
       }
     }
 
     async function sendToServer(rawCode) {
-      isProcessing = true;
+      isProcessing = true; // 통신 중에는 다른 스캔 무시
+      initAudioContext();  // 소리 권한 강제 오픈
 
       const photoEl = document.getElementById("photoBox");
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
@@ -326,6 +306,7 @@
         applyFeedback("ERROR", "", studentId, "서버 연결 오류");
       }
 
+      // 1.5초 후 초기 상태로 복귀
       setTimeout(() => {
         document.body.className = "";
         const banner = document.getElementById("statusBanner");
@@ -333,10 +314,9 @@
         banner.innerText = "대기 중";
         document.getElementById("studentInfo").innerText = "-";
         document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
-        document.getElementById("scanTarget").style.borderColor = "#22c55e";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
-      }, 1600);
+      }, 1500);
     }
 
     function updateStatsDisplay(s) {
@@ -362,9 +342,9 @@
 
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
 
-    // 시작하자마자 카메라 가동
+    // 페이지 접속 즉시 스캐너 작동!
     window.addEventListener("DOMContentLoaded", () => { 
-      startCamera(currentFacingMode); 
+      initScanner(); 
       fetchStats(); 
     });
   </script>

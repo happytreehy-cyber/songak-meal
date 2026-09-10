@@ -4,7 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
+  
+  <!-- 💡 학교 전산망 차단 방지 2중 백업 스캐너 라이브러리 -->
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
+  <script>
+    if (typeof jsQR === 'undefined') {
+      document.write('<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"><\/script>');
+    }
+  </script>
+  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -16,6 +24,7 @@
       display: flex; flex-direction: column; padding: 10px 16px;
       border: 6px solid transparent; transition: border-color 0.2s ease, background-color 0.2s ease;
     }
+
     body.flash-ok { background-color: #064e3b !important; border-color: #10b981 !important; }
     body.flash-dup, body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
 
@@ -29,23 +38,30 @@
     .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid #334155; }
     
     .stats-group { display: flex; gap: 8px; align-items: center; }
-    .stat-badge { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none; }
+    .stat-badge {
+      display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700;
+      padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none;
+    }
     .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
     .stat-done  { background: #133924; color: #4ade80; border: 1px solid #166534; }
     .stat-left  { background: #3a1919; color: #f87171; border: 1px solid #991b1b; }
     .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 
     .main-content { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; flex: 1; margin-top: 10px; min-height: 0; }
-    .scanner-card { position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; }
-    video { width: 100%; height: 100%; object-fit: cover; }
+    
+    .scanner-card { 
+      position: relative; background: #000; border-radius: 12px; overflow: hidden; 
+      border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; 
+    }
+    #video { width: 100%; height: 100%; object-fit: cover; }
     canvas { display: none; }
 
     .scan-target {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 58%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
+      width: 55%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
       box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
     }
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.85rem; color: #eab308; font-weight: 600; pointer-events: none; }
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.9rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
@@ -58,7 +74,10 @@
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
 
-    .status-alert-banner { width: 100%; padding: 10px 8px; border-radius: 8px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3; }
+    .status-alert-banner {
+      width: 100%; padding: 10px 8px; border-radius: 8px;
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3;
+    }
     .banner-standby { background: transparent; color: #f8fafc; }
     .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #4ade80; }
     .banner-dup, .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #f87171; }
@@ -67,7 +86,10 @@
     .status-sub { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 16px; min-height: 1.4rem; }
     .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.8rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
 
-    .right-top-modal { position: absolute; top: 50px; right: 16px; width: 340px; background: #182234; border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000; }
+    .right-top-modal {
+      position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
+      border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000;
+    }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .modal-title { font-size: 1rem; font-weight: 700; color: #38bdf8; }
     .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; }
@@ -107,16 +129,16 @@
     <div class="scanner-card">
       <video id="video" autoplay playsinline muted></video>
       <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 카메라와 명찰 거리를 30cm 정도 띄워주세요</div>
+      <div class="scanner-tip">⚡ 카메라와 30cm 정도 거리를 유지해 주세요</div>
     </div>
 
     <div class="info-card">
-      <!-- 사진 공간 (사진은 나중에 photos 폴더에 학번.jpeg로 넣으시면 바로 뜹니다) -->
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
-      <div class="status-sub" id="statusSub">웹캠의 초점이 맞도록 살짝 띄워주세요</div>
-      <div class="engine-tag" id="engineTag">웹캠 좌우반전 듀얼 스캔 가동 중</div>
+      <div class="status-sub" id="statusSub">하얀 여백이 있는 명찰을 비춰주세요</div>
+      <!-- 💡 스캐너가 살아있는지 눈으로 보여주는 실시간 심장박동 태그 -->
+      <div class="engine-tag" id="engineTag">카메라 준비 중...</div>
     </div>
   </main>
 
@@ -131,6 +153,8 @@
     let isProcessing = false;
     let lastScannedId = "";
     let lastScanTime = 0;
+    let scanCount = 0;
+    let lastScanTick = 0;
 
     const video = document.getElementById("video");
     const canvasElement = document.getElementById("canvas");
@@ -159,6 +183,7 @@
       osc1.frequency.setValueAtTime(659.25, now); gain1.gain.setValueAtTime(0.3, now);
       gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
       osc1.connect(gain1); gain1.connect(audioCtx.destination); osc1.start(now); osc1.stop(now + 0.35);
+
       const osc2 = audioCtx.createOscillator(); const gain2 = audioCtx.createGain();
       osc2.frequency.setValueAtTime(523.25, now + 0.15); gain2.gain.setValueAtTime(0.3, now + 0.15);
       gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
@@ -182,14 +207,16 @@
       if (videoStream) videoStream.getTracks().forEach(track => track.stop());
       try {
         videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } } });
-      } catch (e) {
+      } catch (err1) {
         try {
           videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        } catch (e2) {
-          document.getElementById("statusSub").innerText = "카메라를 찾을 수 없습니다."; return;
+        } catch (err2) {
+          document.getElementById("statusSub").innerText = "카메라 권한을 확인해주세요.";
+          return;
         }
       }
       video.srcObject = videoStream;
+      video.setAttribute("playsinline", true);
       await video.play();
 
       if (facingMode === "user") video.style.transform = "scaleX(-1)";
@@ -216,39 +243,68 @@
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 [핵심 엔진] 노트북 거울 모드(좌우 반전)까지 완벽하게 잡아내는 듀얼 스캐너!
+    // 💡 [핵심] 절대 멈추지 않고 실시간으로 숫자가 올라가는 진단형 스캔 루프
     function scanLoop() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA && !isProcessing) {
-        canvasElement.width = video.videoWidth;
-        canvasElement.height = video.videoHeight;
-        
-        // 1. 원본 화면 스캔 시도
-        ctx.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-        let imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height);
-        let code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+      requestAnimationFrame(scanLoop);
 
-        // 2. 만약 인식이 안 됐다면? 노트북 거울모드 특성상 '좌우 반전'해서 다시 시도!
-        if (!code) {
-          ctx.save();
-          ctx.translate(canvasElement.width, 0);
-          ctx.scale(-1, 1); // 좌우 휙 뒤집기
-          ctx.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-          ctx.restore();
-          imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height);
-          code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+      if (isProcessing) return;
+      if (!video || video.readyState < 2 || video.videoWidth === 0) return;
+
+      const now = Date.now();
+      // 초당 약 8~10회 스캔 (태블릿 CPU 과열 방지)
+      if (now - lastScanTick < 120) return;
+      lastScanTick = now;
+
+      scanCount++;
+      document.getElementById("engineTag").innerText = `⚡ 스캔 감시 중 (${scanCount}회)`;
+
+      if (typeof jsQR === 'undefined') {
+        document.getElementById("engineTag").innerText = "⚠ 스캐너 라이브러리 로딩 실패 (새로고침 필요)";
+        return;
+      }
+
+      try {
+        // 해상도가 너무 거대할 때만 가볍게 조절 (모서리 뭉개짐 없음)
+        let w = video.videoWidth;
+        let h = video.videoHeight;
+        if (w > 1000) {
+          h = Math.round(h * (1000 / w));
+          w = 1000;
         }
 
+        if (canvasElement.width !== w || canvasElement.height !== h) {
+          canvasElement.width = w;
+          canvasElement.height = h;
+        }
+
+        // 1. 기본 화면 스캔
+        ctx.drawImage(video, 0, 0, w, h);
+        let imgData = ctx.getImageData(0, 0, w, h);
+        let code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
+
+        // 2. 웹캠 거울모드로 뒤집혔을 때를 대비한 반전 스캔
+        if (!code) {
+          ctx.save();
+          ctx.translate(w, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, 0, 0, w, h);
+          ctx.restore();
+          imgData = ctx.getImageData(0, 0, w, h);
+          code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
+        }
+
+        // 💡 QR 발견 즉시 0.01초 만에 실행!
         if (code && code.data && code.data.trim() !== "") {
           const rawId = code.data.trim();
-          const now = Date.now();
           if (rawId !== lastScannedId || (now - lastScanTime > 3500)) {
             lastScannedId = rawId;
             lastScanTime = now;
             sendToServer(rawId);
           }
         }
+      } catch (e) {
+        console.warn("스캔 루프 예외 건너뜀:", e);
       }
-      requestAnimationFrame(scanLoop);
     }
 
     function applyFeedback(statusType, studentName, studentId, customMsg) {
@@ -264,7 +320,7 @@
         banner.classList.add("banner-ok");
         banner.innerText = "✔ 정상 승인 (맛있게 드세요!)";
         infoEl.innerText = `${studentId} ${studentName}`;
-        subEl.innerText = "출석부 & 블랙박스 기록 완료";
+        subEl.innerText = "출석부 동그라미 & 블랙박스 기록 완료";
         playDingDong();
       } else if (statusType === "DUPLICATE") {
         document.body.classList.add("flash-dup");
@@ -287,10 +343,18 @@
       isProcessing = true;
       initAudioContext();
 
-      const photoEl = document.getElementById("photoBox");
       const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
+      
+      // 💡 [핵심] 카메라가 QR을 읽자마자 학번을 화면에 즉시 띄워 선생님을 안심시켜 드립니다!
+      document.getElementById("studentInfo").innerText = `${studentId} (인식 성공!)`;
+      document.getElementById("statusBanner").className = "status-alert-banner banner-ok";
+      document.getElementById("statusBanner").innerText = "✔ QR 감지! 출석 처리 중...";
+      document.getElementById("statusSub").innerText = "구글 시트에 출석 기록을 전송하고 있습니다...";
+      playDingDong(); // 0.01초 만에 딩동 소리 발사!
+
+      // 사진 미리 로드 시도
+      const photoEl = document.getElementById("photoBox");
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
-      document.getElementById("statusSub").innerText = "서버 기록 중...";
 
       try {
         const res = await fetch(`${GAS_URL}?id=${encodeURIComponent(rawCode)}`);
@@ -321,7 +385,7 @@
         document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
-      }, 1500);
+      }, 1600);
     }
 
     function updateStatsDisplay(s) {
@@ -330,8 +394,27 @@
       document.getElementById("cntLeft").innerText = s.left;
     }
 
+    async function toggleGradeModal() {
+      const m = document.getElementById("gradeModal");
+      if (m.style.display === "block") { m.style.display = "none"; return; }
+      m.style.display = "block";
+      try {
+        const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
+        const d = await res.json();
+        if (d) {
+          if (d[1]) document.getElementById("g1-stat").innerText = `완료: ${d[1].done}명 / 미식사: ${d[1].left}명 (총 ${d[1].total}명)`;
+          if (d[2]) document.getElementById("g2-stat").innerText = `완료: ${d[2].done}명 / 미식사: ${d[2].left}명 (총 ${d[2].total}명)`;
+          if (d[3]) document.getElementById("g3-stat").innerText = `완료: ${d[3].done}명 / 미식사: ${d[3].left}명 (총 ${d[3].total}명)`;
+        }
+      } catch (e) {}
+    }
+
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
-    window.addEventListener("DOMContentLoaded", () => { startCamera(currentFacingMode); fetchStats(); });
+
+    window.addEventListener("DOMContentLoaded", () => { 
+      startCamera(currentFacingMode); 
+      fetchStats(); 
+    });
   </script>
 </body>
 </html>

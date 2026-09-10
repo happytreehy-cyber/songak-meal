@@ -134,8 +134,8 @@
   <canvas id="canvas"></canvas>
 
   <script>
-    // 선생님께서 방금 발급받으신 최신 웹 앱 URL이 완벽하게 반영되어 있습니다.
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz9Ucehjj3F3agF5etoA_bZSWDdMYJKNzNZmvvh9pFkAQolGm_qTfcc-SKA2Siqq_TG/exec";
+    // 선생님의 최신 웹 앱 URL 완벽 적용 완료!
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx74JmXTx-YIVR5aJOzUtj2uYIYD18TpP-QaEc6Vx1npe0YW1UMQXr7r4a58eId8Lue/exec";
     const PHOTO_BASE_URL = "./photos/";
 
     let currentFacingMode = "user";
@@ -236,7 +236,8 @@
         if (code && code.data) {
           const rawId = code.data.trim();
           const now = Date.now();
-          if (!isProcessing && (rawId !== lastScannedId || (now - lastScanTime > 3000))) {
+          // QR 중복 인식 방지 (동일 학생 5초 쿨타임 적용)
+          if (!isProcessing && (rawId !== lastScannedId || (now - lastScanTime > 5000))) {
             lastScannedId = rawId;
             lastScanTime = now;
             handleFastMatch(rawId);

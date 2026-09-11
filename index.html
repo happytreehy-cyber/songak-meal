@@ -25,7 +25,7 @@
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
-    /* 🌟 완벽 복구: 바깥 파란 네온, 안쪽은 아예 직접 만든 '초록색 네모' */
+    /* 🌟 확실한 쨍한 초록색 인식창을 아예 CSS로 직접 박아버렸습니다! */
     .camera-wrapper { position: relative; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
     #reader { width: 100%; height: 100%; }
     .custom-target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 6px solid #4ade80; border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; z-index: 10; }
@@ -78,7 +78,8 @@
 
   <div class="header">
     <div class="header-left">
-      <div class="title">🍴 송악고 석식 시스템</div>
+      <!-- ★ 학생용 타이틀 추가! -->
+      <div class="title">🍴 송악고 석식 시스템 (학생용)</div>
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
@@ -93,9 +94,9 @@
 
   <div class="main-content">
     <div class="camera-section">
-      <!-- 🌟 카메라 바깥 파란 네온 + 직접 만든 초록색 타겟 박스 -->
       <div class="camera-wrapper">
         <div id="reader"></div>
+        <!-- 쨍한 초록색 타겟 박스 -->
         <div class="custom-target"></div>
       </div>
     </div>
@@ -115,8 +116,8 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode;
+    let currentCamMode = "user"; // ★ 오후 4시의 완벽했던 전면(셀카) 카메라 우선 모드!
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
-    let currentCamMode = "user"; // ★ 가장 심플하고 완벽한 오후 4시 카메라 모드
     
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
 
@@ -149,7 +150,6 @@
       }
     }
 
-    // 🌟 성공 기능 영구 보존: 서버 에러 나도 자체 계산하는 백업 통계 시스템!
     function refreshStats() {
       fetch(SCRIPT_URL + "?action=GET_DETAILS")
         .then(r => r.json())
@@ -250,26 +250,23 @@
       document.getElementById('loading-sub').innerHTML = `${errorMsg}<br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
     }
 
-    // 🌟 성공 기능 영구 보존: 오후 4시의 그 100% 작동하던 초광속 카메라 엔진!
+    // 🌟 성공 엔진 완벽 복구: 바코드와 QR코드를 모두 한방에 초광속으로 읽는 전면(셀카) 고정 카메라!
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
       startCamera();
     }
 
     function startCamera() {
-      // 라이브러리의 흰색 qrbox를 아예 끄고(전체화면 스캔) 우리가 만든 초록 네모로 시선을 유도! -> 인식 속도 2배 빨라짐
       html5QrCode.start(
         { facingMode: currentCamMode }, 
-        { fps: 60 }, 
+        { fps: 30 }, // 프레임 안정화
         onScanSuccess,
         (ignoreError) => {}
       ).catch(e => {
-        // 전면 카메라(user)가 에러 나면, 무조건 후면(environment)으로 돌려서 켜기
+        // 전면(user) 렌즈가 오류나면, 브라우저가 제공하는 환경(environment)으로 안전하게 우회
         if (currentCamMode === "user") {
           currentCamMode = "environment";
           startCamera();
-        } else {
-          console.log("카메라 실행 실패", e);
         }
       });
     }
@@ -279,7 +276,8 @@
         currentCamMode = (currentCamMode === "user") ? "environment" : "user";
         startCamera();
       }).catch(e => {
-        alert("카메라 전환 에러가 발생했습니다.");
+        currentCamMode = (currentCamMode === "user") ? "environment" : "user";
+        startCamera();
       });
     }
 
@@ -299,7 +297,6 @@
       } else {
         playBeep('success'); updateUI("#4CAF50", `<span style="font-size: 70pt; color: #4CAF50;">🟢</span>`, "✓ 정상 승인", `<span style="color:#10b981;">(맛있게 드세요!)</span><br><span style="color:white;">${student.name}</span>`);
         
-        // 🌟 성공 기능 영구 보존: 로컬 통계 100% 즉시 반영 엔진
         student.marked = 1;
         if(currentStatsDetails) {
           currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--;

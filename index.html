@@ -1,433 +1,153 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>송악고 석식 출입관리시스템</title>
-  
-  <!-- 💡 학교 방화벽 차단 대비! 전 세계 1,2,3위 서버 3중 우회 다운로드 -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <script>if(typeof jsQR === 'undefined') document.write('<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"><\/script>');</script>
-  <script>if(typeof jsQR === 'undefined') document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"><\/script>');</script>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>송악고 석식 시스템 (학생용)</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 100%; height: 100%; overflow: hidden;
-      background-color: #0b0f19; color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      transition: background-color 0.25s ease;
-    }
-    body {
-      display: flex; flex-direction: column; padding: 10px 16px;
-      border: 6px solid transparent; transition: border-color 0.25s ease, background-color 0.25s ease;
-    }
-
-    body.flash-ok { background-color: #064e3b !important; border-color: #22c55e !important; }
-    body.flash-ok .info-card { background-color: #065f46 !important; border-color: #34d399 !important; }
-
-    body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
-    body.flash-err .info-card { background-color: #991b1b !important; border-color: #f87171 !important; }
-
-    header {
-      position: relative; display: flex; justify-content: space-between; align-items: center;
-      padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0; z-index: 100;
-    }
-    .brand-group { display: flex; align-items: center; gap: 10px; }
-    .badge-school { background: #2563eb; color: #fff; font-weight: 700; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; }
-    .title-text { font-size: 1.15rem; font-weight: 700; }
-    .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid #334155; }
+    body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #111827; color: white; font-family: sans-serif; overflow: hidden; }
     
-    .stats-group { display: flex; gap: 8px; align-items: center; }
-    .stat-badge { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none; }
-    .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
-    .stat-done  { background: #133924; color: #4ade80; border: 1px solid #166534; }
-    .stat-left  { background: #3a1919; color: #f87171; border: 1px solid #991b1b; }
-    .btn-cam { background: #1f2937; color: #cbd5e1; border: 1px solid #475569; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    /* 사라졌던 최상단 통계 바 완벽 부활! */
+    .top-stats-bar { display: flex; justify-content: center; gap: 15px; padding: 15px; background: #1f2937; border-bottom: 2px solid #374151; font-size: 14pt; font-weight: bold; }
+    .stat-badge { padding: 8px 15px; border-radius: 8px; }
+    .stat-total { background: #3b82f6; }
+    .stat-done { background: #10b981; }
+    .stat-left { background: #ef4444; }
 
-    .main-content { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; flex: 1; margin-top: 10px; min-height: 0; }
+    .main-content { display: flex; flex: 1; height: 100%; }
+    .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
+    .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+    #reader { width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #000; }
+    .box-title { font-size: 20pt; font-weight: bold; margin-bottom: 10px; }
+    .box-content { font-size: 15pt; margin-bottom: 5px; }
+    .status-circle { width: 180px; height: 180px; border: 4px solid yellow; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; font-size: 40pt; font-weight: bold; background: #111827; }
     
-    .scanner-card { 
-      position: relative; background: #000; border-radius: 12px; overflow: hidden; 
-      border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; 
-    }
-    #video { width: 100%; height: 100%; object-fit: contain; }
-    
-    /* 컴퓨터의 시야 (이젠 까맣지 않고 선생님 얼굴이 똑같이 나올 겁니다!) */
-    .debug-canvas {
-      position: absolute; top: 10px; left: 10px; width: 150px; height: auto;
-      border: 3px solid #ef4444; border-radius: 8px; background: #000; z-index: 10;
-    }
-    .debug-label {
-      position: absolute; top: 10px; left: 170px; color: #ef4444; font-size: 0.85rem; font-weight: bold; z-index: 10;
-      background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px;
-    }
-
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.95rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); }
-
-    .info-card {
-      background: #111827; border-radius: 12px; border: 1px solid #1f2937;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
-      transition: background-color 0.25s ease, border-color 0.25s ease;
-    }
-    .photo-box {
-      width: 150px; height: 195px; border: 2.5px solid #eab308; border-radius: 14px;
-      background: #1a2234; display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; color: #94a3b8; margin-bottom: 16px; overflow: hidden; flex-shrink: 0;
-    }
-    .photo-box img { width: 100%; height: 100%; object-fit: cover; }
-
-    .status-alert-banner {
-      width: 100%; padding: 12px 8px; border-radius: 8px;
-      font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; line-height: 1.3;
-    }
-    .banner-standby { background: transparent; color: #f8fafc; }
-    .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #86efac; }
-    .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #fca5a5; }
-
-    .student-info-text { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
-    .status-sub { font-size: 1.1rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; white-space: pre-wrap; }
-    
-    .right-top-modal {
-      position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
-      border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000;
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .modal-title { font-size: 1rem; font-weight: 700; color: #38bdf8; }
-    .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; }
-    .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0f172a; border-radius: 6px; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
+    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
   </style>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body onclick="initAudioContext()">
+<body>
+  
+  <!-- 데이터 다운로드 로딩 화면 -->
+  <div id="loading-overlay">
+    <h2 style="color: #3b82f6; font-size: 24pt;">📡 명단 암기 중...</h2>
+    <p style="font-size: 15pt; color: #9ca3af;">10초 딜레이를 없애기 위해 1000명 데이터를 미리 외우는 중입니다.<br>잠시만 기다려 주세요.</p>
+  </div>
 
-  <header>
-    <div class="brand-group">
-      <span class="badge-school">송악고</span>
-      <span class="title-text">석식 시스템</span>
-      <span class="clock-tag" id="liveClock">2026-09-11 00:00:00</span>
-    </div>
-    
-    <div class="stats-group">
-      <div class="stat-badge stat-total" onclick="toggleGradeModal()">📊 총신청 <span id="cntTotal">0</span></div>
-      <div class="stat-badge stat-done" onclick="toggleGradeModal()">🍱 식사완료 <span id="cntDone">0</span></div>
-      <div class="stat-badge stat-left" onclick="toggleGradeModal()">⏳ 미식사 <span id="cntLeft">0</span></div>
-      <button class="btn-cam" onclick="toggleCamera()">카메라 전환</button>
-    </div>
+  <!-- 상단 통계 바 -->
+  <div class="top-stats-bar">
+    <div class="stat-badge stat-total">총신청: <span id="val-total">0</span>명</div>
+    <div class="stat-badge stat-done">식사완료: <span id="val-done">0</span>명</div>
+    <div class="stat-badge stat-left">미식사: <span id="val-left">0</span>명</div>
+  </div>
 
-    <div class="right-top-modal" id="gradeModal">
-      <div class="modal-header">
-        <div class="modal-title">학년별 실시간 현황</div>
-        <button class="modal-close" onclick="closeGradeModal()">&times;</button>
-      </div>
-      <div id="modalList">
-        <div class="grade-row"><span>1학년</span><span id="g1-stat">조회 중...</span></div>
-        <div class="grade-row"><span>2학년</span><span id="g2-stat">조회 중...</span></div>
-        <div class="grade-row"><span>3학년</span><span id="g3-stat">조회 중...</span></div>
-      </div>
+  <div class="main-content">
+    <div class="camera-section"><div id="reader"></div></div>
+    <div class="info-section">
+      <div class="status-circle" id="photo-box"><span class="box-content" style="font-size: 15pt; color: yellow;">사진대기</span></div>
+      <div class="box-title" id="status-title" style="color: yellow;">대기 중</div>
+      <div class="box-content" id="status-message">-<br>명찰 QR을 비춰주세요</div>
     </div>
-  </header>
-
-  <main class="main-content">
-    <div class="scanner-card">
-      <video id="video" autoplay playsinline muted></video>
-      <!-- 💡 선생님을 구원할 컴퓨터 시야 화면 -->
-      <canvas id="canvas" class="debug-canvas"></canvas>
-      <div class="debug-label">👈 컴퓨터 시야 (이 안에도 똑같이 보여야 합니다!)</div>
-      <div class="scanner-tip">⚡ 카메라 전체 화면 스캔 중 (약 30cm 거리를 두세요)</div>
-    </div>
-
-    <div class="info-card" id="infoCard">
-      <div class="photo-box" id="photoBox">사진 대기</div>
-      <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
-      <div class="student-info-text" id="studentInfo">-</div>
-      <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
-    </div>
-  </main>
+  </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
-    const PHOTO_BASE_URL = "./photos/";
-
-    let videoStream = null;
-    let isProcessing = false;
-    let lastScannedId = "";
-    let lastScanTime = 0;
-    let allVideoDevices = [];
-    let currentDeviceIndex = 0;
-
-    const video = document.getElementById("video");
-    const canvasElement = document.getElementById("canvas");
-    // 성능 저하를 일으키는 옵션 제거하여 호환성 극대화
-    const ctx = canvasElement.getContext("2d");
-
-    if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {});
-
-    function updateClock() {
-      const d = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      document.getElementById("liveClock").innerText = 
-        `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    let audioCtx = null;
-    function initAudioContext() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // ★ 선생님의 앱스 스크립트 웹앱 주소로 꼭 바꿔주세요! ★
+    const SCRIPT_URL = "여기에_선생님의_웹앱_주소를_넣으세요";
+    
+    let html5QrcodeScanner;
+    let studentCache = {}; // 0초 딜레이를 위한 1000명 명단 기억 주머니
+    
+    // 효과음 엔진
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(type) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
+      osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+      
+      if (type === 'success') { // 딩동! (초록색)
+        osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); 
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+      } else if (type === 'duplicate') { // 띠딕! (주황색)
+        osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      } else if (type === 'error') { // 삐-! (빨간색)
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+      }
     }
 
-    function playDingDong() {
-      initAudioContext();
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      const osc1 = audioCtx.createOscillator(); const gain1 = audioCtx.createGain();
-      osc1.type = "sine"; osc1.frequency.setValueAtTime(659.25, now);
-      gain1.gain.setValueAtTime(0.35, now); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-      osc1.connect(gain1); gain1.connect(audioCtx.destination); osc1.start(now); osc1.stop(now + 0.35);
-
-      const osc2 = audioCtx.createOscillator(); const gain2 = audioCtx.createGain();
-      osc2.type = "sine"; osc2.frequency.setValueAtTime(523.25, now + 0.15);
-      gain2.gain.setValueAtTime(0.35, now + 0.15); gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-      osc2.connect(gain2); gain2.connect(audioCtx.destination); osc2.start(now + 0.15); osc2.stop(now + 0.65);
-    }
-
-    function playWarningBeep() {
-      initAudioContext();
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      [0, 0.18].forEach(delay => {
-        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-        osc.type = "square"; osc.frequency.setValueAtTime(360, now + delay);
-        gain.gain.setValueAtTime(0.28, now + delay); gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.13);
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now + delay); osc.stop(now + delay + 0.13);
+    // 통계(총신청/완료/미식사) 불러와서 화면 갱신하는 함수
+    function refreshStats() {
+      fetch(SCRIPT_URL + "?action=GET_DETAILS").then(r => r.json()).then(res => {
+        if(res.totalStats) {
+          document.getElementById('val-total').innerText = res.totalStats.total;
+          document.getElementById('val-done').innerText = res.totalStats.done;
+          document.getElementById('val-left').innerText = res.totalStats.left;
+        }
       });
     }
 
-    async function setupCameras() {
-      try {
-        let tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        tempStream.getTracks().forEach(t => t.stop());
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        allVideoDevices = devices.filter(d => d.kind === 'videoinput');
-        
-        allVideoDevices.sort((a, b) => {
-          let aName = a.label.toLowerCase(); let bName = b.label.toLowerCase();
-          if(aName.includes('prism')) return 1;
-          if(bName.includes('prism')) return -1;
-          return 0;
-        });
-        currentDeviceIndex = 0;
-        startCamera();
-      } catch (err) {
-        startCameraFallback();
-      }
-    }
-
-    async function startCamera() {
-      if (videoStream) videoStream.getTracks().forEach(t => t.stop());
-      try {
-        const deviceId = allVideoDevices[currentDeviceIndex] ? allVideoDevices[currentDeviceIndex].deviceId : undefined;
-        const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: true };
-        
-        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = videoStream;
-        video.setAttribute("playsinline", true);
-        await video.play();
-        
-        const label = allVideoDevices[currentDeviceIndex] ? allVideoDevices[currentDeviceIndex].label.toLowerCase() : "";
-        if (label.includes("front") || label.includes("user") || currentDeviceIndex === 0) {
-          video.style.transform = "scaleX(-1)";
-        } else {
-          video.style.transform = "scaleX(1)";
-        }
-        requestAnimationFrame(scanLoop);
-      } catch(e) {
-        startCameraFallback();
-      }
-    }
-
-    async function startCameraFallback() {
-      try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = videoStream;
-        video.setAttribute("playsinline", true);
-        await video.play();
-        video.style.transform = "scaleX(-1)";
-        requestAnimationFrame(scanLoop);
-      } catch(e) {}
-    }
-
-    function toggleCamera() {
-      if (allVideoDevices.length > 1) {
-        currentDeviceIndex = (currentDeviceIndex + 1) % allVideoDevices.length;
-        startCamera();
-      }
-    }
-
-    async function fetchStats() {
-      try {
-        const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
-        const d = await res.json();
-        if (d && d.totalStats) {
-          document.getElementById("cntTotal").innerText = d.totalStats.total || 0;
-          document.getElementById("cntDone").innerText = d.totalStats.done || 0;
-          document.getElementById("cntLeft").innerText = d.totalStats.left || 0;
-        }
-      } catch (e) {}
-    }
-    setInterval(fetchStats, 5000);
-
-    let lastScanTick = 0;
-    function scanLoop() {
-      requestAnimationFrame(scanLoop);
-
-      if (isProcessing || !video || video.readyState < 2 || video.videoWidth === 0) return;
-
-      const now = Date.now();
-      if (now - lastScanTick < 100) return;
-      lastScanTick = now;
-
-      try {
-        const w = video.videoWidth;
-        const h = video.videoHeight;
-        
-        let dw = 640;
-        let dh = Math.floor(h * (640 / w));
-
-        if (canvasElement.width !== dw || canvasElement.height !== dh) {
-          canvasElement.width = dw;
-          canvasElement.height = dh;
-        }
-
-        // 💡 1. 컴퓨터 시야(캔버스)에 화면부터 무조건 그립니다! (까만 화면 완벽 방지)
-        ctx.drawImage(video, 0, 0, dw, dh);
-        
-        // 💡 2. 학교 인터넷 방화벽이 엔진을 차단했을 경우 즉시 비상 알림 발동!
-        if (typeof jsQR === 'undefined') {
-            document.getElementById("statusBanner").className = "status-alert-banner banner-err";
-            document.getElementById("statusBanner").innerText = "⚠ 학교 인터넷 차단 감지!";
-            document.getElementById("statusSub").innerText = "학교 전산망이 스캐너 다운로드를 막았습니다.\n(선생님의 스마트폰 핫스팟으로 와이파이를 잠시만 연결한 후 새로고침 해주세요!)";
-            return; // 엔진이 없으므로 여기서 멈춤
-        }
-
-        // 엔진이 정상 로드되었을 경우 정상 스캔 진행
-        let imgData = ctx.getImageData(0, 0, dw, dh);
-        let code = jsQR(imgData.data, dw, dh, { inversionAttempts: "dontInvert" });
-
-        // 거울 모드 대비 반전 스캔
-        if (!code) {
-          ctx.save();
-          ctx.translate(dw, 0);
-          ctx.scale(-1, 1);
-          ctx.drawImage(video, 0, 0, dw, dh);
-          ctx.restore();
-          imgData = ctx.getImageData(0, 0, dw, dh);
-          code = jsQR(imgData.data, dw, dh, { inversionAttempts: "dontInvert" });
-        }
-
-        if (code && code.data && code.data.trim() !== "") {
-          const rawId = code.data.trim();
-          if (rawId !== lastScannedId || (now - lastScanTime > 3500)) {
-            lastScannedId = rawId;
-            lastScanTime = now;
-            sendToServer(rawId);
+    // 처음 켤 때 명단 외우기 + 통계 띄우기
+    window.onload = function() {
+      refreshStats(); // 통계 갱신
+      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS") // 1000명 통째로 가져오기
+        .then(r => r.json()).then(res => {
+          if(res.status === "SUCCESS") {
+            studentCache = res.data;
+            document.getElementById('loading-overlay').style.display = 'none';
+            startScanner();
+            // 이후 10초마다 통계 알아서 갱신
+            setInterval(refreshStats, 10000); 
           }
-        }
-      } catch (e) {}
-    }
+        }).catch(err => alert("네트워크 오류입니다. 새로고침 해주세요."));
+    };
 
-    function applyFeedback(statusType, studentName, studentId, mealTime, customMsg) {
-      const banner = document.getElementById("statusBanner");
-      const infoEl = document.getElementById("studentInfo");
-      const subEl = document.getElementById("statusSub");
+    // 0.1초 초광속 스캔 처리!
+    function onScanSuccess(decodedText, decodedResult) {
+      html5QrcodeScanner.pause(true); // 찰칵 후 카메라 일시정지
+      let studentId = decodedText.trim().replace(/[^0-9]/g, '');
+      let student = studentCache[studentId]; // 내 머릿속(태블릿)에서 0.01초만에 판독
 
-      document.body.className = "";
-      banner.className = "status-alert-banner";
-
-      if (statusType === "SUCCESS") {
-        document.body.classList.add("flash-ok");
-        banner.classList.add("banner-ok");
-        banner.innerText = "✓ 정상 승인 (맛있게 드세요!)";
-        infoEl.innerText = `${studentId} ${studentName}`;
-        subEl.innerText = "상태: 식사 승인 완료";
-        playDingDong();
-      } else if (statusType === "DUPLICATE") {
-        document.body.classList.add("flash-err");
-        banner.classList.add("banner-err");
-        banner.innerText = "⚠ 중복 식사 감지!";
-        infoEl.innerText = `${studentId} ${studentName || ''}`;
-        const timeText = mealTime ? `(식사 시간: ${mealTime})` : "";
-        subEl.innerText = `“이미 식사한 학생입니다" ${timeText}`;
-        playWarningBeep();
+      if (!student) {
+        playBeep('error'); updateUI("red", "X", "미신청", "당일 석식 미신청자입니다");
+      } else if (student.marked === 1) {
+        playBeep('duplicate'); updateUI("orange", "중복", student.name, "이미 식사한 학생입니다");
+        fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId); // 구글엔 백그라운드로 몰래 알림
       } else {
-        document.body.classList.add("flash-err");
-        banner.classList.add("banner-err");
-        banner.innerText = customMsg || "당일 석식 미신청자입니다";
-        infoEl.innerText = `${studentId}`;
-        subEl.innerText = "승인 거부 (명단 없음)";
-        playWarningBeep();
-      }
-    }
+        playBeep('success'); updateUI("#4CAF50", "🟢", student.name, "식사 승인 완료");
+        student.marked = 1; // 내 머릿속에도 식사했다고 즉시 체크 (중복 스캔 방어)
+        
+        // 통계 UI도 즉시 +1 변경 (기다리지 않음)
+        let doneEl = document.getElementById('val-done');
+        let leftEl = document.getElementById('val-left');
+        doneEl.innerText = parseInt(doneEl.innerText) + 1;
+        leftEl.innerText = Math.max(0, parseInt(leftEl.innerText) - 1);
 
-    async function sendToServer(rawCode) {
-      isProcessing = true;
-      initAudioContext();
-
-      const studentId = rawCode.split(/[^0-9]/)[0] || rawCode;
-      
-      document.getElementById("studentInfo").innerText = `${studentId}`;
-      document.getElementById("statusBanner").className = "status-alert-banner banner-standby";
-      document.getElementById("statusBanner").innerText = "조회 중...";
-      document.getElementById("statusSub").innerText = "서버 기록을 확인하고 있습니다.";
-
-      const photoEl = document.getElementById("photoBox");
-      photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
-
-      try {
-        const res = await fetch(`${GAS_URL}?id=${encodeURIComponent(rawCode)}`);
-        const data = await res.json();
-
-        if (data.status === "SUCCESS") {
-          applyFeedback("SUCCESS", data.name, data.studentId, data.time);
-          if (data.stats) updateStatsDisplay(data.stats);
-        } else if (data.status === "DUPLICATE") {
-          applyFeedback("DUPLICATE", data.name, data.studentId, data.time);
-          if (data.stats) updateStatsDisplay(data.stats);
-        } else if (data.status === "NOT_FOUND") {
-          applyFeedback("NOT_FOUND", "", studentId, null, "당일 석식 미신청자입니다");
-          if (data.stats) updateStatsDisplay(data.stats);
-        } else {
-          applyFeedback("ERROR", "", studentId, null, data.message);
-        }
-      } catch (err) {
-        applyFeedback("ERROR", "", studentId, null, "서버 연결 오류");
+        fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId); // 구글엔 백그라운드로 몰래 알림
       }
 
+      // 딱 1초 뒤에 다음 애 찍을 수 있게 대기 화면 복구
       setTimeout(() => {
-        document.body.className = "";
-        const banner = document.getElementById("statusBanner");
-        banner.className = "status-alert-banner banner-standby";
-        banner.innerText = "대기 중";
-        document.getElementById("studentInfo").innerText = "-";
-        document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
-        photoEl.innerText = "사진 대기";
-        isProcessing = false;
-      }, 2500);
+        updateUI("yellow", `<span style="font-size:15pt;color:yellow;">사진대기</span>`, "대기 중", "-<br>명찰 QR을 비춰주세요");
+        html5QrcodeScanner.resume();
+      }, 1000);
     }
 
-    function updateStatsDisplay(s) {
-      document.getElementById("cntTotal").innerText = s.total;
-      document.getElementById("cntDone").innerText = s.done;
-      document.getElementById("cntLeft").innerText = s.left;
+    function updateUI(color, iconHtml, title, message) {
+      const box = document.getElementById('photo-box'); box.style.borderColor = color; box.style.color = color; box.innerHTML = iconHtml;
+      const titleEl = document.getElementById('status-title'); titleEl.innerText = title; titleEl.style.color = color;
+      document.getElementById('status-message').innerHTML = `<span style="color:${color}">${message}</span>`;
     }
 
-    function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
+    function onScanFailure(e) {}
 
-    window.addEventListener("DOMContentLoaded", () => { 
-      setupCameras(); 
-      fetchStats(); 
-    });
+    function startScanner() {
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 60, qrbox: {width: 250, height: 250}, videoConstraints: { facingMode: "environment", focusMode: "continuous" } }, false);
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
   </script>
 </body>
 </html>

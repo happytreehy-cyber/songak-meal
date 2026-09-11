@@ -36,7 +36,7 @@
     
     .warning-text { margin-top: 15px; font-size: 12pt; color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; line-height: 1.4; }
 
-    /* ★ 하단 로켓 진행 바(프로그레스 바) 디자인 */
+    /* ★ 하단 로켓 진행 바 디자인 */
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
     .progress-container { width: 80%; max-width: 400px; height: 6px; background: #374151; border-radius: 3px; position: relative; margin-top: 40px; }
     .progress-bar { height: 100%; background: #3b82f6; width: 0%; border-radius: 3px; transition: width 0.5s ease; }
@@ -53,7 +53,6 @@
 </head>
 <body>
   
-  <!-- ★ 셰프 밑에 로켓 진행 바 추가! -->
   <div id="loading-overlay">
     <div style="font-size: 70pt; margin-bottom: 10px;">👩‍🍳</div>
     <h2 id="loading-msg" style="color: #3b82f6; font-size: 26pt; margin-bottom: 10px;">오늘도 송악고 급식실은<br>맛있게 조리 중입니다</h2>
@@ -74,11 +73,11 @@
 
   <div class="header">
     <div class="header-left">
-      <!-- ★ 학생용 타이틀 추가 -->
       <div class="title">🍴 송악고 석식 시스템 (학생용)</div>
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
+      <!-- ★ 전환 버튼 다시 예쁘게 복구 완료! -->
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
@@ -111,7 +110,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode;
-    let currentCamMode = "user"; 
+    let currentCamMode = "user"; // ★ 무조건 앞면(셀카)으로 시작하게 강제 고정!
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
     
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
@@ -172,14 +171,13 @@
     }
     function closeStats() { document.getElementById('stats-modal').style.display = 'none'; document.getElementById('modal-bg').style.display = 'none'; }
 
-    // ★ 로켓 진행 바(프로그레스 바) 로직
     window.onload = function() {
       refreshStats();
       
       let progress = 0;
       let progressTimer = setInterval(() => {
         progress += 5; 
-        if(progress > 90) progress = 90; // 데이터를 다 받을 때까지 90%에서 대기
+        if(progress > 90) progress = 90; 
         document.getElementById('rocket-icon').style.left = progress + '%';
         document.getElementById('progress-bar').style.width = progress + '%';
       }, 500);
@@ -198,7 +196,6 @@
             if(res.status === "SUCCESS") {
               studentCache = res.data;
               
-              // 100% 도달 후 0.5초 뒤 로딩창 숨기기
               clearInterval(progressTimer);
               document.getElementById('rocket-icon').style.left = '100%';
               document.getElementById('progress-bar').style.width = '100%';
@@ -227,30 +224,35 @@
       document.getElementById('loading-overlay').innerHTML = `<div style="font-size: 70pt; margin-bottom: 10px;">❌</div><h2 style="color: #ef4444; font-size: 26pt; margin-bottom: 10px;">데이터를 불러오지 못했습니다!</h2><div style="font-size: 15pt; color: #9ca3af; margin-top:10px;">${errorMsg}</div><br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
     }
 
-    // 🌟 100% 오류 없는 오후 4시의 완벽한 전면(user) 카메라 고정 엔진!
+    // 🌟 완전 앞면(셀카) 고정 + 전환 기능 복구
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
       startCamera();
     }
 
     function startCamera() {
-      // 바코드, QR코드 모두 완벽하게 동시에 읽어냅니다!
       html5QrCode.start(
-        { facingMode: currentCamMode }, 
-        { fps: 30, qrbox: { width: 250, height: 250 } },
+        { facingMode: currentCamMode }, // 처음 시작은 무조건 "user" (앞면)
+        { fps: 30, qrbox: { width: 250, height: 250 } }, // 바코드 & QR 동시 인식 지원!
         onScanSuccess,
-        (ignoreError) => {}
+        (ignoreError) => {} 
       ).catch(e => {
-         console.log("카메라 실행 에러 (권한을 확인하세요):", e);
-         // ★ 여기가 핵심입니다! 예전처럼 뒤통수 카메라로 마음대로 넘어가지 못하도록 우회 코드를 싹 다 지웠습니다!
+         console.log("카메라 실행 에러:", e);
+         alert("카메라 실행 실패! 태블릿 설정에서 웹 브라우저의 카메라 권한을 허용해주세요.");
       });
     }
 
+    // 🌟 카메라 전환 버튼 작동 로직 복구
     function switchCamera() {
       html5QrCode.stop().then(() => {
+        // user면 environment로, environment면 user로 쇽! 전환
         currentCamMode = (currentCamMode === "user") ? "environment" : "user";
         startCamera();
-      }).catch(e => alert("카메라 전환 중 오류가 발생했습니다."));
+      }).catch(e => {
+        // 혹시 끄는 데 실패해도 강제로 전환 시도
+        currentCamMode = (currentCamMode === "user") ? "environment" : "user";
+        startCamera();
+      });
     }
 
     function onScanSuccess(decodedText, decodedResult) {

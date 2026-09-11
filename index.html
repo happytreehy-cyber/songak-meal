@@ -25,9 +25,9 @@
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
-    /* 🟩 라이브러리 고집 꺾기! 카메라 창 및 안쪽 가이드라인 초록색 강제 덮어쓰기 */
-    #reader { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 4px solid #4ade80 !important; box-shadow: 0 0 25px rgba(74, 222, 128, 0.4) !important; }
-    #qr-shaded-region div { border-color: #4ade80 !important; border-width: 6px !important; }
+    /* ★ 3. 캡처 화면 100% 반영: 바깥은 파란 네온, 안쪽 모서리(꺾쇠)는 쨍한 초록색으로 덮어쓰기! */
+    #reader { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 4px solid #60a5fa !important; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4) !important; position: relative; }
+    #reader #qr-shaded-region div { border-color: #4ade80 !important; border-width: 8px !important; }
 
     .box-title { font-size: 24pt; font-weight: 900; margin-bottom: 10px; }
     .box-content { font-size: 18pt; margin-bottom: 5px; font-weight: bold; }
@@ -35,12 +35,16 @@
     
     .warning-text { margin-top: 15px; font-size: 12pt; color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; line-height: 1.4; }
 
-    /* 로켓 좌우 비행 애니메이션 */
-    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; overflow: hidden; }
-    .rocket-anim { font-size: 70pt; margin-bottom: 15px; display: inline-block; animation: flyAcross 2s ease-in-out infinite alternate; }
-    @keyframes flyAcross {
-      0% { transform: translateX(-60px) translateY(10px) rotate(15deg); }
-      100% { transform: translateX(60px) translateY(-10px) rotate(45deg); }
+    /* ★ 4. 위 셰프 고정, 아래는 로켓 궤도 비행 애니메이션! */
+    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+    .loading-flex { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px; }
+    .rocket-wrapper { width: 60px; height: 40px; position: relative; overflow: hidden; display: flex; align-items: center; }
+    .rocket-anim { font-size: 22pt; position: absolute; animation: flyRight 1.5s linear infinite; }
+    @keyframes flyRight {
+      0% { left: -30px; transform: translateY(5px) rotate(10deg); opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { left: 60px; transform: translateY(-10px) rotate(45deg); opacity: 0; }
     }
     
     .error-btn { margin-top:20px; padding: 12px 25px; background: #ef4444; color: white; font-weight: bold; font-size: 16pt; border: none; border-radius: 8px; cursor: pointer; }
@@ -55,11 +59,16 @@
 <body>
   
   <div id="loading-overlay">
-    <div id="anim-icon" class="rocket-anim">🚀</div>
-    <h2 id="loading-msg" style="color: #3b82f6; font-size: 26pt; margin-bottom: 10px;">
+    <!-- 위쪽 셰프 고정 -->
+    <div style="font-size: 70pt; margin-bottom: 10px;">👩‍🍳</div>
+    <h2 id="loading-msg" style="color: #3b82f6; font-size: 26pt; margin-bottom: 15px;">
       오늘도 송악고 급식실은<br>맛있게 조리 중입니다
     </h2>
-    <p id="loading-sub" style="font-size: 15pt; color: #9ca3af;">명단을 빠르게 불러오고 있습니다... (<span id="load-time">0</span>초)</p>
+    <!-- 아래쪽 안내 문구와 전용 궤도를 따라 우주를 비행하는 로켓 -->
+    <div class="loading-flex">
+      <span id="loading-sub" style="font-size: 15pt; color: #9ca3af;">명단을 빠르게 불러오고 있습니다... (<span id="load-time">0</span>초)</span>
+      <div class="rocket-wrapper"><div class="rocket-anim">🚀</div></div>
+    </div>
   </div>
 
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
@@ -105,7 +114,7 @@
     
     let html5QrCode, cameras = [], currentCameraIndex = 0;
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
-    let fallbackMode = "user"; // 최후의 수단용 모드
+    let fallbackMode = "user";
     
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
 
@@ -138,15 +147,43 @@
       }
     }
 
+    // 🌟 성공 기능 영구 보존: 서버 에러 나도 자체 계산하는 백업 통계 시스템!
     function refreshStats() {
-      fetch(SCRIPT_URL + "?action=GET_DETAILS").then(r => r.json()).then(res => {
-        if(res.totalStats) {
-          currentStatsDetails = res;
-          document.getElementById('val-total').innerText = res.totalStats.total;
-          document.getElementById('val-done').innerText = res.totalStats.done;
-          document.getElementById('val-left').innerText = res.totalStats.left;
+      fetch(SCRIPT_URL + "?action=GET_DETAILS")
+        .then(r => r.json())
+        .then(res => {
+          if(res.totalStats) {
+            currentStatsDetails = res;
+            updateStatsUI();
+          } else { fallbackToLocalStats(); }
+        }).catch(e => {
+          fallbackToLocalStats(); 
+        });
+    }
+
+    function fallbackToLocalStats() {
+      if(Object.keys(studentCache).length === 0) return;
+      let stats = { 1: {total:0, done:0, left:0}, 2: {total:0, done:0, left:0}, 3: {total:0, done:0, left:0}, totalStats: {total:0, done:0, left:0} };
+      for (let id in studentCache) {
+        let s = studentCache[id];
+        let g = parseInt(id.charAt(0));
+        stats.totalStats.total++;
+        if(stats[g]) stats[g].total++;
+        if (s.marked === 1) {
+          stats.totalStats.done++; if(stats[g]) stats[g].done++;
+        } else {
+          stats.totalStats.left++; if(stats[g]) stats[g].left++;
         }
-      }).catch(e => console.log("통계 갱신 대기 중"));
+      }
+      currentStatsDetails = stats;
+      updateStatsUI();
+    }
+
+    function updateStatsUI() {
+      if(!currentStatsDetails) return;
+      document.getElementById('val-total').innerText = currentStatsDetails.totalStats.total;
+      document.getElementById('val-done').innerText = currentStatsDetails.totalStats.done;
+      document.getElementById('val-left').innerText = currentStatsDetails.totalStats.left;
     }
 
     function openStats() {
@@ -188,6 +225,7 @@
             if(res.status === "SUCCESS") {
               studentCache = res.data;
               document.getElementById('loading-overlay').style.display = 'none';
+              fallbackToLocalStats(); 
               initCamera(); 
               setInterval(refreshStats, 10000); 
             } else {
@@ -210,12 +248,11 @@
       document.getElementById('loading-sub').innerHTML = `${errorMsg}<br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
     }
 
-    // ★ 카메라 전면(앞) 강제 고정 3중 철벽 방어!
+    // 🌟 성공 기능 영구 보존: 카메라 전면 고정 & 가상카메라 100% 무시
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length > 0) {
-          // PRISM 등 가상 카메라 아예 목록에서 삭제(차단)!!
           cameras = devices.filter(c => !c.label.toLowerCase().includes('prism') && !c.label.toLowerCase().includes('virtual') && !c.label.toLowerCase().includes('obs'));
           if(cameras.length === 0) cameras = devices; 
           
@@ -223,7 +260,7 @@
           currentCameraIndex = (frontCamIndex !== -1) ? frontCamIndex : 0;
           startCamera(cameras[currentCameraIndex].id);
         } else {
-          startCameraFallback({ facingMode: "user" }); // 에러 나도 무조건 전면(user)
+          startCameraFallback({ facingMode: "user" }); 
         }
       }).catch(e => {
         startCameraFallback({ facingMode: "user" }); 
@@ -237,7 +274,6 @@
         onScanSuccess,
         (ignoreError) => {}
       ).catch(e => {
-        // ★ 이전처럼 후면(environment)으로 빠지지 않도록 전면(user)으로 강제 우회 설정!!
         startCameraFallback({ facingMode: "user" });
       });
     }
@@ -246,7 +282,6 @@
       html5QrCode.start(modeObj, { fps: 60, qrbox: { width: 250, height: 250 } }, onScanSuccess, (e) => {}).catch(e=>console.log(e));
     }
 
-    // ★ 카메라 전환 오류 나도 무조건 토글되도록 최후의 수단 탑재
     function switchCamera() {
       if (cameras.length > 1) {
         html5QrCode.stop().then(() => {
@@ -282,10 +317,16 @@
         fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       } else {
         playBeep('success'); updateUI("#4CAF50", `<span style="font-size: 70pt; color: #4CAF50;">🟢</span>`, "✓ 정상 승인", `<span style="color:#10b981;">(맛있게 드세요!)</span><br><span style="color:white;">${student.name}</span>`);
-        student.marked = 1;
         
-        let doneEl = document.getElementById('val-done'), leftEl = document.getElementById('val-left');
-        doneEl.innerText = parseInt(doneEl.innerText) + 1; leftEl.innerText = Math.max(0, parseInt(leftEl.innerText) - 1);
+        // 🌟 성공 기능 영구 보존: 로컬 통계 100% 즉시 반영 엔진
+        student.marked = 1;
+        if(currentStatsDetails) {
+          currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--;
+          let g = studentId.charAt(0);
+          if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; }
+          updateStatsUI(); 
+        }
+        
         fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       }
 

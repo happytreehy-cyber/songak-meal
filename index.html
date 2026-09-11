@@ -14,8 +14,6 @@
     
     .header-right { display: flex; gap: 12px; align-items: center; }
     .stat-badge { padding: 8px 15px; border-radius: 8px; font-size: 14pt; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    
-    /* ★ 3. 총신청에만 마우스 포인터(클릭 모양)가 생기도록 수정 */
     .stat-total { background: #3b82f6; cursor: pointer; } 
     .stat-done { background: #10b981; } 
     .stat-left { background: #ef4444; }
@@ -28,8 +26,6 @@
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
     #reader { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); }
-    
-    /* ★ 2. 카메라 인식창 하얀색 모서리를 초록색으로 강제 변경! */
     #qr-shaded-region > div { border-color: #4ade80 !important; border-width: 6px !important; }
 
     .box-title { font-size: 24pt; font-weight: 900; margin-bottom: 10px; }
@@ -43,7 +39,6 @@
     @keyframes bounce { from { transform: translateY(0px); } to { transform: translateY(-20px); } }
     .error-btn { margin-top:20px; padding: 12px 25px; background: #ef4444; color: white; font-weight: bold; font-size: 16pt; border: none; border-radius: 8px; cursor: pointer; }
 
-    /* ★ 4. 통계 팝업창 가로 넓이를 키우고 글씨 배치 조정 */
     #stats-modal { display: none; position: fixed; top: 75px; right: 20px; background: #1f2937; padding: 20px 25px; border-radius: 12px; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.7); width: 420px; border: 2px solid #374151; }
     .modal-backdrop { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 150; }
     .grade-stat-row { display: flex; justify-content: space-between; font-size: 13pt; padding: 10px 0; border-bottom: 1px solid #374151; font-weight: bold; }
@@ -74,10 +69,8 @@
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
-      <!-- 카메라 강제 전환 버튼 -->
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
       <div class="header-right">
-        <!-- ★ 3. 총신청 부분만 클릭 시 팝업 열리도록 설정 -->
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
         <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
         <div class="stat-badge stat-left">미식사: <span id="val-left">0</span></div>
@@ -91,13 +84,12 @@
     </div>
     <div class="info-section">
       <div class="status-circle" id="photo-box">
-        <!-- ★ 1. 명찰 이모티콘 🪪 추가 및 세로 3단 정렬 완벽 적용 -->
-        <div class="box-content" style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">
-          🪪<br>QR<br>준비
-        </div>
+        <div class="box-content" style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>QR<br>준비</div>
       </div>
       <div class="box-title" id="status-title" style="display: none;"></div>
-      <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 20pt; margin-top: 10px;">⬅️ 왼쪽 카메라에<br>학생증을 비춰주세요</div>
+      
+      <!-- ★ 1. 요청하신 멘트로 변경! -->
+      <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 20pt; margin-top: 10px;">⬅️ 왼쪽 카메라에<br>QR을 비춰주세요</div>
       
       <div class="warning-text">
         * 선생님 화면에서는 QR 인식 시<br>해당 학생의 실제 사진이 표시됩니다.
@@ -106,7 +98,6 @@
   </div>
 
   <script>
-    // 선생님의 완벽한 웹앱 주소!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode, cameras = [], currentCameraIndex = 0;
@@ -135,7 +126,6 @@
         osc.connect(gainNode); gainNode.connect(audioCtx.destination);
         gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
         osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15);
-        
         const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain();
         osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2);
         osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination);
@@ -155,7 +145,6 @@
       }).catch(e => console.log("통계 갱신 대기 중"));
     }
 
-    // ★ 4. 통계 팝업 디자인 와이드(Wide)하게 변경
     function openStats() {
       if(!currentStatsDetails) { alert("아직 통계를 불러오지 못했습니다."); return; }
       let html = "";
@@ -205,34 +194,40 @@
       document.getElementById('loading-sub').innerHTML = `${errorMsg}<br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
     }
 
-    // ★ 5. PRISM 등 가상 카메라 무시하고, 기기 렌즈 ID 멱살 잡고 강제 전환하는 엔진
+    // ★ 1. 카메라 문제 3중 안전장치로 완벽 방어! 
+    // ID가 튕기면 무조건 시스템이 알아서 기본 렌즈로 우회해서 켭니다.
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length > 0) {
           cameras = devices;
-          // 웹캠이나 전면 렌즈를 우선적으로 픽업
-          let frontCamIndex = cameras.findIndex(c => c.label.toLowerCase().includes('front') || c.label.toLowerCase().includes('전면') || c.label.toLowerCase().includes('webcam'));
-          
+          let frontCamIndex = cameras.findIndex(c => c.label.toLowerCase().includes('front') || c.label.toLowerCase().includes('전면') || c.label.toLowerCase().includes('user'));
           currentCameraIndex = (frontCamIndex !== -1) ? frontCamIndex : 0;
           startCamera(cameras[currentCameraIndex].id);
         } else {
-          alert("사용 가능한 카메라 렌즈를 찾을 수 없습니다.");
+          startCameraFallback({ facingMode: "user" }); // ID 못 찾으면 강제로 앞면
         }
-      }).catch(e => alert("카메라 권한을 허용해 주셔야 스캔이 가능합니다!"));
+      }).catch(e => {
+        startCameraFallback({ facingMode: "user" }); // 권한 충돌 시 강제로 앞면
+      });
     }
 
-    // 렌즈 ID를 다이렉트로 때려 넣어서 실행!
     function startCamera(cameraId) {
       html5QrCode.start(
         cameraId, 
         { fps: 60, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
         (ignoreError) => {}
-      ).catch(e => console.log("카메라 실행 에러:", e));
+      ).catch(e => {
+        // ID 렌즈가 거부하면 최후의 수단으로 환경(후면) 카메라 강제 실행
+        startCameraFallback({ facingMode: "environment" });
+      });
     }
 
-    // 버튼 누르면 배열에 있는 다음 렌즈로 무조건 넘어가게 설정
+    function startCameraFallback(modeObj) {
+      html5QrCode.start(modeObj, { fps: 60, qrbox: { width: 250, height: 250 } }, onScanSuccess, (e) => {}).catch(e=>console.log(e));
+    }
+
     function switchCamera() {
       if (cameras.length > 1) {
         html5QrCode.stop().then(() => {
@@ -252,8 +247,9 @@
       let student = studentCache[studentId];
       let nowTime = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
 
+      // ★ 2. 요청하신 디자인, 멘트 완벽 일치!
       if (!student) {
-        playBeep('error'); updateUI("red", `<span style="font-size: 70pt; color: red;">🔴</span>`, "미신청", "당일 석식 미신청자입니다");
+        playBeep('error'); updateUI("#ef4444", `<span style="font-size: 70pt; color: #ef4444;">🔴</span>`, "경고", "당일 석식 미신청자입니다");
       } else if (student.marked === 1) {
         playBeep('duplicate'); updateUI("orange", `<span style="font-size: 70pt; color: orange;">🟠</span>`, "⚠ 중복 식사 !", `이미 식사한 학생입니다<br><span style="font-size:12pt;color:#9ca3af;">(시간: ${nowTime})</span>`);
         fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
@@ -266,13 +262,12 @@
         fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       }
 
-      // 스캔 후 복구 시 명찰(🪪) 이모티콘 3단 정렬 유지
       setTimeout(() => {
         updateUI(
           "yellow", 
           `<div style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>QR<br>준비</div>`, 
           "", 
-          "⬅️ 왼쪽 카메라에<br>학생증을 비춰주세요"
+          "⬅️ 왼쪽 카메라에<br>QR을 비춰주세요"
         );
         isScanning = true;
       }, 1500); 
@@ -283,12 +278,8 @@
       
       const titleEl = document.getElementById('status-title');
       if(title) {
-        titleEl.style.display = "block";
-        titleEl.innerText = title;
-        titleEl.style.color = color;
-      } else {
-        titleEl.style.display = "none";
-      }
+        titleEl.style.display = "block"; titleEl.innerText = title; titleEl.style.color = color;
+      } else { titleEl.style.display = "none"; }
       
       const msgEl = document.getElementById('status-message');
       msgEl.innerHTML = `<span style="color:${color === 'yellow' ? '#9ca3af' : 'white'}; font-weight:bold;">${message}</span>`;

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
   
+  <!-- 💡 어제 인식이 가장 잘 되었던 튼튼한 기본 엔진 -->
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
   
   <style>
@@ -22,6 +23,7 @@
 
     body.flash-ok { background-color: #064e3b !important; border-color: #22c55e !important; }
     body.flash-ok .info-card { background-color: #065f46 !important; border-color: #34d399 !important; }
+
     body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
     body.flash-err .info-card { background-color: #991b1b !important; border-color: #f87171 !important; }
 
@@ -47,33 +49,26 @@
       position: relative; background: #000; border-radius: 12px; overflow: hidden; 
       border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; 
     }
-    #video { width: 100%; height: 100%; object-fit: cover; }
-    canvas { display: none; }
-
-    /* 💡 스캔 영역 & 레이저빔 효과 추가 */
-    .scan-target {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 250px; height: 250px; border: 3.5px solid #22c55e; border-radius: 20px;
-      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none; overflow: hidden;
+    
+    /* 💡 화면 가장자리가 짤리는 현상 완벽 방지 (contain) */
+    #video { width: 100%; height: 100%; object-fit: contain; }
+    
+    /* 💡 선생님의 답답함을 풀어드릴 컴퓨터의 눈 (디버그 캔버스) */
+    .debug-canvas {
+      position: absolute; top: 10px; left: 10px; width: 150px; height: auto;
+      border: 3px solid #ef4444; border-radius: 8px; background: #000; z-index: 10;
     }
-    .scan-target::after {
-      content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-      background: #4ade80; box-shadow: 0 0 12px #4ade80;
-      animation: scanLaser 2s infinite ease-in-out;
-    }
-    @keyframes scanLaser {
-      0% { top: 0; opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { top: 100%; opacity: 0; }
+    .debug-label {
+      position: absolute; top: 10px; left: 170px; color: #ef4444; font-size: 0.85rem; font-weight: bold; z-index: 10;
+      background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px;
     }
 
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.95rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.95rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
       display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
-      transition: background-color 0.2s ease, border-color 0.2s ease;
+      transition: background-color 0.25s ease, border-color 0.25s ease;
     }
     .photo-box {
       width: 150px; height: 195px; border: 2.5px solid #eab308; border-radius: 14px;
@@ -84,14 +79,14 @@
 
     .status-alert-banner {
       width: 100%; padding: 12px 8px; border-radius: 8px;
-      font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; line-height: 1.3;
+      font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; line-height: 1.3;
     }
     .banner-standby { background: transparent; color: #f8fafc; }
     .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #86efac; }
     .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #fca5a5; }
 
-    .student-info-text { font-size: 1.3rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
-    .status-sub { font-size: 1.05rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
+    .student-info-text { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
+    .status-sub { font-size: 1.1rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
     
     .right-top-modal {
       position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
@@ -135,19 +130,19 @@
   <main class="main-content">
     <div class="scanner-card">
       <video id="video" autoplay playsinline muted></video>
-      <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 카메라 렌즈에서 약 30cm 거리를 유지해 주세요</div>
+      <!-- 💡 선생님을 위한 컴퓨터 시야 확인 모니터 -->
+      <canvas id="canvas" class="debug-canvas"></canvas>
+      <div class="debug-label">👈 컴퓨터 시야 (이 안에서 또렷해야 스캔됩니다!)</div>
+      <div class="scanner-tip">⚡ 카메라 전체 화면 스캔 중 (약 30cm 거리를 두세요)</div>
     </div>
 
     <div class="info-card" id="infoCard">
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
-      <div class="status-sub" id="statusSub">명찰을 초록 박스 안에 맞춰주세요</div>
+      <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
     </div>
   </main>
-
-  <canvas id="canvas"></canvas>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
@@ -163,6 +158,8 @@
     const video = document.getElementById("video");
     const canvasElement = document.getElementById("canvas");
     const ctx = canvasElement.getContext("2d", { willReadFrequently: true });
+
+    if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {});
 
     function updateClock() {
       const d = new Date();
@@ -206,7 +203,6 @@
       });
     }
 
-    // 💡 카메라 무조건 켜기
     async function setupCameras() {
       try {
         let tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -214,6 +210,7 @@
         const devices = await navigator.mediaDevices.enumerateDevices();
         allVideoDevices = devices.filter(d => d.kind === 'videoinput');
         
+        // PRISM 가상 카메라 제외
         allVideoDevices.sort((a, b) => {
           let aName = a.label.toLowerCase(); let bName = b.label.toLowerCase();
           if(aName.includes('prism')) return 1;
@@ -281,7 +278,7 @@
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 [핵심] 중앙 초록박스 집중 돋보기 스캔 (속도 10배 향상, 뭉개짐 해결)
+    // 💡 화면 짤림 없는 완벽한 원본 스캔 루프
     let lastScanTick = 0;
     function scanLoop() {
       requestAnimationFrame(scanLoop);
@@ -290,46 +287,45 @@
       if (typeof jsQR === 'undefined') return;
 
       const now = Date.now();
-      if (now - lastScanTick < 100) return; // 프레임 제한으로 멈춤 방지
+      if (now - lastScanTick < 100) return;
       lastScanTick = now;
 
       try {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
+        const w = video.videoWidth;
+        const h = video.videoHeight;
         
-        // 화면 정중앙의 50% 영역(초록 박스 부분)만 잘라내서 검사합니다. (처리 속도 극대화)
-        const cropSize = Math.min(vw, vh) * 0.5;
-        const sx = (vw - cropSize) / 2;
-        const sy = (vh - cropSize) / 2;
-
-        // 캔버스를 항상 300x300 고정 크기로 둡니다. (가장 최적화된 인식 해상도)
-        if (canvasElement.width !== 300) {
-          canvasElement.width = 300;
-          canvasElement.height = 300;
+        // 연산 부하 방지를 위해 최대 800px로 조절하되 원본 비율 완벽 유지
+        let dw = w;
+        let dh = h;
+        if (dw > 800) {
+          dh = Math.floor(h * (800 / w));
+          dw = 800;
         }
 
-        // 1차 스캔: 초록 박스 영역을 300x300 캔버스에 그립니다.
-        ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, 300, 300);
-        let imgData = ctx.getImageData(0, 0, 300, 300);
-        
-        // 반사광 무시 옵션(attemptBoth) 켜기
-        let code = jsQR(imgData.data, 300, 300, { inversionAttempts: "attemptBoth" });
+        if (canvasElement.width !== dw || canvasElement.height !== dh) {
+          canvasElement.width = dw;
+          canvasElement.height = dh;
+        }
 
-        // 2차 스캔: 노트북 웹캠의 거울 모드로 인해 좌우가 뒤집혔을 경우
+        // 1. 원본 화면 스캔 (선생님이 왼쪽 위 캔버스에서 보시는 화면 그대로입니다!)
+        ctx.drawImage(video, 0, 0, dw, dh);
+        let imgData = ctx.getImageData(0, 0, dw, dh);
+        let code = jsQR(imgData.data, dw, dh, { inversionAttempts: "dontInvert" });
+
+        // 2. 노트북 거울모드로 뒤집혔을 경우를 대비한 반전 스캔
         if (!code) {
           ctx.save();
-          ctx.translate(300, 0);
-          ctx.scale(-1, 1); // 좌우 반전
-          ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, 300, 300);
+          ctx.translate(dw, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, 0, 0, dw, dh);
           ctx.restore();
-          imgData = ctx.getImageData(0, 0, 300, 300);
-          code = jsQR(imgData.data, 300, 300, { inversionAttempts: "attemptBoth" });
+          imgData = ctx.getImageData(0, 0, dw, dh);
+          code = jsQR(imgData.data, dw, dh, { inversionAttempts: "dontInvert" });
         }
 
         if (code && code.data && code.data.trim() !== "") {
           const rawId = code.data.trim();
-          // 동일 학생 연속 스캔 방지 (4초)
-          if (rawId !== lastScannedId || (now - lastScanTime > 4000)) {
+          if (rawId !== lastScannedId || (now - lastScanTime > 3500)) {
             lastScannedId = rawId;
             lastScanTime = now;
             sendToServer(rawId);
@@ -382,7 +378,6 @@
       document.getElementById("statusBanner").innerText = "조회 중...";
       document.getElementById("statusSub").innerText = "서버 기록을 확인하고 있습니다.";
 
-      // 사진 자동 매칭 (QR 인식 시 photos/학번.jpeg 자동 출력)
       const photoEl = document.getElementById("photoBox");
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
 
@@ -412,7 +407,7 @@
         banner.className = "status-alert-banner banner-standby";
         banner.innerText = "대기 중";
         document.getElementById("studentInfo").innerText = "-";
-        document.getElementById("statusSub").innerText = "명찰을 초록 박스 안에 맞춰주세요";
+        document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
       }, 2500);

@@ -5,22 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>송악고 석식 시스템 (학생용)</title>
   <style>
-    body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #111827; color: white; font-family: sans-serif; overflow: hidden; }
+    body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #111827; color: white; font-family: 'Apple SD Gothic Neo', sans-serif; overflow: hidden; }
     
-    /* 상단 통계 바 */
-    .top-stats-bar { display: flex; justify-content: center; gap: 15px; padding: 15px; background: #1f2937; border-bottom: 2px solid #374151; font-size: 14pt; font-weight: bold; }
-    .stat-badge { padding: 8px 15px; border-radius: 8px; }
+    /* 🌟 복구 완료: 상단 헤더 (제목, 시계, 통계, 카메라 전환 버튼) */
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1f2937; border-bottom: 2px solid #374151; }
+    .header-left { display: flex; align-items: baseline; gap: 15px; }
+    .title { font-size: 22pt; font-weight: 900; color: #60a5fa; letter-spacing: 1px; }
+    .clock { font-size: 14pt; color: #9ca3af; font-weight: bold; }
+    
+    .header-right { display: flex; gap: 12px; align-items: center; }
+    .stat-badge { padding: 8px 15px; border-radius: 8px; font-size: 14pt; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     .stat-total { background: #3b82f6; }
     .stat-done { background: #10b981; }
     .stat-left { background: #ef4444; }
+    
+    .cam-btn { padding: 8px 15px; background: #4b5563; color: white; border: none; border-radius: 8px; font-size: 13pt; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .cam-btn:active { background: #374151; transform: scale(0.95); }
 
     .main-content { display: flex; flex: 1; height: 100%; }
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-    #reader { width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #000; }
-    .box-title { font-size: 20pt; font-weight: bold; margin-bottom: 10px; }
-    .box-content { font-size: 15pt; margin-bottom: 5px; }
-    .status-circle { width: 180px; height: 180px; border: 4px solid yellow; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; font-size: 40pt; font-weight: bold; background: #111827; }
+    
+    #reader { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; background: #000; box-shadow: inset 0 0 20px rgba(255,255,255,0.05); }
+    
+    /* 🌟 복구 완료: 우측 상태창 디자인 (크고 굵게!) */
+    .box-title { font-size: 24pt; font-weight: 900; margin-bottom: 15px; }
+    .box-content { font-size: 18pt; margin-bottom: 5px; font-weight: bold; }
+    .status-circle { width: 220px; height: 220px; border: 6px solid yellow; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; background: #111827; box-shadow: 0 0 20px rgba(255,255,0,0.2); }
     
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
   </style>
@@ -30,56 +41,79 @@
   
   <!-- 데이터 다운로드 로딩 화면 -->
   <div id="loading-overlay">
-    <h2 style="color: #3b82f6; font-size: 24pt;">📡 명단 암기 중...</h2>
-    <p style="font-size: 15pt; color: #9ca3af;">10초 딜레이를 없애기 위해 1000명 데이터를 미리 외우는 중입니다.<br>잠시만 기다려 주세요.</p>
+    <h2 style="color: #3b82f6; font-size: 28pt;">📡 시스템 최적화 중...</h2>
+    <p style="font-size: 16pt; color: #9ca3af;">초광속 스캔을 위해 서버와 연결하고 있습니다.</p>
   </div>
 
-  <!-- 상단 통계 바 -->
-  <div class="top-stats-bar">
-    <div class="stat-badge stat-total">총신청: <span id="val-total">0</span>명</div>
-    <div class="stat-badge stat-done">식사완료: <span id="val-done">0</span>명</div>
-    <div class="stat-badge stat-left">미식사: <span id="val-left">0</span>명</div>
+  <!-- 🌟 복구 완료: 상단 헤더 (제목, 시계, 카메라 전환, 통계 모두 모음) -->
+  <div class="header">
+    <div class="header-left">
+      <div class="title">송악고 석식 시스템</div>
+      <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
+    </div>
+    <div class="header-right">
+      <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
+      <div class="stat-badge stat-total">총신청: <span id="val-total">0</span></div>
+      <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
+      <div class="stat-badge stat-left">미식사: <span id="val-left">0</span></div>
+    </div>
   </div>
 
   <div class="main-content">
-    <div class="camera-section"><div id="reader"></div></div>
+    <div class="camera-section">
+      <!-- 권한 묻는 기본 화면 안 뜨게 개조함 -->
+      <div id="reader"></div>
+    </div>
+    
     <div class="info-section">
-      <div class="status-circle" id="photo-box"><span class="box-content" style="font-size: 15pt; color: yellow;">사진대기</span></div>
-      <div class="box-title" id="status-title" style="color: yellow;">대기 중</div>
-      <div class="box-content" id="status-message">-<br>명찰 QR을 비춰주세요</div>
+      <div class="status-circle" id="photo-box">
+        <!-- 🌟 복구 완료: 사진대기 -> 스캔 대기로 변경하고 엄청 크고 굵게! -->
+        <span class="box-content" style="font-size: 35pt; font-weight: 900; color: yellow; line-height: 1.2;">스캔<br>대기</span>
+      </div>
+      <div class="box-title" id="status-title" style="color: yellow;">준비 완료</div>
+      <div class="box-content" id="status-message" style="color: #9ca3af;">학생증 QR을 비춰주세요</div>
     </div>
   </div>
 
   <script>
-    // ★ 선생님께서 힘들게 찾아오신 진짜 웹앱 주소가 완벽하게 들어갔습니다! ★
+    // 🚨 [매우 중요] 선생님이 찾아내신 진짜 앱스 스크립트 주소를 유지했습니다! 🚨
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
-    let html5QrcodeScanner;
-    let studentCache = {}; // 0초 딜레이를 위한 1000명 명단 기억 주머니
+    let html5QrCode;
+    let cameras = [];
+    let currentCameraIndex = 0;
+    let studentCache = {}; 
+    let isScanning = true;
     
-    // 효과음 엔진
+    // 시계 째깍째깍 기능
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('live-clock').innerText = now.toLocaleString('ko-KR');
+    }, 1000);
+
+    // 효과음 엔진 (딩동, 띠딕, 삐-)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(type) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
       const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
       osc.connect(gainNode); gainNode.connect(audioCtx.destination);
       
-      if (type === 'success') { // 딩동! (초록색)
+      if (type === 'success') { 
         osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); 
         gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
         osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-      } else if (type === 'duplicate') { // 띠딕! (주황색)
+      } else if (type === 'duplicate') { 
         osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
         gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
         osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-      } else if (type === 'error') { // 삐-! (빨간색)
+      } else if (type === 'error') { 
         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
         gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
         osc.start(); osc.stop(audioCtx.currentTime + 0.6);
       }
     }
 
-    // 통계(총신청/완료/미식사) 불러와서 화면 갱신하는 함수
+    // 통계 가져오기
     function refreshStats() {
       fetch(SCRIPT_URL + "?action=GET_DETAILS").then(r => r.json()).then(res => {
         if(res.totalStats) {
@@ -87,71 +121,91 @@
           document.getElementById('val-done').innerText = res.totalStats.done;
           document.getElementById('val-left').innerText = res.totalStats.left;
         }
-      }).catch(err => console.log("통계 갱신 대기 중..."));
+      }).catch(err => console.log("통계 대기 중..."));
     }
 
-    // 처음 켤 때 명단 외우기 + 통계 띄우기
     window.onload = function() {
-      if (SCRIPT_URL === "여기에_선생님의_웹앱_주소를_넣으세요") {
-        alert("🚨 구글 웹앱 주소가 입력되지 않았습니다! 코드의 SCRIPT_URL을 수정해주세요.");
-        return;
-      }
-      
-      refreshStats(); // 통계 갱신
-      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS") // 1000명 통째로 가져오기
+      refreshStats();
+      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS")
         .then(r => r.json()).then(res => {
           if(res.status === "SUCCESS") {
             studentCache = res.data;
             document.getElementById('loading-overlay').style.display = 'none';
-            startScanner();
-            // 이후 10초마다 통계 알아서 갱신
+            initCamera(); // 🌟 명단 외우면 바로 카메라 강제 시작!
             setInterval(refreshStats, 10000); 
           }
-        }).catch(err => alert("네트워크 오류 또는 구글 주소가 잘못되었습니다. 주소와 배포 상태를 확인해주세요."));
+        }).catch(err => alert("네트워크 오류! 새로고침 해주세요."));
     };
 
-    // 0.1초 초광속 스캔 처리!
+    // 🌟 복구 완료: 귀찮은 버튼 없이 카메라 자동 시작 및 전환 로직
+    function initCamera() {
+      html5QrCode = new Html5Qrcode("reader");
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          cameras = devices;
+          // 후면 카메라(스마트폰/태블릿 뒷면) 우선 찾기
+          let backCam = devices.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('후면'));
+          currentCameraIndex = backCam ? devices.indexOf(backCam) : 0;
+          startCamera(cameras[currentCameraIndex].id);
+        }
+      }).catch(err => {
+        alert("카메라 권한을 허용해 주셔야 스캔이 가능합니다!");
+      });
+    }
+
+    function startCamera(cameraId) {
+      html5QrCode.start(
+        cameraId,
+        { fps: 60, qrbox: { width: 250, height: 250 } },
+        onScanSuccess,
+        (errorMessage) => { /* 무시 */ }
+      ).catch(err => console.log(err));
+    }
+
+    function switchCamera() {
+      if (cameras.length > 1) {
+        html5QrCode.stop().then(() => {
+          currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+          startCamera(cameras[currentCameraIndex].id);
+        }).catch(err => alert("카메라 전환 중 오류가 발생했습니다."));
+      } else {
+        alert("전환할 수 있는 다른 카메라가 없습니다.");
+      }
+    }
+
+    // 0.1초 스캔 처리
     function onScanSuccess(decodedText, decodedResult) {
-      html5QrcodeScanner.pause(true); // 찰칵 후 카메라 일시정지
+      if(!isScanning) return; // 딜레이 중복 방지
+      isScanning = false;
+      
       let studentId = decodedText.trim().replace(/[^0-9]/g, '');
-      let student = studentCache[studentId]; // 내 머릿속(태블릿)에서 0.01초만에 판독
+      let student = studentCache[studentId];
 
       if (!student) {
-        playBeep('error'); updateUI("red", "X", "미신청", "당일 석식 미신청자입니다");
+        playBeep('error'); updateUI("red", `<span style="font-size: 70pt;">X</span>`, "미신청", "당일 석식 미신청자입니다");
       } else if (student.marked === 1) {
-        playBeep('duplicate'); updateUI("orange", "중복", student.name, "이미 식사한 학생입니다");
-        fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId); // 구글엔 백그라운드로 몰래 알림
+        playBeep('duplicate'); updateUI("orange", `<span style="font-size: 40pt; color: orange;">중복</span>`, student.name, "이미 식사한 학생입니다");
+        fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       } else {
-        playBeep('success'); updateUI("#4CAF50", "🟢", student.name, "식사 승인 완료");
-        student.marked = 1; // 내 머릿속에도 식사했다고 즉시 체크 (중복 스캔 방어)
+        playBeep('success'); updateUI("#4CAF50", `<span style="font-size: 70pt; color: #4CAF50;">🟢</span>`, student.name, "식사 승인 완료");
+        student.marked = 1;
         
-        // 통계 UI도 즉시 +1 변경 (기다리지 않음)
-        let doneEl = document.getElementById('val-done');
-        let leftEl = document.getElementById('val-left');
-        doneEl.innerText = parseInt(doneEl.innerText) + 1;
-        leftEl.innerText = Math.max(0, parseInt(leftEl.innerText) - 1);
-
-        fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId); // 구글엔 백그라운드로 몰래 알림
+        let doneEl = document.getElementById('val-done'), leftEl = document.getElementById('val-left');
+        doneEl.innerText = parseInt(doneEl.innerText) + 1; leftEl.innerText = Math.max(0, parseInt(leftEl.innerText) - 1);
+        fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       }
 
-      // 딱 1초 뒤에 다음 애 찍을 수 있게 대기 화면 복구
+      // 1초 뒤 자동 복구
       setTimeout(() => {
-        updateUI("yellow", `<span style="font-size:15pt;color:yellow;">사진대기</span>`, "대기 중", "-<br>명찰 QR을 비춰주세요");
-        html5QrcodeScanner.resume();
+        updateUI("yellow", `<span style="font-size: 35pt; font-weight: 900; color: yellow; line-height: 1.2;">스캔<br>대기</span>`, "준비 완료", "학생증 QR을 비춰주세요");
+        isScanning = true;
       }, 1000);
     }
 
     function updateUI(color, iconHtml, title, message) {
-      const box = document.getElementById('photo-box'); box.style.borderColor = color; box.style.color = color; box.innerHTML = iconHtml;
+      const box = document.getElementById('photo-box'); box.style.borderColor = color; box.innerHTML = iconHtml;
       const titleEl = document.getElementById('status-title'); titleEl.innerText = title; titleEl.style.color = color;
-      document.getElementById('status-message').innerHTML = `<span style="color:${color}">${message}</span>`;
-    }
-
-    function onScanFailure(e) {}
-
-    function startScanner() {
-      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 60, qrbox: {width: 250, height: 250}, videoConstraints: { facingMode: "environment", focusMode: "continuous" } }, false);
-      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+      document.getElementById('status-message').innerHTML = `<span style="color:${color}; font-weight:bold;">${message}</span>`;
     }
   </script>
 </body>

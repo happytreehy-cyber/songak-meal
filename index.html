@@ -25,10 +25,10 @@
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
-    /* 🌟 바깥 파란 네온, 중앙 타겟팅 모서리 쨍한 초록색으로 100% 강제 고정! */
+    /* 파란 네온, 초록색 타겟 박스 */
     .camera-wrapper { position: relative; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
     #reader { width: 100%; height: 100%; }
-    #reader #qr-shaded-region div { border-color: #4ade80 !important; border-width: 6px !important; }
+    .custom-target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 6px solid #4ade80; border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; z-index: 10; }
 
     .box-title { font-size: 24pt; font-weight: 900; margin-bottom: 10px; }
     .box-content { font-size: 18pt; margin-bottom: 5px; font-weight: bold; }
@@ -77,7 +77,7 @@
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
-      <!-- 비상용 카메라 전환 버튼 유지 (오류 시 수동 조작용) -->
+      <!-- 무적의 전환 버튼 -->
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
@@ -91,6 +91,7 @@
     <div class="camera-section">
       <div class="camera-wrapper">
         <div id="reader"></div>
+        <div class="custom-target"></div>
       </div>
     </div>
     <div class="info-section">
@@ -108,7 +109,8 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
-    let html5QrCode, cameras = [], currentCameraIndex = 0;
+    let html5QrCode;
+    let isFrontMode = true; // 무조건 앞면(user)부터 시작하게 강제 세팅!
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
     
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
@@ -160,7 +162,9 @@
       let html = "";
       [1, 2, 3].forEach(grade => {
         let st = currentStatsDetails[grade];
-        if(st) { html += `<div class="grade-stat-row"><span style="color:#60a5fa;">${grade}학년</span> <span>총 신청: ${st.total}명</span> <span style="color:#10b981;">식사완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; }
+        if(st) { 
+          html += `<div class="grade-stat-row"><span style="color:#60a5fa;">${grade}학년</span> <span>총 신청: ${st.total}명</span> <span style="color:#10b981;">식사완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; 
+        }
       });
       document.getElementById('stats-detail-content').innerHTML = html;
       document.getElementById('stats-modal').style.display = 'block'; document.getElementById('modal-bg').style.display = 'block';
@@ -209,56 +213,47 @@
       document.getElementById('loading-sub').innerHTML = `${errorMsg}<br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
     }
 
-    // 🌟 대망의 오후 4시 전설의 카메라 코드 완벽 복구!
-    // 기기에 달린 렌즈들의 '고유 주민등록번호(ID)'를 직접 추출해서 강제로 켭니다.
+    // 🌟 완전 무식하고 강력한 카메라 엔진 (렌즈 목록 확인 안 함!)
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
-      Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length > 0) {
-          // 가상카메라 싹 다 버리기
-          cameras = devices.filter(c => !c.label.toLowerCase().includes('prism') && !c.label.toLowerCase().includes('virtual') && !c.label.toLowerCase().includes('obs'));
-          if (cameras.length === 0) cameras = devices; 
-
-          // 전면(셀카) 카메라를 기를 쓰고 찾아내기
-          let frontCamIndex = cameras.findIndex(c => c.label.toLowerCase().includes('front') || c.label.toLowerCase().includes('전면') || c.label.toLowerCase().includes('user'));
-          
-          // 못 찾았다면, 보통 태블릿은 두 번째 렌즈(인덱스 1)가 앞면임
-          if (frontCamIndex === -1) {
-            frontCamIndex = cameras.length > 1 ? 1 : 0;
-          }
-
-          currentCameraIndex = frontCamIndex;
-          // ID의 멱살을 잡고 다이렉트로 실행!
-          startCamera(cameras[currentCameraIndex].id);
-        } else {
-          alert("카메라 렌즈를 찾을 수 없습니다.");
-        }
-      }).catch(err => {
-        alert("태블릿 설정에서 카메라 권한을 허용해 주셔야 합니다!");
-      });
+      startCurrentCamera();
     }
 
-    // 렌즈 ID를 박아넣어서 브라우저가 딴짓 못하게 완벽 차단! (바코드 & QR 동시 인식)
-    function startCamera(cameraId) {
+    function startCurrentCamera() {
+      // 렌즈 목록 확인 없이 무조건 user(앞면) 또는 environment(뒷면)를 켜라고 브라우저에 명령
+      const constraints = { facingMode: isFrontMode ? "user" : "environment" };
+      
       html5QrCode.start(
-        cameraId,
-        { fps: 60, qrbox: { width: 250, height: 250 } },
+        constraints,
+        { fps: 30, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
-        (ignoreError) => { /* 인식 대기 중 에러 무시 */ }
-      ).catch(e => {
-        console.log("카메라 실행 에러:", e);
+        (ignoreError) => {}
+      ).catch(err => {
+        console.log("카메라 모드 실행 에러:", err);
+        // 만약 앞면(user)를 켰는데 기기가 거부하면, 묻지 말고 즉시 뒷면으로 재시도!
+        if (isFrontMode) {
+           isFrontMode = false;
+           startCurrentCamera();
+        } else {
+           alert("카메라를 켤 수 없습니다. 브라우저 설정에서 카메라 권한을 확인해주세요.");
+        }
       });
     }
 
-    // 버튼을 누를 때마다 기기에 달린 다음 렌즈 ID로 무조건 착착 넘어갑니다.
+    // 무적의 전환 버튼 (무조건 반대편 카메라로 강제 전환)
     function switchCamera() {
-      if (cameras.length > 1) {
+      try {
         html5QrCode.stop().then(() => {
-          currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-          startCamera(cameras[currentCameraIndex].id);
-        }).catch(e => alert("카메라 전환 에러"));
-      } else {
-        alert("전환할 다른 렌즈가 없습니다.");
+          isFrontMode = !isFrontMode;
+          startCurrentCamera();
+        }).catch(e => {
+          // 끄는 데 실패해도 억지로 전환 시도
+          isFrontMode = !isFrontMode;
+          startCurrentCamera();
+        });
+      } catch(e) {
+        isFrontMode = !isFrontMode;
+        startCurrentCamera();
       }
     }
 

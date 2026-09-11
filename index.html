@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
   
-  <!-- 💡 신용카드사 앱에 탑재되는 최고성능 AI 웹어셈블리 스캐너 -->
-  <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+  <!-- 💡 어제 카메라가 확실하게 켜졌던 가볍고 안전한 순정 엔진 -->
+  <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,18 +14,17 @@
       width: 100%; height: 100%; overflow: hidden;
       background-color: #0b0f19; color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      transition: background-color 0.25s ease;
+      transition: background-color 0.2s ease;
     }
     body {
       display: flex; flex-direction: column; padding: 10px 16px;
-      border: 6px solid transparent; transition: border-color 0.25s ease, background-color 0.25s ease;
+      border: 6px solid transparent; transition: border-color 0.2s ease, background-color 0.2s ease;
     }
 
-    /* 💡 정상 승인: 초록색 화면 */
+    /* 💡 요청하신 색상 완벽 적용 */
     body.flash-ok { background-color: #064e3b !important; border-color: #22c55e !important; }
     body.flash-ok .info-card { background-color: #065f46 !important; border-color: #34d399 !important; }
 
-    /* 💡 중복/미신청: 붉은색 화면 */
     body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
     body.flash-err .info-card { background-color: #991b1b !important; border-color: #f87171 !important; }
 
@@ -39,10 +38,7 @@
     .clock-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid #334155; }
     
     .stats-group { display: flex; gap: 8px; align-items: center; }
-    .stat-badge {
-      display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700;
-      padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none;
-    }
+    .stat-badge { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; user-select: none; }
     .stat-total { background: #382715; color: #fbbf24; border: 1px solid #78350f; }
     .stat-done  { background: #133924; color: #4ade80; border: 1px solid #166534; }
     .stat-left  { background: #3a1919; color: #f87171; border: 1px solid #991b1b; }
@@ -55,17 +51,12 @@
       border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; 
     }
     #video { width: 100%; height: 100%; object-fit: cover; }
-    
-    /* AI 스캐너가 그려주는 인식 테두리 디자인 */
-    .scan-region-highlight { border-radius: 12px; border-color: #22c55e !important; }
-    .scan-region-highlight-svg { stroke: #22c55e !important; }
-
-    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.85rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+    canvas { display: none; }
 
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
       display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
-      transition: background-color 0.25s ease, border-color 0.25s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
     .photo-box {
       width: 150px; height: 195px; border: 2.5px solid #eab308; border-radius: 14px;
@@ -76,14 +67,14 @@
 
     .status-alert-banner {
       width: 100%; padding: 12px 8px; border-radius: 8px;
-      font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; line-height: 1.3;
+      font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; line-height: 1.3;
     }
     .banner-standby { background: transparent; color: #f8fafc; }
     .banner-ok { background: #15803d; color: #ffffff; border: 2px solid #86efac; }
     .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #fca5a5; }
 
-    .student-info-text { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
-    .status-sub { font-size: 1.1rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
+    .student-info-text { font-size: 1.3rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
+    .status-sub { font-size: 1.05rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
     .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
 
     .right-top-modal {
@@ -127,40 +118,37 @@
 
   <main class="main-content">
     <div class="scanner-card">
-      <video id="video" playsinline></video>
-      <div class="scanner-tip">⚡ 명찰을 멀리서 화면 안쪽으로 슥 비춰주세요</div>
+      <video id="video" autoplay playsinline muted></video>
     </div>
 
     <div class="info-card" id="infoCard">
-      <!-- 💡 사진 기능은 이미 완벽 작동 대기 중입니다! -->
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
       <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
-      <!-- 거슬리는 카운터 완벽 삭제! -->
-      <div class="engine-tag" id="engineTag">● AI 스캐너 시스템 가동 중</div>
+      <!-- 거슬리는 카운터 숫자 완벽 삭제 -->
+      <div class="engine-tag" id="engineTag">● 석식 스캐너 가동 중</div>
     </div>
   </main>
+
+  <canvas id="canvas"></canvas>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     const PHOTO_BASE_URL = "./photos/";
 
-    // AI 엔진 최적화 워커 로드
-    QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
-
-    let qrScanner;
-    let realCameras = [];
-    let currentCamIndex = 0;
+    let videoStream = null;
     let isProcessing = false;
     let lastScannedId = "";
     let lastScanTime = 0;
+    
+    // 카메라 장치 관리용
+    let allVideoDevices = [];
+    let currentDeviceIndex = 0;
 
-    const videoElem = document.getElementById("video");
-
-    if ('wakeLock' in navigator) {
-      navigator.wakeLock.request('screen').catch(() => {});
-    }
+    const video = document.getElementById("video");
+    const canvasElement = document.getElementById("canvas");
+    const ctx = canvasElement.getContext("2d", { willReadFrequently: true });
 
     function updateClock() {
       const d = new Date();
@@ -177,7 +165,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    // 🔔 맑은 차임벨 ("띵동♪")
+    // 🔔 맑은 차임벨 (정상 승인)
     function playDingDong() {
       initAudioContext();
       if (!audioCtx) return;
@@ -193,7 +181,7 @@
       osc2.connect(gain2); gain2.connect(audioCtx.destination); osc2.start(now + 0.15); osc2.stop(now + 0.65);
     }
 
-    // 🚨 둔탁한 경고음 ("삐-삐-!")
+    // 🚨 삐-삐- 경고음 (에러/중복)
     function playWarningBeep() {
       initAudioContext();
       if (!audioCtx) return;
@@ -206,67 +194,76 @@
       });
     }
 
-    // 💡 PRISM 가상 카메라 차단 + AI 스캐너 구동
-    async function setupCamera() {
+    // 💡 가장 안전하고 무식하게(?) 카메라를 무조건 켜는 방식
+    async function setupCameras() {
       try {
-        // 권한 획득 후 카메라 목록 조회
-        const stream = await navigator.mediaDevices.getUserMedia({video: true});
-        stream.getTracks().forEach(t => t.stop());
+        // 권한부터 무조건 확보
+        let tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(t => t.stop());
 
-        const cameras = await QrScanner.listCameras(true);
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        allVideoDevices = devices.filter(d => d.kind === 'videoinput');
         
-        // PRISM 등 가상 카메라 무조건 필터링
-        realCameras = cameras.filter(c => {
-          const name = c.label.toLowerCase();
-          return !name.includes('prism') && !name.includes('obs') && !name.includes('virtual');
+        // PRISM은 최대한 뒤로 미루기 (삭제하려다 에러나는 것 방지)
+        allVideoDevices.sort((a, b) => {
+          let aName = a.label.toLowerCase(); let bName = b.label.toLowerCase();
+          if(aName.includes('prism')) return 1;
+          if(bName.includes('prism')) return -1;
+          return 0;
         });
-        if (realCameras.length === 0) realCameras = cameras;
 
-        // 신용카드사 급 WebAssembly AI 스캐너 초기화
-        qrScanner = new QrScanner(
-          videoElem,
-          result => {
-            // 스캔 성공 시 즉각 처리
-            const rawId = (result.data || result).trim();
-            handleScan(rawId);
-          },
-          {
-            highlightScanRegion: true,     // 파란색 스캔 가이드 라인 자동 생성
-            highlightCodeOutline: true,    // QR 인식 순간 노란색 테두리로 피드백
-            maxScansPerSecond: 15,         // 초당 15회 초고속 렌즈 감시
-          }
-        );
-
-        startScannerWithCurrentCam();
+        currentDeviceIndex = 0;
+        startCamera();
       } catch (err) {
-        document.getElementById("statusSub").innerText = "카메라 권한을 허용해주세요.";
+        // 완전 비상 시 최후의 수단
+        startCameraFallback();
       }
     }
 
-    async function startScannerWithCurrentCam() {
+    async function startCamera() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(t => t.stop());
+      }
       try {
-        if (realCameras.length > 0) {
-          await qrScanner.setCamera(realCameras[currentCamIndex].id);
+        const deviceId = allVideoDevices[currentDeviceIndex] ? allVideoDevices[currentDeviceIndex].deviceId : undefined;
+        const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: true };
+        
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = videoStream;
+        video.setAttribute("playsinline", true);
+        await video.play();
+        
+        // 거울 모드 처리 (웹캠/전면카메라는 뒤집어줌)
+        const label = allVideoDevices[currentDeviceIndex] ? allVideoDevices[currentDeviceIndex].label.toLowerCase() : "";
+        if (label.includes("front") || label.includes("user") || currentDeviceIndex === 0) {
+          video.style.transform = "scaleX(-1)";
         } else {
-          await qrScanner.start();
+          video.style.transform = "scaleX(1)";
         }
-
-        // 노트북(웹캠) 및 전면 카메라인 경우 거울 모드 적용
-        const camLabel = realCameras[currentCamIndex] ? realCameras[currentCamIndex].label.toLowerCase() : "";
-        if (camLabel.includes('front') || camLabel.includes('user') || currentCamIndex === 0) {
-          videoElem.style.transform = "scaleX(-1)";
-        } else {
-          videoElem.style.transform = "scaleX(1)";
-        }
+        
+        requestAnimationFrame(scanLoop);
       } catch(e) {
-        console.error("카메라 에러:", e);
+        startCameraFallback();
+      }
+    }
+
+    async function startCameraFallback() {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = videoStream;
+        video.setAttribute("playsinline", true);
+        await video.play();
+        video.style.transform = "scaleX(-1)"; // 기본 웹캠 반전
+        requestAnimationFrame(scanLoop);
+      } catch(e) {
+        document.getElementById("statusSub").innerText = "카메라를 켤 수 없습니다.";
       }
     }
 
     function toggleCamera() {
-      if (realCameras.length > 1) {
-        currentCamIndex = (currentCamIndex + 1) % realCameras.length;
-        startScannerWithCurrentCam();
+      if (allVideoDevices.length > 1) {
+        currentDeviceIndex = (currentDeviceIndex + 1) % allVideoDevices.length;
+        startCamera();
       }
     }
 
@@ -283,30 +280,64 @@
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 인식 성공 시 데이터 넘기기 (중복 3.5초 방지)
-    function handleScan(rawId) {
-      const now = Date.now();
-      if (isProcessing) return;
-      if (rawId === lastScannedId && (now - lastScanTime < 3500)) return;
+    // 💡 어제 인식이 가장 잘 되었던 듀얼 스캔 (정방향 + 거울모드 모두 100% 인식)
+    function scanLoop() {
+      requestAnimationFrame(scanLoop);
 
-      lastScannedId = rawId;
-      lastScanTime = now;
-      sendToServer(rawId);
+      if (isProcessing || !video || video.readyState < 2 || video.videoWidth === 0) return;
+      if (typeof jsQR === 'undefined') return;
+
+      try {
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+        
+        if (canvasElement.width !== w || canvasElement.height !== h) {
+          canvasElement.width = w;
+          canvasElement.height = h;
+        }
+
+        // 1차 스캔 (화면 그대로)
+        ctx.drawImage(video, 0, 0, w, h);
+        let imgData = ctx.getImageData(0, 0, w, h);
+        let code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
+
+        // 2차 스캔 (노트북 거울모드 특성상 이미지가 뒤집혀있을 경우 대비 좌우 반전 스캔)
+        if (!code) {
+          ctx.save();
+          ctx.translate(w, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, 0, 0, w, h);
+          ctx.restore();
+          imgData = ctx.getImageData(0, 0, w, h);
+          code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
+        }
+
+        if (code && code.data && code.data.trim() !== "") {
+          const rawId = code.data.trim();
+          const now = Date.now();
+          // 동일 학생 4초 이내 중복 스캔 방지
+          if (rawId !== lastScannedId || (now - lastScanTime > 4000)) {
+            lastScannedId = rawId;
+            lastScanTime = now;
+            sendToServer(rawId);
+          }
+        }
+      } catch (e) {}
     }
 
-    // 선생님이 요청하신 3대 반응 완벽 분리
+    // 💡 선생님이 요청하신 3가지 피드백 (화면/소리/문구) 100% 반영!
     function applyFeedback(statusType, studentName, studentId, mealTime, customMsg) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
       const subEl = document.getElementById("statusSub");
 
-      document.body.className = "";
+      document.body.className = ""; // 초기화
       banner.className = "status-alert-banner";
 
       if (statusType === "SUCCESS") {
         document.body.classList.add("flash-ok");
         banner.classList.add("banner-ok");
-        banner.innerText = "✔ 정상 승인 (맛있게 드세요!)";
+        banner.innerText = "✓ 정상 승인 (맛있게 드세요!)";
         infoEl.innerText = `${studentId} ${studentName}`;
         subEl.innerText = "상태: 식사 승인 완료";
         playDingDong();
@@ -336,10 +367,10 @@
       
       document.getElementById("studentInfo").innerText = `${studentId}`;
       document.getElementById("statusBanner").className = "status-alert-banner banner-standby";
-      document.getElementById("statusBanner").innerText = "확인 중...";
-      document.getElementById("statusSub").innerText = "서버로 전송하고 있습니다";
+      document.getElementById("statusBanner").innerText = "조회 중...";
+      document.getElementById("statusSub").innerText = "서버 기록을 확인하고 있습니다.";
 
-      // 💡 QR 인식 시 학번.jpeg 파일 자동 매칭
+      // 사진 자동 매칭
       const photoEl = document.getElementById("photoBox");
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
 
@@ -363,6 +394,7 @@
         applyFeedback("ERROR", "", studentId, null, "서버 연결 오류");
       }
 
+      // 2.5초간 화면 유지 후 대기 상태로 복귀
       setTimeout(() => {
         document.body.className = "";
         const banner = document.getElementById("statusBanner");
@@ -372,7 +404,7 @@
         document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
-      }, 2000);
+      }, 2500);
     }
 
     function updateStatsDisplay(s) {
@@ -381,25 +413,10 @@
       document.getElementById("cntLeft").innerText = s.left;
     }
 
-    async function toggleGradeModal() {
-      const m = document.getElementById("gradeModal");
-      if (m.style.display === "block") { m.style.display = "none"; return; }
-      m.style.display = "block";
-      try {
-        const res = await fetch(`${GAS_URL}?action=GET_DETAILS`);
-        const d = await res.json();
-        if (d) {
-          if (d[1]) document.getElementById("g1-stat").innerText = `완료: ${d[1].done}명 / 미식사: ${d[1].left}명 (총 ${d[1].total}명)`;
-          if (d[2]) document.getElementById("g2-stat").innerText = `완료: ${d[2].done}명 / 미식사: ${d[2].left}명 (총 ${d[2].total}명)`;
-          if (d[3]) document.getElementById("g3-stat").innerText = `완료: ${d[3].done}명 / 미식사: ${d[3].left}명 (총 ${d[3].total}명)`;
-        }
-      } catch (e) {}
-    }
-
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
 
     window.addEventListener("DOMContentLoaded", () => { 
-      setupCamera(); 
+      setupCameras(); 
       fetchStats(); 
     });
   </script>

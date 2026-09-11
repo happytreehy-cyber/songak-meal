@@ -25,10 +25,10 @@
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
-    /* 🌟 바깥 파란 네온, 안쪽은 쨍한 초록색 타겟 박스 고정 */
+    /* 🌟 바깥 파란 네온, 중앙 타겟팅 모서리 쨍한 초록색으로 100% 강제 고정! */
     .camera-wrapper { position: relative; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
     #reader { width: 100%; height: 100%; }
-    .custom-target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 6px solid #4ade80; border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; z-index: 10; }
+    #reader #qr-shaded-region div { border-color: #4ade80 !important; border-width: 6px !important; }
 
     .box-title { font-size: 24pt; font-weight: 900; margin-bottom: 10px; }
     .box-content { font-size: 18pt; margin-bottom: 5px; font-weight: bold; }
@@ -36,12 +36,12 @@
     
     .warning-text { margin-top: 15px; font-size: 12pt; color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; line-height: 1.4; }
 
-    /* ★ 하단 로켓 진행 바 디자인 */
-    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-    .progress-container { width: 80%; max-width: 400px; height: 6px; background: #374151; border-radius: 3px; position: relative; margin-top: 40px; }
-    .progress-bar { height: 100%; background: #3b82f6; width: 0%; border-radius: 3px; transition: width 0.5s ease; }
-    .rocket-icon { font-size: 30pt; position: absolute; top: -35px; left: 0%; transform: translateX(-50%); transition: left 0.5s ease; }
-
+    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; overflow: hidden; }
+    .loading-flex { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px; }
+    .rocket-wrapper { width: 60px; height: 40px; position: relative; overflow: hidden; display: flex; align-items: center; }
+    .rocket-anim { font-size: 22pt; position: absolute; animation: flyRight 1.5s linear infinite; }
+    @keyframes flyRight { 0% { left: -30px; transform: translateY(5px) rotate(10deg); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { left: 60px; transform: translateY(-10px) rotate(45deg); opacity: 0; } }
+    
     .error-btn { margin-top:20px; padding: 12px 25px; background: #ef4444; color: white; font-weight: bold; font-size: 16pt; border: none; border-radius: 8px; cursor: pointer; }
 
     #stats-modal { display: none; position: fixed; top: 75px; right: 20px; background: #1f2937; padding: 20px 25px; border-radius: 12px; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.7); width: 420px; border: 2px solid #374151; }
@@ -55,12 +55,12 @@
   
   <div id="loading-overlay">
     <div style="font-size: 70pt; margin-bottom: 10px;">👩‍🍳</div>
-    <h2 id="loading-msg" style="color: #3b82f6; font-size: 26pt; margin-bottom: 10px;">오늘도 송악고 급식실은<br>맛있게 조리 중입니다</h2>
-    <div style="font-size: 14pt; color: #9ca3af; margin-top:10px;" id="loading-status">명단을 불러오는 중...</div>
-    
-    <div class="progress-container">
-      <div class="rocket-icon" id="rocket-icon">🚀</div>
-      <div class="progress-bar" id="progress-bar"></div>
+    <h2 id="loading-msg" style="color: #3b82f6; font-size: 26pt; margin-bottom: 15px;">
+      오늘도 송악고 급식실은<br>맛있게 조리 중입니다
+    </h2>
+    <div class="loading-flex">
+      <span id="loading-sub" style="font-size: 15pt; color: #9ca3af;">명단을 빠르게 불러오고 있습니다... (<span id="load-time">0</span>초)</span>
+      <div class="rocket-wrapper"><div class="rocket-anim">🚀</div></div>
     </div>
   </div>
 
@@ -77,7 +77,7 @@
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
-      <!-- ★ 전환 버튼 다시 예쁘게 복구 완료! -->
+      <!-- 비상용 카메라 전환 버튼 유지 (오류 시 수동 조작용) -->
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
@@ -91,7 +91,6 @@
     <div class="camera-section">
       <div class="camera-wrapper">
         <div id="reader"></div>
-        <div class="custom-target"></div>
       </div>
     </div>
     <div class="info-section">
@@ -109,8 +108,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
-    let html5QrCode;
-    let currentCamMode = "user"; // ★ 무조건 앞면(셀카)으로 시작하게 강제 고정!
+    let html5QrCode, cameras = [], currentCameraIndex = 0;
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
     
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
@@ -162,9 +160,7 @@
       let html = "";
       [1, 2, 3].forEach(grade => {
         let st = currentStatsDetails[grade];
-        if(st) { 
-          html += `<div class="grade-stat-row"><span style="color:#60a5fa;">${grade}학년</span> <span>총 신청: ${st.total}명</span> <span style="color:#10b981;">식사완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; 
-        }
+        if(st) { html += `<div class="grade-stat-row"><span style="color:#60a5fa;">${grade}학년</span> <span>총 신청: ${st.total}명</span> <span style="color:#10b981;">식사완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; }
       });
       document.getElementById('stats-detail-content').innerHTML = html;
       document.getElementById('stats-modal').style.display = 'block'; document.getElementById('modal-bg').style.display = 'block';
@@ -173,17 +169,11 @@
 
     window.onload = function() {
       refreshStats();
-      
-      let progress = 0;
-      let progressTimer = setInterval(() => {
-        progress += 5; 
-        if(progress > 90) progress = 90; 
-        document.getElementById('rocket-icon').style.left = progress + '%';
-        document.getElementById('progress-bar').style.width = progress + '%';
-      }, 500);
+      let sec = 0;
+      let timer = setInterval(() => { document.getElementById('load-time').innerText = ++sec; }, 1000);
 
       let timeout = setTimeout(() => {
-        clearInterval(progressTimer);
+        clearInterval(timer);
         showErrorUI("구글 서버 응답이 없습니다.<br>새 버전을 제대로 배포했는지 확인해주세요!");
       }, 15000);
 
@@ -191,68 +181,85 @@
         .then(r => r.text())
         .then(text => {
           clearTimeout(timeout);
+          clearInterval(timer);
           try {
             let res = JSON.parse(text);
             if(res.status === "SUCCESS") {
               studentCache = res.data;
-              
-              clearInterval(progressTimer);
-              document.getElementById('rocket-icon').style.left = '100%';
-              document.getElementById('progress-bar').style.width = '100%';
-              document.getElementById('loading-status').innerText = "로딩 완료!";
-              
-              setTimeout(() => {
-                document.getElementById('loading-overlay').style.display = 'none';
-                fallbackToLocalStats(); 
-                initCamera(); 
-                setInterval(refreshStats, 10000); 
-              }, 600);
-              
+              document.getElementById('loading-overlay').style.display = 'none';
+              fallbackToLocalStats(); 
+              initCamera(); 
+              setInterval(refreshStats, 10000); 
             } else {
-              clearInterval(progressTimer); showErrorUI(`구글 시트 에러: ${res.message || '알 수 없는 에러'}`);
+              showErrorUI(`구글 시트 에러: ${res.message || '알 수 없는 에러'}`);
             }
           } catch(e) {
-            clearInterval(progressTimer); showErrorUI("구글 연동 실패!<br>(배포 시 <b>'모든 사용자'</b> 권한인지 꼭 확인하세요)");
+            showErrorUI("구글 연동 실패!<br>(배포 시 <b>'모든 사용자'</b> 권한인지 꼭 확인하세요)");
           }
         }).catch(err => {
-          clearTimeout(timeout); clearInterval(progressTimer);
+          clearTimeout(timeout); clearInterval(timer);
           showErrorUI("통신 실패! 인터넷 연결이나 웹앱 주소를 다시 확인해주세요.");
         });
     };
 
     function showErrorUI(errorMsg) {
-      document.getElementById('loading-overlay').innerHTML = `<div style="font-size: 70pt; margin-bottom: 10px;">❌</div><h2 style="color: #ef4444; font-size: 26pt; margin-bottom: 10px;">데이터를 불러오지 못했습니다!</h2><div style="font-size: 15pt; color: #9ca3af; margin-top:10px;">${errorMsg}</div><br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
+      document.getElementById('anim-icon').innerText = "❌";
+      document.getElementById('anim-icon').style.animation = "none";
+      document.getElementById('loading-msg').innerHTML = "<span style='color:#ef4444'>데이터를 불러오지 못했습니다!</span>";
+      document.getElementById('loading-sub').innerHTML = `${errorMsg}<br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
     }
 
-    // 🌟 완전 앞면(셀카) 고정 + 전환 기능 복구
+    // 🌟 대망의 오후 4시 전설의 카메라 코드 완벽 복구!
+    // 기기에 달린 렌즈들의 '고유 주민등록번호(ID)'를 직접 추출해서 강제로 켭니다.
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
-      startCamera();
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length > 0) {
+          // 가상카메라 싹 다 버리기
+          cameras = devices.filter(c => !c.label.toLowerCase().includes('prism') && !c.label.toLowerCase().includes('virtual') && !c.label.toLowerCase().includes('obs'));
+          if (cameras.length === 0) cameras = devices; 
+
+          // 전면(셀카) 카메라를 기를 쓰고 찾아내기
+          let frontCamIndex = cameras.findIndex(c => c.label.toLowerCase().includes('front') || c.label.toLowerCase().includes('전면') || c.label.toLowerCase().includes('user'));
+          
+          // 못 찾았다면, 보통 태블릿은 두 번째 렌즈(인덱스 1)가 앞면임
+          if (frontCamIndex === -1) {
+            frontCamIndex = cameras.length > 1 ? 1 : 0;
+          }
+
+          currentCameraIndex = frontCamIndex;
+          // ID의 멱살을 잡고 다이렉트로 실행!
+          startCamera(cameras[currentCameraIndex].id);
+        } else {
+          alert("카메라 렌즈를 찾을 수 없습니다.");
+        }
+      }).catch(err => {
+        alert("태블릿 설정에서 카메라 권한을 허용해 주셔야 합니다!");
+      });
     }
 
-    function startCamera() {
+    // 렌즈 ID를 박아넣어서 브라우저가 딴짓 못하게 완벽 차단! (바코드 & QR 동시 인식)
+    function startCamera(cameraId) {
       html5QrCode.start(
-        { facingMode: currentCamMode }, // 처음 시작은 무조건 "user" (앞면)
-        { fps: 30, qrbox: { width: 250, height: 250 } }, // 바코드 & QR 동시 인식 지원!
+        cameraId,
+        { fps: 60, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
-        (ignoreError) => {} 
+        (ignoreError) => { /* 인식 대기 중 에러 무시 */ }
       ).catch(e => {
-         console.log("카메라 실행 에러:", e);
-         alert("카메라 실행 실패! 태블릿 설정에서 웹 브라우저의 카메라 권한을 허용해주세요.");
+        console.log("카메라 실행 에러:", e);
       });
     }
 
-    // 🌟 카메라 전환 버튼 작동 로직 복구
+    // 버튼을 누를 때마다 기기에 달린 다음 렌즈 ID로 무조건 착착 넘어갑니다.
     function switchCamera() {
-      html5QrCode.stop().then(() => {
-        // user면 environment로, environment면 user로 쇽! 전환
-        currentCamMode = (currentCamMode === "user") ? "environment" : "user";
-        startCamera();
-      }).catch(e => {
-        // 혹시 끄는 데 실패해도 강제로 전환 시도
-        currentCamMode = (currentCamMode === "user") ? "environment" : "user";
-        startCamera();
-      });
+      if (cameras.length > 1) {
+        html5QrCode.stop().then(() => {
+          currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+          startCamera(cameras[currentCameraIndex].id);
+        }).catch(e => alert("카메라 전환 에러"));
+      } else {
+        alert("전환할 다른 렌즈가 없습니다.");
+      }
     }
 
     function onScanSuccess(decodedText, decodedResult) {

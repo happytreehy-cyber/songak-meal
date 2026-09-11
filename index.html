@@ -12,7 +12,6 @@
     .title { font-size: 22pt; font-weight: 900; color: #60a5fa; letter-spacing: 1px; }
     .clock { font-size: 14pt; color: #9ca3af; font-weight: bold; }
     
-    /* 통계 바를 누르면 팝업이 뜨게 포인터 추가 */
     .header-right { display: flex; gap: 12px; align-items: center; cursor: pointer; }
     .stat-badge { padding: 8px 15px; border-radius: 8px; font-size: 14pt; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     .stat-total { background: #3b82f6; } .stat-done { background: #10b981; } .stat-left { background: #ef4444; }
@@ -30,15 +29,26 @@
     .box-content { font-size: 18pt; margin-bottom: 5px; font-weight: bold; }
     .status-circle { width: 220px; height: 220px; border: 6px solid yellow; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: #111827; box-shadow: 0 0 20px rgba(255,255,0,0.2); }
     
-    /* 학생 화면 안내 멘트 */
     .warning-text { margin-top: 15px; font-size: 12pt; color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; }
 
-    /* 로딩 멘트 및 움직이는 밥그릇 애니메이션 */
-    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-    .bounce-emoji { font-size: 60pt; margin-bottom: 20px; animation: bounce 1s infinite alternate; }
-    @keyframes bounce { from { transform: translateY(0px); } to { transform: translateY(-20px); } }
+    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+    
+    /* 🌟 공기밥+젓가락 달그락 애니메이션 (로딩용) */
+    .eating-anim { font-size: 70pt; margin-bottom: 20px; display: inline-block; animation: eatAnim 0.5s ease-in-out infinite alternate; }
+    @keyframes eatAnim {
+      from { transform: translateY(0px) rotate(0deg); }
+      to { transform: translateY(-20px) rotate(15deg); }
+    }
 
-    /* 세부 통계 팝업창 (모달) */
+    /* 🌟 요리하는 셰프 들썩임 애니메이션 (제목 및 로딩 화면용) */
+    .cooking-anim { display: inline-block; animation: cookAnim 0.4s infinite alternate; }
+    @keyframes cookAnim {
+      from { transform: rotate(0deg) scale(1); }
+      to { transform: rotate(-15deg) scale(1.15); }
+    }
+
+    .error-btn { margin-top:20px; padding: 12px 25px; background: #ef4444; color: white; font-weight: bold; font-size: 16pt; border: none; border-radius: 8px; cursor: pointer; }
+
     #stats-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1f2937; padding: 25px; border-radius: 16px; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.7); width: 350px; border: 2px solid #374151; }
     .modal-backdrop { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 150; }
     .grade-stat-row { display: flex; justify-content: space-between; font-size: 14pt; padding: 10px 0; border-bottom: 1px solid #374151; }
@@ -48,14 +58,15 @@
 </head>
 <body>
   
-  <!-- 즐거운 로딩 화면으로 교체! -->
+  <!-- 🍚 공기밥 로딩 화면 & 셰프 멘트 -->
   <div id="loading-overlay">
-    <div class="bounce-emoji">🍱🥘🍲</div>
-    <h2 style="color: #3b82f6; font-size: 26pt; margin-bottom: 10px;">오늘도 송악고 급식실은<br>맛있게 조리 중입니다</h2> 
-    <p style="font-size: 15pt; color: #9ca3af;">명단을 빠르게 불러오고 있습니다. 잠시만 기다려주세요!</p>
+    <div id="anim-icon" class="eating-anim">🍚🥢</div>
+    <h2 id="loading-msg" style="color: #3b82f6; font-size: 26pt; margin-bottom: 10px;">
+      <span class="cooking-anim">👩‍🍳</span> 오늘도 송악고 급식실은 🍲<br>맛있게 조리 중입니다
+    </h2>
+    <p id="loading-sub" style="font-size: 15pt; color: #9ca3af;">명단을 빠르게 불러오고 있습니다... (<span id="load-time">0</span>초)</p>
   </div>
 
-  <!-- 통계 세부 팝업창 -->
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
   <div id="stats-modal">
     <h3 style="margin-top:0; color:#60a5fa; text-align:center; font-size:18pt;">📊 학년별 식사 현황</h3>
@@ -65,11 +76,10 @@
 
   <div class="header">
     <div class="header-left">
-      <!-- 제목 앞에 요리사, 음식 이모티콘 추가 -->
-      <div class="title">👩‍🍳 송악고 석식 시스템 🍲</div>
+      <!-- 👩‍🍳 제목 옆 요리사 이모티콘에도 애니메이션 적용 -->
+      <div class="title"><span class="cooking-anim">👩‍🍳</span> 송악고 석식 시스템 🍲</div>
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
-    <!-- 통계 바를 클릭하면 팝업 열림 -->
     <div style="display:flex;">
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
       <div class="header-right" onclick="openStats()">
@@ -84,15 +94,12 @@
     <div class="camera-section">
       <div id="reader"></div>
     </div>
-    
     <div class="info-section">
       <div class="status-circle" id="photo-box">
         <span class="box-content" style="font-size: 35pt; font-weight: 900; color: yellow; line-height: 1.2;">스캔<br>대기</span>
       </div>
       <div class="box-title" id="status-title" style="color: yellow;">준비 완료</div>
       <div class="box-content" id="status-message" style="color: #9ca3af;">학생증 QR을 비춰주세요</div>
-      
-      <!-- 거짓말 방지용 무시무시한 경고 문구 -->
       <div class="warning-text">
         * 주의: 선생님 화면에서는 QR 인식 시<br>해당 학생의 실제 사진이 표시됩니다.
       </div>
@@ -100,38 +107,29 @@
   </div>
 
   <script>
-    // 🚨 선생님의 완벽한 웹앱 주소! 🚨
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
-    let html5QrCode;
-    let cameras = [];
-    let currentCameraIndex = 0;
-    let studentCache = {}; 
-    let isScanning = true;
-    let currentStatsDetails = null; // 세부 통계 데이터 저장용
+    let html5QrCode, cameras = [], currentCameraIndex = 0;
+    let studentCache = {}, isScanning = true, currentStatsDetails = null;
     
-    setInterval(() => {
-      document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR');
-    }, 1000);
+    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
 
-    // 상황별 정밀 효과음 세팅 (딩동 / 띠딕 / 삐-삐-!)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(type) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      
-      if (type === 'success') { // 맑은 띵동♪
+      if (type === 'success') { 
         const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
         osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); 
         osc.connect(gainNode); gainNode.connect(audioCtx.destination);
         gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
         osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-      } else if (type === 'duplicate') { // 띠딕!
+      } else if (type === 'duplicate') { 
         const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
         osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
         osc.connect(gainNode); gainNode.connect(audioCtx.destination);
         gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
         osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-      } else if (type === 'error') { // 삐-삐-! (위급한 더블 비프음)
+      } else if (type === 'error') { 
         const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
         osc.connect(gainNode); gainNode.connect(audioCtx.destination);
@@ -154,7 +152,7 @@
           document.getElementById('val-done').innerText = res.totalStats.done;
           document.getElementById('val-left').innerText = res.totalStats.left;
         }
-      }).catch(e => console.log("통계 대기 중"));
+      }).catch(e => console.log("통계 갱신 대기 중"));
     }
 
     function openStats() {
@@ -165,29 +163,41 @@
         if(st) { html += `<div class="grade-stat-row"><span>${grade}학년</span> <span style="color:#10b981;">식사: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; }
       });
       document.getElementById('stats-detail-content').innerHTML = html;
-      document.getElementById('stats-modal').style.display = 'block';
-      document.getElementById('modal-bg').style.display = 'block';
+      document.getElementById('stats-modal').style.display = 'block'; document.getElementById('modal-bg').style.display = 'block';
     }
+    function closeStats() { document.getElementById('stats-modal').style.display = 'none'; document.getElementById('modal-bg').style.display = 'none'; }
 
-    function closeStats() {
-      document.getElementById('stats-modal').style.display = 'none';
-      document.getElementById('modal-bg').style.display = 'none';
-    }
-
+    // 에러 처리 엔진 및 로딩 타이머
     window.onload = function() {
       refreshStats();
+      let sec = 0;
+      let timer = setInterval(() => { document.getElementById('load-time').innerText = ++sec; }, 1000);
+
       fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS")
-        .then(r => r.json()).then(res => {
+        .then(r => r.json())
+        .then(res => {
+          clearInterval(timer);
           if(res.status === "SUCCESS") {
             studentCache = res.data;
             document.getElementById('loading-overlay').style.display = 'none';
             initCamera(); 
             setInterval(refreshStats, 10000); 
+          } else {
+            showErrorUI(`구글 시트 에러: ${res.message || '알 수 없는 에러'}`);
           }
-        }).catch(err => alert("네트워크 오류! 구글 시트 연결을 확인해주세요."));
+        }).catch(err => {
+          clearInterval(timer);
+          showErrorUI("통신 실패! 구글 스크립트 새 버전을 배포했는지 확인해주세요.");
+        });
     };
 
-    // 전면(셀카) 카메라 우선 실행되도록 변경!
+    function showErrorUI(errorMsg) {
+      document.getElementById('anim-icon').innerText = "❌";
+      document.getElementById('anim-icon').style.animation = "none";
+      document.getElementById('loading-msg').innerHTML = "<span style='color:#ef4444'>데이터를 불러오지 못했습니다!</span>";
+      document.getElementById('loading-sub').innerHTML = `${errorMsg}<br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
+    }
+
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
       Html5Qrcode.getCameras().then(devices => {
@@ -221,7 +231,6 @@
       let student = studentCache[studentId];
       let nowTime = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
 
-      // 멘트 및 기호 완벽 반영
       if (!student) {
         playBeep('error'); updateUI("red", `<span style="font-size: 70pt; color: red;">🔴</span>`, "미신청", "당일 석식 미신청자입니다");
       } else if (student.marked === 1) {

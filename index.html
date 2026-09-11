@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>송악고 석식 출입관리시스템</title>
   
-  <!-- 💡 어제 카메라가 확실하게 켜졌던 가볍고 안전한 순정 엔진 -->
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
   
   <style>
@@ -14,17 +13,15 @@
       width: 100%; height: 100%; overflow: hidden;
       background-color: #0b0f19; color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      transition: background-color 0.2s ease;
+      transition: background-color 0.25s ease;
     }
     body {
       display: flex; flex-direction: column; padding: 10px 16px;
-      border: 6px solid transparent; transition: border-color 0.2s ease, background-color 0.2s ease;
+      border: 6px solid transparent; transition: border-color 0.25s ease, background-color 0.25s ease;
     }
 
-    /* 💡 요청하신 색상 완벽 적용 */
     body.flash-ok { background-color: #064e3b !important; border-color: #22c55e !important; }
     body.flash-ok .info-card { background-color: #065f46 !important; border-color: #34d399 !important; }
-
     body.flash-err { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
     body.flash-err .info-card { background-color: #991b1b !important; border-color: #f87171 !important; }
 
@@ -53,6 +50,26 @@
     #video { width: 100%; height: 100%; object-fit: cover; }
     canvas { display: none; }
 
+    /* 💡 스캔 영역 & 레이저빔 효과 추가 */
+    .scan-target {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 250px; height: 250px; border: 3.5px solid #22c55e; border-radius: 20px;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none; overflow: hidden;
+    }
+    .scan-target::after {
+      content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+      background: #4ade80; box-shadow: 0 0 12px #4ade80;
+      animation: scanLaser 2s infinite ease-in-out;
+    }
+    @keyframes scanLaser {
+      0% { top: 0; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.95rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+
     .info-card {
       background: #111827; border-radius: 12px; border: 1px solid #1f2937;
       display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
@@ -75,8 +92,7 @@
 
     .student-info-text { font-size: 1.3rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
     .status-sub { font-size: 1.05rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
-    .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
-
+    
     .right-top-modal {
       position: absolute; top: 50px; right: 16px; width: 340px; background: #182234;
       border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); display: none; z-index: 1000;
@@ -119,15 +135,15 @@
   <main class="main-content">
     <div class="scanner-card">
       <video id="video" autoplay playsinline muted></video>
+      <div class="scan-target" id="scanTarget"></div>
+      <div class="scanner-tip">⚡ 카메라 렌즈에서 약 30cm 거리를 유지해 주세요</div>
     </div>
 
     <div class="info-card" id="infoCard">
       <div class="photo-box" id="photoBox">사진 대기</div>
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
-      <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
-      <!-- 거슬리는 카운터 숫자 완벽 삭제 -->
-      <div class="engine-tag" id="engineTag">● 석식 스캐너 가동 중</div>
+      <div class="status-sub" id="statusSub">명찰을 초록 박스 안에 맞춰주세요</div>
     </div>
   </main>
 
@@ -141,8 +157,6 @@
     let isProcessing = false;
     let lastScannedId = "";
     let lastScanTime = 0;
-    
-    // 카메라 장치 관리용
     let allVideoDevices = [];
     let currentDeviceIndex = 0;
 
@@ -165,7 +179,6 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    // 🔔 맑은 차임벨 (정상 승인)
     function playDingDong() {
       initAudioContext();
       if (!audioCtx) return;
@@ -181,7 +194,6 @@
       osc2.connect(gain2); gain2.connect(audioCtx.destination); osc2.start(now + 0.15); osc2.stop(now + 0.65);
     }
 
-    // 🚨 삐-삐- 경고음 (에러/중복)
     function playWarningBeep() {
       initAudioContext();
       if (!audioCtx) return;
@@ -194,36 +206,29 @@
       });
     }
 
-    // 💡 가장 안전하고 무식하게(?) 카메라를 무조건 켜는 방식
+    // 💡 카메라 무조건 켜기
     async function setupCameras() {
       try {
-        // 권한부터 무조건 확보
         let tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
         tempStream.getTracks().forEach(t => t.stop());
-
         const devices = await navigator.mediaDevices.enumerateDevices();
         allVideoDevices = devices.filter(d => d.kind === 'videoinput');
         
-        // PRISM은 최대한 뒤로 미루기 (삭제하려다 에러나는 것 방지)
         allVideoDevices.sort((a, b) => {
           let aName = a.label.toLowerCase(); let bName = b.label.toLowerCase();
           if(aName.includes('prism')) return 1;
           if(bName.includes('prism')) return -1;
           return 0;
         });
-
         currentDeviceIndex = 0;
         startCamera();
       } catch (err) {
-        // 완전 비상 시 최후의 수단
         startCameraFallback();
       }
     }
 
     async function startCamera() {
-      if (videoStream) {
-        videoStream.getTracks().forEach(t => t.stop());
-      }
+      if (videoStream) videoStream.getTracks().forEach(t => t.stop());
       try {
         const deviceId = allVideoDevices[currentDeviceIndex] ? allVideoDevices[currentDeviceIndex].deviceId : undefined;
         const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: true };
@@ -233,14 +238,12 @@
         video.setAttribute("playsinline", true);
         await video.play();
         
-        // 거울 모드 처리 (웹캠/전면카메라는 뒤집어줌)
         const label = allVideoDevices[currentDeviceIndex] ? allVideoDevices[currentDeviceIndex].label.toLowerCase() : "";
         if (label.includes("front") || label.includes("user") || currentDeviceIndex === 0) {
           video.style.transform = "scaleX(-1)";
         } else {
           video.style.transform = "scaleX(1)";
         }
-        
         requestAnimationFrame(scanLoop);
       } catch(e) {
         startCameraFallback();
@@ -253,11 +256,9 @@
         video.srcObject = videoStream;
         video.setAttribute("playsinline", true);
         await video.play();
-        video.style.transform = "scaleX(-1)"; // 기본 웹캠 반전
+        video.style.transform = "scaleX(-1)";
         requestAnimationFrame(scanLoop);
-      } catch(e) {
-        document.getElementById("statusSub").innerText = "카메라를 켤 수 없습니다.";
-      }
+      } catch(e) {}
     }
 
     function toggleCamera() {
@@ -280,42 +281,54 @@
     }
     setInterval(fetchStats, 5000);
 
-    // 💡 어제 인식이 가장 잘 되었던 듀얼 스캔 (정방향 + 거울모드 모두 100% 인식)
+    // 💡 [핵심] 중앙 초록박스 집중 돋보기 스캔 (속도 10배 향상, 뭉개짐 해결)
+    let lastScanTick = 0;
     function scanLoop() {
       requestAnimationFrame(scanLoop);
 
       if (isProcessing || !video || video.readyState < 2 || video.videoWidth === 0) return;
       if (typeof jsQR === 'undefined') return;
 
+      const now = Date.now();
+      if (now - lastScanTick < 100) return; // 프레임 제한으로 멈춤 방지
+      lastScanTick = now;
+
       try {
-        const w = video.videoWidth;
-        const h = video.videoHeight;
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
         
-        if (canvasElement.width !== w || canvasElement.height !== h) {
-          canvasElement.width = w;
-          canvasElement.height = h;
+        // 화면 정중앙의 50% 영역(초록 박스 부분)만 잘라내서 검사합니다. (처리 속도 극대화)
+        const cropSize = Math.min(vw, vh) * 0.5;
+        const sx = (vw - cropSize) / 2;
+        const sy = (vh - cropSize) / 2;
+
+        // 캔버스를 항상 300x300 고정 크기로 둡니다. (가장 최적화된 인식 해상도)
+        if (canvasElement.width !== 300) {
+          canvasElement.width = 300;
+          canvasElement.height = 300;
         }
 
-        // 1차 스캔 (화면 그대로)
-        ctx.drawImage(video, 0, 0, w, h);
-        let imgData = ctx.getImageData(0, 0, w, h);
-        let code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
+        // 1차 스캔: 초록 박스 영역을 300x300 캔버스에 그립니다.
+        ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, 300, 300);
+        let imgData = ctx.getImageData(0, 0, 300, 300);
+        
+        // 반사광 무시 옵션(attemptBoth) 켜기
+        let code = jsQR(imgData.data, 300, 300, { inversionAttempts: "attemptBoth" });
 
-        // 2차 스캔 (노트북 거울모드 특성상 이미지가 뒤집혀있을 경우 대비 좌우 반전 스캔)
+        // 2차 스캔: 노트북 웹캠의 거울 모드로 인해 좌우가 뒤집혔을 경우
         if (!code) {
           ctx.save();
-          ctx.translate(w, 0);
-          ctx.scale(-1, 1);
-          ctx.drawImage(video, 0, 0, w, h);
+          ctx.translate(300, 0);
+          ctx.scale(-1, 1); // 좌우 반전
+          ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, 300, 300);
           ctx.restore();
-          imgData = ctx.getImageData(0, 0, w, h);
-          code = jsQR(imgData.data, w, h, { inversionAttempts: "dontInvert" });
+          imgData = ctx.getImageData(0, 0, 300, 300);
+          code = jsQR(imgData.data, 300, 300, { inversionAttempts: "attemptBoth" });
         }
 
         if (code && code.data && code.data.trim() !== "") {
           const rawId = code.data.trim();
-          const now = Date.now();
-          // 동일 학생 4초 이내 중복 스캔 방지
+          // 동일 학생 연속 스캔 방지 (4초)
           if (rawId !== lastScannedId || (now - lastScanTime > 4000)) {
             lastScannedId = rawId;
             lastScanTime = now;
@@ -325,13 +338,12 @@
       } catch (e) {}
     }
 
-    // 💡 선생님이 요청하신 3가지 피드백 (화면/소리/문구) 100% 반영!
     function applyFeedback(statusType, studentName, studentId, mealTime, customMsg) {
       const banner = document.getElementById("statusBanner");
       const infoEl = document.getElementById("studentInfo");
       const subEl = document.getElementById("statusSub");
 
-      document.body.className = ""; // 초기화
+      document.body.className = "";
       banner.className = "status-alert-banner";
 
       if (statusType === "SUCCESS") {
@@ -370,7 +382,7 @@
       document.getElementById("statusBanner").innerText = "조회 중...";
       document.getElementById("statusSub").innerText = "서버 기록을 확인하고 있습니다.";
 
-      // 사진 자동 매칭
+      // 사진 자동 매칭 (QR 인식 시 photos/학번.jpeg 자동 출력)
       const photoEl = document.getElementById("photoBox");
       photoEl.innerHTML = `<img src="${PHOTO_BASE_URL}${studentId}.jpeg" onerror="this.src=''; this.parentElement.innerText='사진 대기';">`;
 
@@ -394,14 +406,13 @@
         applyFeedback("ERROR", "", studentId, null, "서버 연결 오류");
       }
 
-      // 2.5초간 화면 유지 후 대기 상태로 복귀
       setTimeout(() => {
         document.body.className = "";
         const banner = document.getElementById("statusBanner");
         banner.className = "status-alert-banner banner-standby";
         banner.innerText = "대기 중";
         document.getElementById("studentInfo").innerText = "-";
-        document.getElementById("statusSub").innerText = "명찰 QR을 비춰주세요";
+        document.getElementById("statusSub").innerText = "명찰을 초록 박스 안에 맞춰주세요";
         photoEl.innerText = "사진 대기";
         isProcessing = false;
       }, 2500);

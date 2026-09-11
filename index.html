@@ -9,14 +9,16 @@
     
     .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1f2937; border-bottom: 2px solid #374151; }
     .header-left { display: flex; align-items: baseline; gap: 15px; }
-    
-    /* 🍴 심플하고 고급스러운 이모티콘으로 변경 */
     .title { font-size: 22pt; font-weight: 900; color: #60a5fa; letter-spacing: 1px; }
     .clock { font-size: 14pt; color: #9ca3af; font-weight: bold; }
     
-    .header-right { display: flex; gap: 12px; align-items: center; cursor: pointer; position: relative; }
+    .header-right { display: flex; gap: 12px; align-items: center; }
     .stat-badge { padding: 8px 15px; border-radius: 8px; font-size: 14pt; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    .stat-total { background: #3b82f6; } .stat-done { background: #10b981; } .stat-left { background: #ef4444; }
+    
+    /* ★ 3. 총신청에만 마우스 포인터(클릭 모양)가 생기도록 수정 */
+    .stat-total { background: #3b82f6; cursor: pointer; } 
+    .stat-done { background: #10b981; } 
+    .stat-left { background: #ef4444; }
     
     .cam-btn { padding: 8px 15px; background: #4b5563; color: white; border: none; border-radius: 8px; font-size: 13pt; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-right: 15px; }
     .cam-btn:active { background: #374151; transform: scale(0.95); }
@@ -25,25 +27,26 @@
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
-    /* 🟦 카메라 창 눈에 확 띄게 파란색 테두리 + 네온 효과 추가! */
     #reader { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); }
     
+    /* ★ 2. 카메라 인식창 하얀색 모서리를 초록색으로 강제 변경! */
+    #qr-shaded-region > div { border-color: #4ade80 !important; border-width: 6px !important; }
+
     .box-title { font-size: 24pt; font-weight: 900; margin-bottom: 10px; }
     .box-content { font-size: 18pt; margin-bottom: 5px; font-weight: bold; }
     .status-circle { width: 220px; height: 220px; border: 6px solid yellow; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: #111827; box-shadow: 0 0 20px rgba(255,255,0,0.2); }
     
-    /* 주의라는 딱딱한 말 제거 */
     .warning-text { margin-top: 15px; font-size: 12pt; color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; line-height: 1.4; }
 
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-    
     .chef-anim { font-size: 70pt; margin-bottom: 15px; display: inline-block; animation: bounce 0.8s ease-in-out infinite alternate; }
     @keyframes bounce { from { transform: translateY(0px); } to { transform: translateY(-20px); } }
     .error-btn { margin-top:20px; padding: 12px 25px; background: #ef4444; color: white; font-weight: bold; font-size: 16pt; border: none; border-radius: 8px; cursor: pointer; }
 
-    #stats-modal { display: none; position: fixed; top: 75px; right: 20px; background: #1f2937; padding: 20px 25px; border-radius: 12px; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.7); width: 280px; border: 2px solid #374151; }
+    /* ★ 4. 통계 팝업창 가로 넓이를 키우고 글씨 배치 조정 */
+    #stats-modal { display: none; position: fixed; top: 75px; right: 20px; background: #1f2937; padding: 20px 25px; border-radius: 12px; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.7); width: 420px; border: 2px solid #374151; }
     .modal-backdrop { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 150; }
-    .grade-stat-row { display: flex; justify-content: space-between; font-size: 13pt; padding: 8px 0; border-bottom: 1px solid #374151; font-weight: bold; }
+    .grade-stat-row { display: flex; justify-content: space-between; font-size: 13pt; padding: 10px 0; border-bottom: 1px solid #374151; font-weight: bold; }
     .close-btn { width: 100%; padding: 10px; margin-top: 15px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 13pt; font-weight: bold; cursor: pointer; }
   </style>
   <script src="https://unpkg.com/html5-qrcode"></script>
@@ -67,14 +70,15 @@
 
   <div class="header">
     <div class="header-left">
-      <!-- 🍴 깔끔한 이모티콘 -->
       <div class="title">🍴 송악고 석식 시스템</div>
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
+      <!-- 카메라 강제 전환 버튼 -->
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
-      <div class="header-right" onclick="openStats()">
-        <div class="stat-badge stat-total">총신청: <span id="val-total">0</span></div>
+      <div class="header-right">
+        <!-- ★ 3. 총신청 부분만 클릭 시 팝업 열리도록 설정 -->
+        <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
         <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
         <div class="stat-badge stat-left">미식사: <span id="val-left">0</span></div>
       </div>
@@ -87,14 +91,14 @@
     </div>
     <div class="info-section">
       <div class="status-circle" id="photo-box">
-        <!-- 📱 QR 준비 문구 -->
-        <span class="box-content" style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2;">📱 QR<br>준비</span>
+        <!-- ★ 1. 명찰 이모티콘 🪪 추가 및 세로 3단 정렬 완벽 적용 -->
+        <div class="box-content" style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">
+          🪪<br>QR<br>준비
+        </div>
       </div>
-      <!-- ⬅️ 시선을 왼쪽으로 돌리는 문구 -->
       <div class="box-title" id="status-title" style="display: none;"></div>
       <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 20pt; margin-top: 10px;">⬅️ 왼쪽 카메라에<br>학생증을 비춰주세요</div>
       
-      <!-- 부드러운 경고 멘트 -->
       <div class="warning-text">
         * 선생님 화면에서는 QR 인식 시<br>해당 학생의 실제 사진이 표시됩니다.
       </div>
@@ -151,12 +155,20 @@
       }).catch(e => console.log("통계 갱신 대기 중"));
     }
 
+    // ★ 4. 통계 팝업 디자인 와이드(Wide)하게 변경
     function openStats() {
       if(!currentStatsDetails) { alert("아직 통계를 불러오지 못했습니다."); return; }
       let html = "";
       [1, 2, 3].forEach(grade => {
         let st = currentStatsDetails[grade];
-        if(st) { html += `<div class="grade-stat-row"><span>${grade}학년</span> <span style="color:#10b981;">식사: ${st.done}</span> <span style="color:#ef4444;">미식사: ${st.left}</span></div>`; }
+        if(st) { 
+          html += `<div class="grade-stat-row">
+                    <span style="color:#60a5fa;">${grade}학년</span> 
+                    <span>총 신청: ${st.total}명</span> 
+                    <span style="color:#10b981;">식사완료: ${st.done}명</span> 
+                    <span style="color:#ef4444;">미식사: ${st.left}명</span>
+                   </div>`; 
+        }
       });
       document.getElementById('stats-detail-content').innerHTML = html;
       document.getElementById('stats-modal').style.display = 'block'; document.getElementById('modal-bg').style.display = 'block';
@@ -193,16 +205,15 @@
       document.getElementById('loading-sub').innerHTML = `${errorMsg}<br><br><button class="error-btn" onclick="location.reload()">새로고침(다시시도)</button>`;
     }
 
-    // ★ 카메라 멱살 잡고 강제로 전환시키는 완벽한 로직!
+    // ★ 5. PRISM 등 가상 카메라 무시하고, 기기 렌즈 ID 멱살 잡고 강제 전환하는 엔진
     function initCamera() {
       html5QrCode = new Html5Qrcode("reader");
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length > 0) {
           cameras = devices;
-          // 'front'나 '전면'이라는 이름표가 붙은 렌즈를 찾음
-          let frontCamIndex = cameras.findIndex(c => c.label.toLowerCase().includes('front') || c.label.toLowerCase().includes('전면'));
+          // 웹캠이나 전면 렌즈를 우선적으로 픽업
+          let frontCamIndex = cameras.findIndex(c => c.label.toLowerCase().includes('front') || c.label.toLowerCase().includes('전면') || c.label.toLowerCase().includes('webcam'));
           
-          // 전면 렌즈가 있으면 그거부터, 없으면 0번 렌즈부터 강제 시작
           currentCameraIndex = (frontCamIndex !== -1) ? frontCamIndex : 0;
           startCamera(cameras[currentCameraIndex].id);
         } else {
@@ -211,18 +222,19 @@
       }).catch(e => alert("카메라 권한을 허용해 주셔야 스캔이 가능합니다!"));
     }
 
+    // 렌즈 ID를 다이렉트로 때려 넣어서 실행!
     function startCamera(cameraId) {
       html5QrCode.start(
-        cameraId, // 렌즈 고유 번호를 직접 때려 넣음 (전환 오류 100% 방지)
+        cameraId, 
         { fps: 60, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
         (ignoreError) => {}
       ).catch(e => console.log("카메라 실행 에러:", e));
     }
 
+    // 버튼 누르면 배열에 있는 다음 렌즈로 무조건 넘어가게 설정
     function switchCamera() {
       if (cameras.length > 1) {
-        // 기존 카메라를 끄고, 배열에 있는 다음 렌즈로 강제 이동
         html5QrCode.stop().then(() => {
           currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
           startCamera(cameras[currentCameraIndex].id);
@@ -254,11 +266,11 @@
         fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       }
 
-      // 스캔 후 원래의 대기 상태로 복구
+      // 스캔 후 복구 시 명찰(🪪) 이모티콘 3단 정렬 유지
       setTimeout(() => {
         updateUI(
           "yellow", 
-          `<span style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2;">📱 QR<br>준비</span>`, 
+          `<div style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>QR<br>준비</div>`, 
           "", 
           "⬅️ 왼쪽 카메라에<br>학생증을 비춰주세요"
         );

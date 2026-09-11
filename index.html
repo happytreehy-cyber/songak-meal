@@ -7,7 +7,7 @@
   <style>
     body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #111827; color: white; font-family: sans-serif; overflow: hidden; }
     
-    /* 사라졌던 최상단 통계 바 완벽 부활! */
+    /* 상단 통계 바 */
     .top-stats-bar { display: flex; justify-content: center; gap: 15px; padding: 15px; background: #1f2937; border-bottom: 2px solid #374151; font-size: 14pt; font-weight: bold; }
     .stat-badge { padding: 8px 15px; border-radius: 8px; }
     .stat-total { background: #3b82f6; }
@@ -51,7 +51,7 @@
   </div>
 
   <script>
-    // ★ 선생님의 앱스 스크립트 웹앱 주소로 꼭 바꿔주세요! ★
+    // 🚨 [매우 중요] 아래 따옴표 안의 한글을 지우고 선생님의 구글 웹앱 주소를 넣으세요! 🚨
     const SCRIPT_URL = "여기에_선생님의_웹앱_주소를_넣으세요";
     
     let html5QrcodeScanner;
@@ -87,11 +87,16 @@
           document.getElementById('val-done').innerText = res.totalStats.done;
           document.getElementById('val-left').innerText = res.totalStats.left;
         }
-      });
+      }).catch(err => console.log("통계 갱신 대기 중..."));
     }
 
     // 처음 켤 때 명단 외우기 + 통계 띄우기
     window.onload = function() {
+      if (SCRIPT_URL === "여기에_선생님의_웹앱_주소를_넣으세요") {
+        alert("🚨 구글 웹앱 주소가 입력되지 않았습니다! 코드의 SCRIPT_URL을 수정해주세요.");
+        return;
+      }
+      
       refreshStats(); // 통계 갱신
       fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS") // 1000명 통째로 가져오기
         .then(r => r.json()).then(res => {
@@ -102,7 +107,7 @@
             // 이후 10초마다 통계 알아서 갱신
             setInterval(refreshStats, 10000); 
           }
-        }).catch(err => alert("네트워크 오류입니다. 새로고침 해주세요."));
+        }).catch(err => alert("네트워크 오류 또는 구글 주소가 잘못되었습니다. 주소와 배포 상태를 확인해주세요."));
     };
 
     // 0.1초 초광속 스캔 처리!

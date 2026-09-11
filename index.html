@@ -54,7 +54,7 @@
 
     .scan-target {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 55%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
+      width: 60%; aspect-ratio: 1/1; border: 3.5px solid #22c55e; border-radius: 20px;
       box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45); pointer-events: none;
     }
     .scanner-tip { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 0.85rem; color: #fbbf24; font-weight: 700; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
@@ -80,7 +80,7 @@
     .banner-err { background: #b91c1c; color: #ffffff; border: 2px solid #fca5a5; }
 
     .student-info-text { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
-    .status-sub { font-size: 1.1rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
+    .status-sub { font-size: 1.05rem; color: #f1f5f9; margin-bottom: 16px; min-height: 1.5rem; font-weight: 600; }
     .engine-tag { background: #1e293b; color: #38bdf8; font-size: 0.85rem; padding: 6px 16px; border-radius: 20px; border: 1px solid #0284c7; }
 
     .right-top-modal {
@@ -99,7 +99,7 @@
     <div class="brand-group">
       <span class="badge-school">송악고</span>
       <span class="title-text">석식 시스템</span>
-      <span class="clock-tag" id="liveClock">2026-09-10 00:00:00</span>
+      <span class="clock-tag" id="liveClock">2026-09-11 00:00:00</span>
     </div>
     
     <div class="stats-group">
@@ -126,7 +126,7 @@
     <div class="scanner-card">
       <video id="video" autoplay playsinline muted></video>
       <div class="scan-target" id="scanTarget"></div>
-      <div class="scanner-tip">⚡ 카메라와 25~35cm 거리를 유지해 주세요</div>
+      <div class="scanner-tip">⚡ 화면 어디든 QR을 비추면 바로 인식합니다</div>
     </div>
 
     <div class="info-card" id="infoCard">
@@ -134,7 +134,7 @@
       <div class="status-alert-banner banner-standby" id="statusBanner">대기 중</div>
       <div class="student-info-text" id="studentInfo">-</div>
       <div class="status-sub" id="statusSub">명찰 QR을 비춰주세요</div>
-      <div class="engine-tag" id="engineTag">● 석식 스캐너 상시 가동 중</div>
+      <div class="engine-tag" id="engineTag">● 광범위 고속 스캔 가동 중</div>
     </div>
   </main>
 
@@ -144,34 +144,19 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     const PHOTO_BASE_URL = "./photos/";
 
-    let currentFacingMode = "user"; 
     let videoStream = null;
     let isProcessing = false;
-    let lastScannedId = "";
-    let lastScanTime = 0;
     let lastScanTick = 0;
-    let isStartingCamera = false;
+    let realCameras = [];
+    let currentCamIndex = 0;
 
     const video = document.getElementById("video");
     const canvasElement = document.getElementById("canvas");
     const ctx = canvasElement.getContext("2d", { willReadFrequently: true });
 
-    // 1. 화면 절전 방지 (Screen Wake Lock API)
-    let wakeLock = null;
-    async function requestWakeLock() {
-      if ('wakeLock' in navigator) {
-        try {
-          wakeLock = await navigator.wakeLock.request('screen');
-        } catch (err) {}
-      }
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').catch(() => {});
     }
-    requestWakeLock();
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        requestWakeLock();
-        checkAndReviveCamera();
-      }
-    });
 
     function updateClock() {
       const d = new Date();
@@ -228,57 +213,64 @@
       });
     }
 
-    // 2. 카메라 구동 및 자동 꺼짐 방지 핸들러
-    async function startCamera(facingMode) {
-      if (isStartingCamera) return;
-      isStartingCamera = true;
-
-      if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-      }
+    async function setupCamera() {
       try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } } 
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const allDevices = await navigator.mediaDevices.enumerateDevices();
+        tempStream.getTracks().forEach(t => t.stop());
+
+        const videoInputs = allDevices.filter(d => d.kind === 'videoinput');
+        
+        realCameras = videoInputs.filter(d => {
+          const name = (d.label || '').toLowerCase();
+          return !name.includes('prism') && !name.includes('obs') && !name.includes('virtual') && !name.includes('xsplit');
         });
-      } catch (err1) {
-        try {
-          videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        } catch (err2) {
-          document.getElementById("statusSub").innerText = "카메라 연결을 확인해주세요.";
-          isStartingCamera = false;
-          return;
-        }
+
+        if (realCameras.length === 0) realCameras = videoInputs;
+
+        currentCamIndex = 0;
+        await startSelectedCamera();
+      } catch (err) {
+        document.getElementById("statusSub").innerText = "카메라 권한을 확인해주세요.";
       }
+    }
 
-      videoStream.getTracks().forEach(track => {
-        track.onended = () => {
-          checkAndReviveCamera();
-        };
-      });
-
-      video.srcObject = videoStream;
-      video.setAttribute("playsinline", true);
-      try { await video.play(); } catch(e) {}
-
-      if (facingMode === "user") video.style.transform = "scaleX(-1)";
-      else video.style.transform = "scaleX(1)";
+    async function startSelectedCamera() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(t => t.stop());
+      }
       
-      isStartingCamera = false;
-      requestAnimationFrame(scanLoop);
+      const targetDevice = realCameras[currentCamIndex];
+      const constraints = targetDevice ? 
+        { video: { deviceId: { exact: targetDevice.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } } : 
+        { video: { facingMode: "user" } };
+
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = videoStream;
+        video.setAttribute("playsinline", true);
+        await video.play();
+
+        const label = targetDevice ? targetDevice.label.toLowerCase() : "";
+        if (label.includes("front") || label.includes("user") || currentCamIndex === 0) {
+          video.style.transform = "scaleX(-1)";
+        } else {
+          video.style.transform = "scaleX(1)";
+        }
+
+        document.getElementById("engineTag").innerText = `● 카메라 가동 중 (${currentCamIndex + 1}/${realCameras.length})`;
+        requestAnimationFrame(scanLoop);
+      } catch (e) {
+        console.error("카메라 전환 에러:", e);
+      }
     }
 
     function toggleCamera() {
-      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-      startCamera(currentFacingMode);
-    }
-
-    // 3. 카메라 꺼짐 감지 및 자동 복구 (워치독)
-    function checkAndReviveCamera() {
-      if (!videoStream || !videoStream.active || video.paused || video.readyState < 2) {
-        startCamera(currentFacingMode);
+      if (realCameras.length > 1) {
+        currentCamIndex = (currentCamIndex + 1) % realCameras.length;
+        startSelectedCamera();
       }
     }
-    setInterval(checkAndReviveCamera, 3000);
 
     async function fetchStats() {
       try {
@@ -293,6 +285,7 @@
     }
     setInterval(fetchStats, 5000);
 
+    // 💡 [핵심] 억지 크롭을 버리고, 신용카드 앱처럼 카메라 전체 화면(Full-Frame) 초고속 스캔!
     function scanLoop() {
       requestAnimationFrame(scanLoop);
 
@@ -300,55 +293,38 @@
       if (!video || video.readyState < 2 || video.videoWidth === 0) return;
 
       const now = Date.now();
-      if (now - lastScanTick < 120) return;
+      if (now - lastScanTick < 100) return;
       lastScanTick = now;
 
       if (typeof jsQR === 'undefined') return;
 
       try {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
+        let sw = video.videoWidth;
+        let sh = video.videoHeight;
         
-        const cropSize = Math.round(Math.min(vw, vh) * 0.65);
-        const sx = Math.round((vw - cropSize) / 2);
-        const sy = Math.round((vh - cropSize) / 2);
-
-        if (canvasElement.width !== cropSize || canvasElement.height !== cropSize) {
-          canvasElement.width = cropSize;
-          canvasElement.height = cropSize;
+        // 연산 속도를 위해 가로 기준 800px로 균일 스케일링 (QR이 작아도 뚜렷하게 보존)
+        if (sw > 800) {
+          sh = Math.round(sh * (800 / sw));
+          sw = 800;
         }
 
-        ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, cropSize, cropSize);
-        let imgData = ctx.getImageData(0, 0, cropSize, cropSize);
-        let code = jsQR(imgData.data, cropSize, cropSize, { inversionAttempts: "attemptBoth" });
-
-        if (!code) {
-          ctx.save();
-          ctx.translate(cropSize, 0);
-          ctx.scale(-1, 1);
-          ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, cropSize, cropSize);
-          ctx.restore();
-          imgData = ctx.getImageData(0, 0, cropSize, cropSize);
-          code = jsQR(imgData.data, cropSize, cropSize, { inversionAttempts: "attemptBoth" });
-        }
-
-        if (!code) {
-          const sw = 640;
-          const sh = Math.round(sw * (vh / vw));
+        if (canvasElement.width !== sw || canvasElement.height !== sh) {
           canvasElement.width = sw;
           canvasElement.height = sh;
-          ctx.drawImage(video, 0, 0, sw, sh);
-          imgData = ctx.getImageData(0, 0, sw, sh);
-          code = jsQR(imgData.data, sw, sh, { inversionAttempts: "dontInvert" });
+        }
+
+        // 1. 전체 화면 스캔 (화면 어디에 비추든 즉시 인식)
+        ctx.drawImage(video, 0, 0, sw, sh);
+        let imgData = ctx.getImageData(0, 0, sw, sh);
+        let code = jsQR(imgData.data, sw, sh, { inversionAttempts: "dontInvert" });
+
+        // 2. 조명/그림자 대비 반전 시도
+        if (!code) {
+          code = jsQR(imgData.data, sw, sh, { inversionAttempts: "onlyInvert" });
         }
 
         if (code && code.data && code.data.trim() !== "") {
-          const rawId = code.data.trim();
-          if (rawId !== lastScannedId || (now - lastScanTime > 3500)) {
-            lastScannedId = rawId;
-            lastScanTime = now;
-            sendToServer(rawId);
-          }
+          sendToServer(code.data.trim());
         }
       } catch (e) {}
     }
@@ -417,9 +393,10 @@
           applyFeedback("ERROR", "", studentId, null, data.message);
         }
       } catch (err) {
-        applyFeedback("ERROR", "", studentId, null, "서버 연결 오류 (네트워크 확인)");
+        applyFeedback("ERROR", "", studentId, null, "서버 연결 오류");
       }
 
+      // 피드백을 2초간 띄운 뒤 즉시 다음 학생 스캔 대기 상태로 복귀
       setTimeout(() => {
         document.body.className = "";
         const banner = document.getElementById("statusBanner");
@@ -456,7 +433,7 @@
     function closeGradeModal() { document.getElementById("gradeModal").style.display = "none"; }
 
     window.addEventListener("DOMContentLoaded", () => { 
-      startCamera(currentFacingMode); 
+      setupCamera(); 
       fetchStats(); 
     });
   </script>

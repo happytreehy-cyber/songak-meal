@@ -17,13 +17,16 @@
     .stat-total { background: #3b82f6; cursor: pointer; } 
     .stat-done { background: #10b981; } 
     .stat-left { background: #ef4444; }
+
+    /* ★ 카메라 전환 버튼 복구 */
+    .cam-btn { padding: 8px 15px; background: #4b5563; color: white; border: none; border-radius: 8px; font-size: 13pt; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-right: 15px; }
+    .cam-btn:active { background: #374151; transform: scale(0.95); }
     
     .main-content { display: flex; flex: 1; height: 100%; position: relative; }
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
-    /* 파란 네온, 초록색 타겟 박스 */
-    .camera-wrapper { position: relative; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
+    .camera-wrapper { position: relative; width: 100%; flex: 1; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
     #reader { width: 100%; height: 100%; }
     .custom-target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 6px solid #4ade80; border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; z-index: 10; }
 
@@ -33,11 +36,9 @@
     
     .warning-text { margin-top: 15px; font-size: 12pt; color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; line-height: 1.4; }
 
-    /* ★ 학생용 수동 입력 버튼 */
     .manual-btn { position: absolute; bottom: 20px; right: 20px; background: rgba(75, 85, 99, 0.8); color: white; border: 2px solid #6b7280; padding: 12px 20px; border-radius: 12px; font-size: 14pt; font-weight: bold; cursor: pointer; backdrop-filter: blur(5px); transition: 0.2s; z-index: 50; }
     .manual-btn:hover { background: rgba(55, 65, 81, 1); border-color: #9ca3af; }
 
-    /* ★ 수동 입력 모달 창 */
     #manual-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; }
     .modal-content { background: #1f2937; padding: 40px; border-radius: 16px; border: 2px solid #3b82f6; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     .modal-content input { width: 250px; padding: 15px; font-size: 24pt; text-align: center; border-radius: 8px; border: 2px solid #9ca3af; margin: 20px 0; font-weight: bold; }
@@ -45,7 +46,6 @@
     .btn-submit { background: #3b82f6; color: white; }
     .btn-cancel { background: #ef4444; color: white; }
 
-    /* 로딩 화면 */
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; overflow: hidden; }
     .progress-container { width: 80%; max-width: 400px; height: 6px; background: #374151; border-radius: 3px; position: relative; margin-top: 40px; }
     .progress-bar { height: 100%; background: #3b82f6; width: 0%; border-radius: 3px; transition: width 0.5s ease; }
@@ -60,7 +60,6 @@
 </head>
 <body>
   
-  <!-- ★ 수동 입력 모달 창 -->
   <div id="manual-modal">
     <div class="modal-content">
       <h2 style="color: #60a5fa; margin-top: 0; font-size: 24pt;">✍️ 수동 승인</h2>
@@ -94,10 +93,14 @@
       <div class="title">🍴 송악고 석식 시스템 (학생용)</div>
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
-    <div class="header-right">
-      <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
-      <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
-      <div class="stat-badge stat-left">미식사: <span id="val-left">0</span></div>
+    <div style="display:flex;">
+      <!-- ★ 전환 버튼 예쁘게 부활! -->
+      <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
+      <div class="header-right">
+        <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
+        <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
+        <div class="stat-badge stat-left">미식사: <span id="val-left">0</span></div>
+      </div>
     </div>
   </div>
 
@@ -107,18 +110,23 @@
         <div id="reader"></div>
         <div class="custom-target"></div>
       </div>
+      <!-- ★ 카메라 밑으로 직관적인 안내 문구 이동 -->
+      <div style="text-align: center; margin-top: 20px; font-size: 22pt; font-weight: bold; color: #9ca3af;">
+        ⬆️ 위 카메라에 <span style="color:#60a5fa;">QR</span> 또는 <span style="color:#60a5fa;">바코드</span>를 비춰주세요
+      </div>
     </div>
     <div class="info-section">
       <div class="status-circle" id="photo-box">
-        <div class="box-content" style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>QR<br>준비</div>
+        <div class="box-content" style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>대기중</div>
       </div>
       <div class="box-title" id="status-title" style="display: none;"></div>
-      <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 20pt; margin-top: 10px;">⬅️ 왼쪽 카메라에<br>QR을 비춰주세요</div>
+      <!-- ★ 우측 노란 네모 아래 글씨를 비워서 깔끔하게! -->
+      <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 20pt; margin-top: 10px;">
+      </div>
       <div class="warning-text">
         * 교사용 모니터에 본인의 실제 사진이<br>표시되며, 대리 식사는 즉시 적발됩니다.
       </div>
     </div>
-    <!-- ★ 우측 하단 QR이 없나요? 버튼 추가됨 -->
     <button class="manual-btn" onclick="openManual()">QR이 없나요?</button>
   </div>
 
@@ -126,7 +134,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode;
-    let isFrontMode = true; 
+    let currentCamMode = "user"; // ★ 무조건 앞면(user)으로 고정 시작
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
     
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
@@ -187,27 +195,25 @@
     }
     function closeStats() { document.getElementById('stats-modal').style.display = 'none'; document.getElementById('modal-bg').style.display = 'none'; }
 
-    // ★ 수동 입력 창 열기/닫기/제출 로직 (지연 시간 없음!)
     function openManual() {
       document.getElementById('manual-modal').style.display = 'flex';
       document.getElementById('manual-input-val').focus();
-      isScanning = false; // 창 열려있을 땐 스캔 중지
+      isScanning = false;
     }
     function closeManual() {
       document.getElementById('manual-modal').style.display = 'none';
       document.getElementById('manual-input-val').value = "";
-      setTimeout(() => { isScanning = true; }, 1000); // 닫고 1초 뒤 스캔 재개
+      setTimeout(() => { isScanning = true; }, 1000);
     }
     function submitManual() {
       let val = document.getElementById('manual-input-val').value.trim();
       if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; }
       closeManual();
-      processStudentScan(val, true); // true = 수동 입력이라는 뜻!
+      processStudentScan(val, true); 
     }
 
     window.onload = function() {
       refreshStats();
-      
       let progress = 0;
       let progressTimer = setInterval(() => {
         progress += 5; 
@@ -244,18 +250,36 @@
     }
 
     function startCurrentCamera() {
-      const constraints = { facingMode: "user" }; // 앞면 고정
+      // 무조건 앞면(user) 카메라를 켭니다. 만약 실패하면 뒷면(environment)으로 돌려서라도 켭니다.
       html5QrCode.start(
-        constraints,
-        { fps: 30, qrbox: { width: 250, height: 250 } },
+        { facingMode: currentCamMode },
+        { fps: 30, qrbox: { width: 250, height: 250 } }, // 바코드, QR코드 모두 인식하는 기본 설정!
         (decodedText) => {
           if(!isScanning) return; 
           isScanning = false;
           let studentId = decodedText.trim().replace(/[^0-9]/g, '');
-          processStudentScan(studentId, false); // false = 카메라 스캔이라는 뜻!
+          processStudentScan(studentId, false);
         },
         (ignoreError) => {}
-      ).catch(err => {});
+      ).catch(err => {
+        console.log("카메라 실행 에러:", err);
+        // 만약 앞면 카메라 켜기에 실패했다면, 자동으로 뒷면으로 켜도록 안전장치
+        if (currentCamMode === "user") {
+          currentCamMode = "environment";
+          startCurrentCamera();
+        }
+      });
+    }
+
+    // ★ 카메라 전환 버튼 기능 (수동으로 모드 뒤집기)
+    function switchCamera() {
+      html5QrCode.stop().then(() => {
+        currentCamMode = (currentCamMode === "user") ? "environment" : "user";
+        startCurrentCamera();
+      }).catch(e => {
+        currentCamMode = (currentCamMode === "user") ? "environment" : "user";
+        startCurrentCamera();
+      });
     }
 
     // 🌟 스캔 & 수동 입력 통합 처리 엔진
@@ -271,7 +295,7 @@
       } else {
         playBeep('success'); 
         
-        // ★ 여기서 수동 입력인지 스캔인지에 따라 화면 메시지가 달라집니다!
+        // ★ 수동 입력인지 스캔인지에 따라 화면 메시지 분리
         if(isManual) {
           updateUI("#10b981", `<span style="font-size: 70pt; color: #10b981;">✍️</span>`, "수동 승인", `<span style="color:white; font-size:24pt;">${student.name}</span><br><br><span style="color:#fca5a5; font-size:14pt;">😈 다음부터는 QR 인식을 이용해<br>빠른 입장 부탁합니다.</span>`);
         } else {
@@ -286,21 +310,21 @@
           updateStatsUI(); 
         }
         
-        // 서버에 전송할 때 수동 입력이면 MARK_MANUAL (✍️ 기록) / 스캔이면 MARK_ATTENDANCE (🟢 기록)
         let actionStr = isManual ? "MARK_MANUAL" : "MARK_ATTENDANCE";
         fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId);
       }
 
-      // 2초 뒤 다시 QR 준비 화면으로 복귀
+      // ★ 수동 입력은 3초 지연, 스캔은 1.5초 지연 후 대기 화면으로 복귀
+      let delayMs = isManual ? 3000 : 1500;
       setTimeout(() => {
         updateUI(
           "yellow", 
-          `<div style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>QR<br>준비</div>`, 
+          `<div style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>대기중</div>`, 
           "", 
-          "⬅️ 왼쪽 카메라에<br>QR을 비춰주세요"
+          "" // 글씨를 깔끔하게 지워줍니다.
         );
         isScanning = true;
-      }, 2000); 
+      }, delayMs); 
     }
 
     function updateUI(color, iconHtml, title, message) {

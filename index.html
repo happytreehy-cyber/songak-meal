@@ -22,25 +22,33 @@
     .cam-btn:active { background: #374151; transform: scale(0.95); }
     
     .main-content { display: flex; flex: 1; height: 100%; position: relative; }
-    .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; }
-    .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     
-    .camera-wrapper { position: relative; width: 100%; flex: 1; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
-    #reader { width: 100%; height: 100%; }
+    /* ★ 해결 2: 카메라 섹션이 너무 커져서 글씨를 밀어내지 못하게 고정 */
+    .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+    .camera-wrapper { position: relative; width: 100%; flex: 1; min-height: 0; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
+    
+    /* ★ 해결 1: 카메라 화면(비디오)이 무조건 네모칸에 100% 꽉 차게 강제 고정!! */
+    #reader { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; position: absolute !important; top: 0 !important; left: 0 !important; }
+    
+    /* 영구보존: 초록색 십자 타겟 박스 */
     .custom-target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 6px solid #4ade80; border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; z-index: 10; }
 
+    /* 화면 밖으로 밀려나지 않게 텍스트 높이 확보 (flex-shrink: 0) */
+    .cam-instruction { text-align: center; margin-top: 15px; font-size: 20pt; font-weight: bold; color: #9ca3af; flex-shrink: 0; }
+
+    .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+    
     .box-title { font-size: 24pt; font-weight: 900; margin-bottom: 10px; }
     .box-content { font-size: 18pt; margin-bottom: 5px; font-weight: bold; line-height: 1.4; }
     .status-circle { width: 220px; height: 220px; border: 6px solid yellow; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: #111827; box-shadow: 0 0 20px rgba(255,255,0,0.2); }
     
     .warning-text { margin-top: 15px; font-size: 12pt; color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; line-height: 1.4; }
 
-    /* ★ 학생용 수동 입력 버튼 (위치 및 크기 수정) */
     .manual-btn { margin-top: 30px; width: 85%; max-width: 300px; background: rgba(75, 85, 99, 0.8); color: white; border: 2px solid #6b7280; padding: 15px 20px; border-radius: 12px; font-size: 16pt; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .manual-btn:hover { background: rgba(55, 65, 81, 1); border-color: #9ca3af; }
     .manual-btn:active { transform: scale(0.95); }
 
-    /* ★ 수동 입력 모달 창 */
     #manual-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; }
     .modal-content { background: #1f2937; padding: 40px; border-radius: 16px; border: 2px solid #3b82f6; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     .modal-content input { width: 250px; padding: 15px; font-size: 24pt; text-align: center; border-radius: 8px; border: 2px solid #9ca3af; margin: 20px 0; font-weight: bold; }
@@ -48,7 +56,6 @@
     .btn-submit { background: #3b82f6; color: white; }
     .btn-cancel { background: #ef4444; color: white; }
 
-    /* 로딩 화면 */
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; overflow: hidden; }
     .progress-container { width: 80%; max-width: 400px; height: 6px; background: #374151; border-radius: 3px; position: relative; margin-top: 40px; }
     .progress-bar { height: 100%; background: #3b82f6; width: 0%; border-radius: 3px; transition: width 0.5s ease; }
@@ -97,7 +104,6 @@
       <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
-      <!-- 전환 버튼 -->
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
@@ -113,8 +119,8 @@
         <div id="reader"></div>
         <div class="custom-target"></div>
       </div>
-      <!-- 카메라 밑 안내 문구 -->
-      <div style="text-align: center; margin-top: 20px; font-size: 22pt; font-weight: bold; color: #9ca3af;">
+      <!-- 잘리지 않도록 안전하게 분리된 텍스트 -->
+      <div class="cam-instruction">
         ⬆️ 위 카메라에 <span style="color:#60a5fa;">QR</span> 또는 <span style="color:#60a5fa;">바코드</span>를 비춰주세요
       </div>
     </div>
@@ -123,14 +129,10 @@
         <div class="box-content" style="font-size: 32pt; font-weight: 900; color: yellow; line-height: 1.2; text-align: center;">🪪<br>대기중</div>
       </div>
       <div class="box-title" id="status-title" style="display: none;"></div>
-      <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 20pt; margin-top: 10px;">
-      </div>
-      <!-- 경고 문구 -->
+      <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 20pt; margin-top: 10px;"></div>
       <div class="warning-text">
         * 교사용 모니터에 본인의 실제 사진이<br>표시되며, 대리 식사는 즉시 적발됩니다.
       </div>
-      
-      <!-- ★ 버튼이 경고 문구 바로 아래 예쁘게 들어옵니다! -->
       <button class="manual-btn" onclick="openManual()">👉 QR이 없나요? (수동입력)</button>
     </div>
   </div>
@@ -139,7 +141,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode;
-    let currentCamMode = "user"; // 앞면 고정
+    let currentCamMode = "user"; 
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
     
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
@@ -154,6 +156,14 @@
       } else if (type === 'error') { 
         const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35);
       }
+    }
+
+    // 영구보존: 이름 마스킹
+    function maskName(name) {
+      if(!name) return "";
+      if(name.length === 2) return name[0] + "O";
+      if(name.length >= 3) return name[0] + "O" + name.substring(2);
+      return name;
     }
 
     function refreshStats() {
@@ -284,22 +294,33 @@
       });
     }
 
+    // 영구보존: 얌체족/미신청자 3초 유지 로직
     function processStudentScan(studentId, isManual) {
       let student = studentCache[studentId];
       let nowTime = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+      
+      let actionStr = isManual ? "MARK_MANUAL" : "MARK_ATTENDANCE";
+      let delayMs = 1500; 
 
       if (!student) {
-        playBeep('error'); updateUI("#ef4444", `<span style="font-size: 70pt; color: #ef4444;">🔴</span>`, "경고", "당일 석식 미신청자입니다");
+        playBeep('error'); 
+        updateUI("#ef4444", `<span style="font-size: 70pt; color: #ef4444;">🔴</span>`, "경고", "당일 석식 미신청자입니다");
+        delayMs = 3000; 
+        fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId); 
       } else if (student.marked === 1) {
-        playBeep('duplicate'); updateUI("orange", `<span style="font-size: 70pt; color: orange;">🟠</span>`, "⚠ 중복 식사 !", `이미 식사한 학생입니다<br><span style="font-size:12pt;color:#9ca3af;">(시간: ${nowTime})</span>`);
+        playBeep('duplicate'); 
+        updateUI("orange", `<span style="font-size: 70pt; color: orange;">🟠</span>`, "⚠ 중복 식사 !", `이미 식사한 학생입니다<br><span style="font-size:12pt;color:#9ca3af;">(시간: ${nowTime})</span>`);
+        delayMs = 3000;
         fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       } else {
         playBeep('success'); 
+        let safeName = maskName(student.name); 
         
         if(isManual) {
-          updateUI("#10b981", `<span style="font-size: 70pt; color: #10b981;">✍️</span>`, "수동 승인", `<span style="color:white; font-size:24pt;">${student.name}</span><br><br><span style="color:#fca5a5; font-size:14pt;">😈 다음부터는 QR 인식을 이용해<br>빠른 입장 부탁합니다.</span>`);
+          updateUI("#10b981", `<span style="font-size: 70pt; color: #10b981;">✍️</span>`, "수동 승인", `<span style="color:white; font-size:24pt;">${safeName}</span><br><br><span style="color:#fca5a5; font-size:14pt;">😈 다음부터는 QR 인식을 이용해<br>빠른 입장 부탁합니다.</span>`);
+          delayMs = 3000;
         } else {
-          updateUI("#4CAF50", `<span style="font-size: 70pt; color: #4CAF50;">🟢</span>`, "✓ 정상 승인", `<span style="color:#10b981;">(맛있게 드세요!)</span><br><span style="color:white; font-size:24pt;">${student.name}</span>`);
+          updateUI("#4CAF50", `<span style="font-size: 70pt; color: #4CAF50;">🟢</span>`, "✓ 정상 승인", `<span style="color:#10b981;">(맛있게 드세요!)</span><br><span style="color:white; font-size:24pt;">${safeName}</span>`);
         }
         
         student.marked = 1;
@@ -310,11 +331,9 @@
           updateStatsUI(); 
         }
         
-        let actionStr = isManual ? "MARK_MANUAL" : "MARK_ATTENDANCE";
         fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId);
       }
 
-      let delayMs = isManual ? 3000 : 1500;
       setTimeout(() => {
         updateUI(
           "yellow", 

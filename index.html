@@ -20,7 +20,6 @@
 
     .cam-btn { padding: 6px 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 5px; }
     .cam-btn:active { transform: scale(0.95); }
-    
     .reset-btn { padding: 6px 12px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
     .reset-btn:active { transform: scale(0.95); }
 
@@ -32,45 +31,43 @@
     #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; position: absolute !important; top: 0 !important; left: 0 !important; }
     
     .custom-target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 260px; height: 260px; border: 6px solid #4ade80; border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.6); pointer-events: none; z-index: 10; }
-    
     .cam-overlay-text { position: absolute; top: calc(50% + 150px); left: 50%; transform: translateX(-50%); text-align: center; font-size: 18pt; font-weight: 900; color: white; text-shadow: 2px 2px 8px rgba(0,0,0,0.9); z-index: 20; width: max-content; }
 
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 20px; text-align: center; }
-    
     .status-circle { width: 220px; height: 220px; border: 5px solid yellow; border-radius: 35px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: #111827; box-shadow: 0 0 20px rgba(255,255,0,0.1); transition: 0.3s; }
-    
     .box-title { font-size: 20pt; font-weight: 900; margin-bottom: 5px; }
     .box-content { font-size: 16pt; margin-bottom: 0; font-weight: bold; line-height: 1.3; }
-    
     .warning-text { margin-top: 10px; font-size: 12pt; color: #fca5a5; font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 12px; border-radius: 12px; line-height: 1.4; border: 1px solid rgba(239, 68, 68, 0.3); transition: opacity 0.2s; }
-
     .manual-btn { margin-top: 30px; width: 95%; max-width: 300px; background: transparent; color: white; border: 2px solid #6b7280; padding: 12px 15px; border-radius: 12px; font-size: 16pt; font-weight: 900; cursor: pointer; transition: 0.2s; line-height: 1.3; }
-    .manual-btn:hover { border-color: #9ca3af; background: rgba(255,255,255,0.05); }
-    .manual-btn:active { transform: scale(0.95); }
 
     #manual-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
     .modal-content { background: #1f2937; padding: 40px; border-radius: 16px; border: 3px solid #60a5fa; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
     .modal-content input { width: 240px; padding: 15px; font-size: 24pt; text-align: center; border-radius: 10px; border: 2px solid #9ca3af; margin: 20px 0; font-weight: bold; background: #374151; color: white; }
     .modal-btns button { padding: 12px 25px; font-size: 16pt; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; margin: 0 8px; transition: 0.2s; }
-    .btn-submit { background: #3b82f6; color: white; }
-    .btn-cancel { background: #ef4444; color: white; }
-    .modal-btns button:active { transform: scale(0.95); }
+    .btn-submit { background: #3b82f6; color: white; } .btn-cancel { background: #ef4444; color: white; }
 
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
     .progress-container { width: 80%; max-width: 400px; height: 8px; background: #374151; border-radius: 4px; position: relative; margin-top: 40px; }
     .progress-bar { height: 100%; background: #60a5fa; width: 0%; border-radius: 4px; transition: width 0.5s ease; box-shadow: 0 0 15px rgba(96, 165, 250, 0.6); }
     .rocket-icon { font-size: 35pt; position: absolute; top: -45px; left: 0%; transform: translateX(-50%); transition: left 0.5s ease; }
 
+    /* ★ 시스템 마감 오버레이 */
+    #closed-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 500; text-align: center; }
+
     #stats-modal { display: none; position: fixed; top: 60px; right: 20px; background: #1f2937; padding: 20px; border-radius: 12px; z-index: 200; box-shadow: 0 15px 40px rgba(0,0,0,0.8); width: 380px; border: 2px solid #4b5563; }
     .modal-backdrop { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 150; }
     .grade-stat-row { display: flex; justify-content: space-between; font-size: 13pt; padding: 10px 0; border-bottom: 1px solid #374151; font-weight: bold; }
-    .close-btn { width: 100%; padding: 10px; margin-top: 15px; background: #4b5563; color: white; border: none; border-radius: 8px; font-size: 13pt; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .close-btn:hover { background: #6b7280; }
   </style>
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
   
+  <div id="closed-overlay">
+    <div style="font-size: 80pt; margin-bottom: 20px;">🛑</div>
+    <h1 style="color: #ef4444; font-size: 30pt; font-weight: 900;">오늘 석식이 종료되었습니다</h1>
+    <p style="color: #9ca3af; font-size: 16pt;">시스템 접근이 차단되었습니다.</p>
+  </div>
+
   <div id="manual-modal">
     <div class="modal-content">
       <h2 style="color: #60a5fa; margin-top: 0; font-size: 24pt; font-weight: 900;">✍️ 수동 승인</h2>
@@ -86,23 +83,20 @@
   <div id="loading-overlay">
     <div style="font-size: 70pt; margin-bottom: 10px;">👩‍🍳</div>
     <h2 id="loading-msg" style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">오늘도 송악고 급식실은<br>맛있게 조리 중입니다</h2>
-    <div class="progress-container">
-      <div class="rocket-icon" id="rocket-icon">🚀</div>
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
+    <div class="progress-container"><div class="rocket-icon" id="rocket-icon">🚀</div><div class="progress-bar" id="progress-bar"></div></div>
   </div>
 
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
   <div id="stats-modal">
     <h3 style="margin-top:0; color:#60a5fa; text-align:center; font-size:16pt; font-weight: 900; margin-bottom: 15px;">📊 학년별 식사 현황</h3>
     <div id="stats-detail-content">로딩 중...</div>
-    <button class="close-btn" onclick="closeStats()">닫기</button>
+    <button style="width: 100%; padding: 10px; margin-top: 15px; background: #4b5563; color: white; border: none; border-radius: 8px; font-size: 13pt; font-weight: bold; cursor: pointer;" onclick="closeStats()">닫기</button>
   </div>
 
   <div class="header">
     <div class="header-left">
+      <div class="clock" id="live-clock">00:00:00</div>
       <div class="title">🍴 송악고 석식 시스템 (학생용)</div>
-      <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
@@ -120,41 +114,26 @@
       <div class="camera-wrapper">
         <div id="reader"></div>
         <div class="custom-target"></div>
-        <div class="cam-overlay-text">
-          ⬆️ 위 네모칸에 <span style="color:#60a5fa; margin: 0 5px;">QR코드</span>를 비춰주세요
-        </div>
+        <div class="cam-overlay-text">⬆️ 위 네모칸에 <span style="color:#60a5fa; margin: 0 5px;">QR코드</span>를 비춰주세요</div>
       </div>
     </div>
     <div class="info-section">
-      <div class="status-circle" id="photo-box">
-        <div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>
-      </div>
+      <div class="status-circle" id="photo-box"><div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div></div>
       <div class="box-title" id="status-title" style="display: none;"></div>
       <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 16pt; margin-top: 5px;"></div>
-      
-      <div class="warning-text" id="warning-box">
-        * 교사용 모니터에 본인의 실제 사진이<br>표시되며, 대리 식사는 즉시 적발됩니다.
-      </div>
-      
-      <button class="manual-btn" onclick="openManual()">
-        👉 QR이 없나요?<br>
-        <span style="font-size: 12pt; color: #9ca3af; font-weight: normal;">(수동입력 하기)</span>
-      </button>
+      <div class="warning-text" id="warning-box">* 교사용 모니터에 본인의 실제 사진이<br>표시되며, 대리 식사는 즉시 적발됩니다.</div>
+      <button class="manual-btn" onclick="openManual()">👉 QR이 없나요?<br><span style="font-size: 12pt; color: #9ca3af; font-weight: normal;">(수동입력 하기)</span></button>
     </div>
   </div>
 
   <script>
-    // ★ 선생님의 기존 구글 시트 주소로 세팅 완료했습니다!
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
+    // ⚠️ 이곳에 선생님의 [새 버전] 주소를 붙여넣어 주세요!!
+    const SCRIPT_URL = "여기에_주소를_넣으세요";
     
-    let html5QrCode;
-    let cameras = [];
-    let currentCamIndex = 0; 
-
-    let studentCache = {}, isScanning = true, currentStatsDetails = null;
-    let uiResetTimer = null; 
+    let html5QrCode, cameras = [], currentCamIndex = 0; 
+    let studentCache = {}, isScanning = true, currentStatsDetails = null, uiResetTimer = null; 
     
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
+    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('ko-KR'); }, 1000);
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(type) {
@@ -168,34 +147,14 @@
       }
     }
 
-    function maskName(name) {
-      if(!name) return "";
-      if(name.length === 2) return name[0] + "O";
-      if(name.length >= 3) return name[0] + "O" + name.substring(2);
-      return name;
-    }
+    function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
 
     function refreshStats() {
-      fetch(SCRIPT_URL + "?action=GET_DETAILS")
-        .then(r => r.json())
-        .then(res => {
-          if(res.totalStats) {
-            currentStatsDetails = res;
-            updateStatsUI();
-          } else { fallbackToLocalStats(); }
-        }).catch(e => { fallbackToLocalStats(); });
-    }
-
-    function fallbackToLocalStats() {
-      if(Object.keys(studentCache).length === 0) return;
-      let stats = { 1: {total:0, done:0, left:0}, 2: {total:0, done:0, left:0}, 3: {total:0, done:0, left:0}, totalStats: {total:0, done:0, left:0} };
-      for (let id in studentCache) {
-        let s = studentCache[id]; let g = parseInt(id.charAt(0));
-        stats.totalStats.total++; if(stats[g]) stats[g].total++;
-        if (s.marked === 1) { stats.totalStats.done++; if(stats[g]) stats[g].done++; } 
-        else { stats.totalStats.left++; if(stats[g]) stats[g].left++; }
-      }
-      currentStatsDetails = stats; updateStatsUI();
+      fetch(SCRIPT_URL + "?action=GET_DETAILS").then(r=>r.json()).then(res => {
+          if(res.sys_status === "CLOSED") { document.getElementById('closed-overlay').style.display = 'flex'; if(html5QrCode) html5QrCode.stop().catch(e=>{}); } 
+          else { document.getElementById('closed-overlay').style.display = 'none'; }
+          if(res.totalStats) { currentStatsDetails = res; updateStatsUI(); }
+      }).catch(e => {});
     }
 
     function updateStatsUI() {
@@ -206,205 +165,68 @@
     }
 
     function openStats() {
-      if(!currentStatsDetails) { alert("아직 통계를 불러오지 못했습니다."); return; }
+      if(!currentStatsDetails) return;
       let html = "";
       [1, 2, 3].forEach(grade => {
         let st = currentStatsDetails[grade];
-        if(st) { 
-          html += `<div class="grade-stat-row"><span style="color:#60a5fa;">${grade}학년</span> <span>총 신청: ${st.total}명</span> <span style="color:#10b981;">식사완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; 
-        }
+        if(st) html += `<div class="grade-stat-row"><span style="color:#60a5fa;">${grade}학년</span> <span>총: ${st.total}명</span> <span style="color:#10b981;">완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; 
       });
       document.getElementById('stats-detail-content').innerHTML = html;
       document.getElementById('stats-modal').style.display = 'block'; document.getElementById('modal-bg').style.display = 'block';
     }
     function closeStats() { document.getElementById('stats-modal').style.display = 'none'; document.getElementById('modal-bg').style.display = 'none'; }
 
-    function openManual() {
-      document.getElementById('manual-modal').style.display = 'flex';
-      document.getElementById('manual-input-val').focus();
-      isScanning = false;
-    }
-    function closeManual() {
-      document.getElementById('manual-modal').style.display = 'none';
-      document.getElementById('manual-input-val').value = "";
-      setTimeout(() => { isScanning = true; }, 1000);
-    }
-    function submitManual() {
-      let val = document.getElementById('manual-input-val').value.trim();
-      if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; }
-      closeManual();
-      processStudentScan(val, true); 
-    }
+    function openManual() { document.getElementById('manual-modal').style.display = 'flex'; document.getElementById('manual-input-val').focus(); isScanning = false; }
+    function closeManual() { document.getElementById('manual-modal').style.display = 'none'; document.getElementById('manual-input-val').value = ""; setTimeout(() => { isScanning = true; }, 1000); }
+    function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
     window.onload = function() {
-      refreshStats();
-      let progress = 0;
-      let progressTimer = setInterval(() => {
-        progress += 5; 
-        if(progress > 90) progress = 90; 
-        document.getElementById('rocket-icon').style.left = progress + '%';
-        document.getElementById('progress-bar').style.width = progress + '%';
-      }, 500);
-
-      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS")
-        .then(r => r.text())
-        .then(text => {
-          try {
-            let res = JSON.parse(text);
-            if(res.status === "SUCCESS") {
-              studentCache = res.data;
-              clearInterval(progressTimer);
-              document.getElementById('rocket-icon').style.left = '100%';
-              document.getElementById('progress-bar').style.width = '100%';
-              
-              setTimeout(() => {
-                document.getElementById('loading-overlay').style.display = 'none';
-                fallbackToLocalStats(); 
-                initCamera(); 
-                setInterval(refreshStats, 10000); 
-              }, 600);
-            } else {
-              alert("⚠️ 서버 연결 오류: " + res.message + "\n(구글 시트를 확인해주세요)");
-              document.getElementById('loading-overlay').style.display = 'none';
-              initCamera();
-            }
-          } catch(e) {
-            alert("⚠️ 통신 에러 발생!\n구글 배포 주소(SCRIPT_URL)가 삭제되었거나 잘못되었습니다.");
+      let progress = 0; let pt = setInterval(() => { progress += 5; if(progress>90) progress=90; document.getElementById('rocket-icon').style.left = progress+'%'; document.getElementById('progress-bar').style.width = progress+'%'; }, 500);
+      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS").then(r=>r.json()).then(res => {
+          clearInterval(pt); document.getElementById('rocket-icon').style.left = '100%'; document.getElementById('progress-bar').style.width = '100%';
+          setTimeout(() => {
             document.getElementById('loading-overlay').style.display = 'none';
-            initCamera();
-          }
-        }).catch(err => {
-          alert("⚠️ 네트워크 연결 실패!\n인터넷 상태나 구글 서버 주소를 확인해주세요.");
-          document.getElementById('loading-overlay').style.display = 'none';
-          initCamera();
-        });
+            if(res.status === "SUCCESS") { studentCache = res.data; if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; else initCamera(); setInterval(refreshStats, 5000); refreshStats(); } 
+            else { alert("⚠️ 구글 시트 출석부에 달력이 없거나, 새버전 배포가 되지 않았습니다!"); }
+          }, 600);
+      }).catch(err => { alert("⚠️ 인터넷 연결 오류 또는 구글 주소가 틀렸습니다."); document.getElementById('loading-overlay').style.display = 'none'; });
     };
 
     function initCamera() {
       Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
-          cameras = devices;
-          let backCamIndex = devices.findIndex(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment'));
-          currentCamIndex = backCamIndex > -1 ? backCamIndex : 0;
-          
-          html5QrCode = new Html5Qrcode("reader");
-          startCurrentCamera(cameras[currentCamIndex].id);
-        } else {
-          html5QrCode = new Html5Qrcode("reader");
-          startCurrentCamera({ facingMode: "environment" });
-        }
-      }).catch(err => {
-        html5QrCode = new Html5Qrcode("reader");
-        startCurrentCamera({ facingMode: "environment" });
-      });
+        if(devices && devices.length) { cameras = devices; let idx = devices.findIndex(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment')); currentCamIndex = idx > -1 ? idx : 0; html5QrCode = new Html5Qrcode("reader"); startCurrentCamera(cameras[currentCamIndex].id); } 
+        else { html5QrCode = new Html5Qrcode("reader"); startCurrentCamera({ facingMode: "environment" }); }
+      }).catch(err => { html5QrCode = new Html5Qrcode("reader"); startCurrentCamera({ facingMode: "environment" }); });
     }
 
-    function startCurrentCamera(camTarget) {
-      html5QrCode.start(
-        camTarget,
-        { fps: 30, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          if(!isScanning) return; 
-          isScanning = false;
-          let studentId = decodedText.trim().replace(/[^0-9]/g, '');
-          processStudentScan(studentId, false);
-        },
-        (ignoreError) => {}
-      ).catch(err => {
-        console.log("카메라 실행 에러:", err);
-      });
-    }
-
-    function switchCamera() {
-      if (cameras.length > 1) {
-        html5QrCode.stop().then(() => {
-          currentCamIndex = (currentCamIndex + 1) % cameras.length; 
-          startCurrentCamera(cameras[currentCamIndex].id);
-        }).catch(e => console.log("카메라 전환 실패"));
-      } else {
-        alert("전환할 수 있는 카메라가 1개뿐입니다.");
-      }
-    }
+    function startCurrentCamera(t) { html5QrCode.start(t, { fps: 30, qrbox: { width: 250, height: 250 } }, (txt) => { if(!isScanning) return; isScanning = false; processStudentScan(txt.trim().replace(/[^0-9]/g, ''), false); }, (e) => {}).catch(e => console.log(e)); }
+    function switchCamera() { if(cameras.length > 1) { html5QrCode.stop().then(() => { currentCamIndex = (currentCamIndex + 1) % cameras.length; startCurrentCamera(cameras[currentCamIndex].id); }); } else alert("전환 카메라가 없습니다."); }
 
     function processStudentScan(studentId, isManual) {
-      if (uiResetTimer) clearTimeout(uiResetTimer); 
-      
-      let student = studentCache[studentId];
-      let nowTime = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
-      let actionStr = isManual ? "MARK_MANUAL" : "MARK_ATTENDANCE";
+      if(uiResetTimer) clearTimeout(uiResetTimer); 
+      let student = studentCache[studentId], nowTime = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' }), actionStr = isManual ? "MARK_MANUAL" : "MARK_ATTENDANCE";
 
-      if (!student) {
-        playBeep('error'); 
-        updateUI("#ef4444", `<span style="font-size: 70pt; color: #ef4444;">🔴</span>`, "", `<div style="color:#ef4444; font-size:20pt; font-weight:bold; margin-top:10px;">당일 석식 미신청자입니다</div>`);
+      if(!student) {
+        playBeep('error'); updateUI("#ef4444", `<span style="font-size: 70pt;">🔴</span>`, "", `<div style="color:#ef4444; font-size:20pt; font-weight:bold; margin-top:10px;">당일 석식 미신청자입니다</div>`);
         fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId); 
-      } else if (student.marked === 1) {
-        playBeep('duplicate'); 
-        updateUI("orange", `<span style="font-size: 70pt; color: orange;">🟠</span>`, "", `<div style="color:orange; font-size:22pt; font-weight:bold; margin-bottom:10px;">⚠ 중복 식사 !</div><div style="color:white; font-size:16pt;">이미 식사한 학생입니다<br><span style="font-size:14pt;color:#9ca3af;">(시간: ${nowTime})</span></div>`);
+      } else if(student.marked === 1) {
+        playBeep('duplicate'); updateUI("orange", `<span style="font-size: 70pt;">🟠</span>`, "", `<div style="color:orange; font-size:22pt; font-weight:bold; margin-bottom:10px;">⚠ 중복 식사 !</div><div style="color:white; font-size:16pt;">이미 통과했습니다<br><span style="font-size:14pt;color:#9ca3af;">(${nowTime})</span></div>`);
         fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
       } else {
-        playBeep('success'); 
-        let safeName = maskName(student.name); 
-        
-        if(isManual) {
-          let manualMsg = `
-            <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
-            <div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div>
-            <div style="color:#fca5a5; font-size:15pt; font-weight:bold; line-height:1.4;">😈 다음부터는 QR 인식을 이용해<br>빠른 입장 부탁합니다.</div>
-          `;
-          updateUI("#10b981", `<span style="font-size: 60pt; color: #10b981;">✅</span>`, "", manualMsg);
-        } else {
-          let normalMsg = `
-            <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
-            <div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div>
-            <div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>
-          `;
-          updateUI("#4CAF50", `<span style="font-size: 60pt; color: #4CAF50;">🟢</span>`, "", normalMsg);
-        }
-        
-        student.marked = 1;
-        if(currentStatsDetails) {
-          currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--;
-          let g = studentId.charAt(0);
-          if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; }
-          updateStatsUI(); 
-        }
-        
+        playBeep('success'); let safeName = maskName(student.name); 
+        if(isManual) { updateUI("#10b981", `<span style="font-size: 60pt;">✅</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div><div style="color:#fca5a5; font-size:15pt; font-weight:bold;">😈 QR을 사용해주세요!</div>`); } 
+        else { updateUI("#4CAF50", `<span style="font-size: 60pt;">🟢</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div><div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>`); }
+        student.marked = 1; if(currentStatsDetails) { currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--; let g = studentId.charAt(0); if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; } updateStatsUI(); }
         fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId);
       }
-
-      setTimeout(() => {
-        isScanning = true;
-      }, 1500); 
-
-      uiResetTimer = setTimeout(() => {
-        updateUI(
-          "yellow", 
-          `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, 
-          "", 
-          ""
-        );
-      }, 5000); 
+      setTimeout(() => { isScanning = true; }, 1500); 
+      uiResetTimer = setTimeout(() => { updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", ""); }, 5000); 
     }
 
     function updateUI(color, iconHtml, title, message) {
-      const box = document.getElementById('photo-box'); box.style.borderColor = color; box.innerHTML = iconHtml;
-      
-      const titleEl = document.getElementById('status-title');
-      if(title) {
-        titleEl.style.display = "block"; titleEl.innerText = title; titleEl.style.color = color;
-      } else { titleEl.style.display = "none"; }
-      
-      const msgEl = document.getElementById('status-message');
-      msgEl.innerHTML = message;
-
-      const warnBox = document.getElementById('warning-box');
-      if(warnBox) {
-        if (color === 'yellow') {
-          warnBox.style.display = "block"; 
-        } else {
-          warnBox.style.display = "none";  
-        }
-      }
+      document.getElementById('photo-box').style.borderColor = color; document.getElementById('photo-box').innerHTML = iconHtml;
+      document.getElementById('status-message').innerHTML = message;
+      document.getElementById('warning-box').style.display = (color === 'yellow') ? "block" : "none";
     }
   </script>
 </body>

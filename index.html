@@ -18,9 +18,13 @@
     .stat-done { background: #10b981; } 
     .stat-left { background: #ef4444; }
 
-    .cam-btn { padding: 6px 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 10px; }
+    .cam-btn { padding: 6px 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 5px; }
     .cam-btn:active { transform: scale(0.95); }
     
+    /* ★ 빨간색 강력 새로고침 버튼 디자인 */
+    .reset-btn { padding: 6px 12px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+    .reset-btn:active { transform: scale(0.95); }
+
     .main-content { display: flex; flex: 1; height: 100%; position: relative; }
     
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
@@ -39,7 +43,6 @@
     .box-title { font-size: 20pt; font-weight: 900; margin-bottom: 5px; }
     .box-content { font-size: 16pt; margin-bottom: 0; font-weight: bold; line-height: 1.3; }
     
-    /* ★ 삭제했던 경고박스 부활! */
     .warning-text { margin-top: 10px; font-size: 12pt; color: #fca5a5; font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 12px; border-radius: 12px; line-height: 1.4; border: 1px solid rgba(239, 68, 68, 0.3); transition: opacity 0.2s; }
 
     .manual-btn { margin-top: 30px; width: 95%; max-width: 300px; background: transparent; color: white; border: 2px solid #6b7280; padding: 12px 15px; border-radius: 12px; font-size: 16pt; font-weight: 900; cursor: pointer; transition: 0.2s; line-height: 1.3; }
@@ -104,6 +107,8 @@
     </div>
     <div style="display:flex;">
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
+      <!-- ★ 빨간색 강제 새로고침 버튼 추가! -->
+      <button class="reset-btn" onclick="window.location.reload()">🔄 새로고침</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
         <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
@@ -129,7 +134,6 @@
       <div class="box-title" id="status-title" style="display: none;"></div>
       <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 16pt; margin-top: 5px;"></div>
       
-      <!-- ★ 경고박스 부활! (기본적으로 켜져 있음) -->
       <div class="warning-text" id="warning-box">
         * 교사용 모니터에 본인의 실제 사진이<br>표시되며, 대리 식사는 즉시 적발됩니다.
       </div>
@@ -333,14 +337,14 @@
         if(isManual) {
           let manualMsg = `
             <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
-            <div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인</div>
+            <div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div>
             <div style="color:#fca5a5; font-size:15pt; font-weight:bold; line-height:1.4;">😈 다음부터는 QR 인식을 이용해<br>빠른 입장 부탁합니다.</div>
           `;
           updateUI("#10b981", `<span style="font-size: 60pt; color: #10b981;">✅</span>`, "", manualMsg);
         } else {
           let normalMsg = `
             <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
-            <div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인</div>
+            <div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div>
             <div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>
           `;
           updateUI("#4CAF50", `<span style="font-size: 60pt; color: #4CAF50;">🟢</span>`, "", normalMsg);
@@ -371,7 +375,6 @@
       }, 5000); 
     }
 
-    // ★ 핵심 수정: 상태가 'yellow'(기본대기)일 때만 경고박스 표시, 나머지는 숨김!
     function updateUI(color, iconHtml, title, message) {
       const box = document.getElementById('photo-box'); box.style.borderColor = color; box.innerHTML = iconHtml;
       
@@ -386,9 +389,9 @@
       const warnBox = document.getElementById('warning-box');
       if(warnBox) {
         if (color === 'yellow') {
-          warnBox.style.display = "block"; // 대기중일 때 경고 보이기
+          warnBox.style.display = "block"; 
         } else {
-          warnBox.style.display = "none";  // 결과 화면일 때 경고 숨기기
+          warnBox.style.display = "none";  
         }
       }
     }

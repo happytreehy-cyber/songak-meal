@@ -2,73 +2,84 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>👩‍🏫 💻 🔍 송악고 석식 모니터링 (교사용)</title>
+  <title>💻 송악고 석식 모니터링 (교사용)</title>
   <style>
     body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Apple SD Gothic Neo', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     
-    .header { background-color: #1e293b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; }
-    .header-left { display: flex; align-items: center; gap: 20px; }
-    .title { font-size: 22pt; font-weight: bold; color: #60a5fa; }
-    .clock { font-size: 16pt; font-weight: bold; color: #94a3b8; }
+    .header { background-color: #1e293b; color: white; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; }
+    .header-left { display: flex; align-items: baseline; gap: 15px; }
+    .title { font-size: 20pt; font-weight: bold; color: #60a5fa; }
+    .clock { font-size: 14pt; font-weight: bold; color: #94a3b8; }
     
     .header-right { display: flex; gap: 10px; }
-    .top-btn { padding: 10px 20px; font-size: 14pt; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; color: white; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-    .btn-refresh { background: #3b82f6; }
-    .btn-refresh:active { transform: scale(0.95); }
-    .btn-close-sys { background: #ef4444; }
-    .btn-close-sys:active { transform: scale(0.95); }
+    .top-btn { padding: 8px 15px; font-size: 13pt; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; color: white; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    .btn-refresh { background: #3b82f6; } .btn-refresh:active { transform: scale(0.95); }
+    .btn-close-sys { background: #ef4444; } .btn-close-sys:active { transform: scale(0.95); }
 
-    .main-container { display: flex; flex: 1; padding: 20px; gap: 20px; height: calc(100vh - 110px); }
-    .left-panel { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+    .main-container { display: flex; flex: 1; padding: 15px; gap: 15px; height: calc(100vh - 80px); box-sizing: border-box; }
     
-    /* 최근 카드가 위로 올라오게 세팅 */
-    .photo-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow-y: auto; align-content: start; }
+    /* 왼쪽 패널 (사진 + 학년별 미식사) */
+    .left-panel { flex: 2; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
     
-    .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.3s ease-out; position: relative; }
+    .photo-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow-y: auto; align-content: start; min-height: 250px; }
+    
+    .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.3s ease-out; position: relative; }
     .student-card.allergy { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
     .student-card.unauth { border-color: #ef4444; background: #fef2f2; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
 
-    .btn-close-card { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 14pt; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.2s; }
+    .btn-close-card { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 12pt; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.2s; }
     .btn-close-card:hover { background: #ef4444; }
 
-    .student-photo { width: 100%; height: 230px; background: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 50pt; color: white; object-fit: cover; }
-    .student-info { margin-top: 10px; text-align: center; }
-    .student-id { font-size: 16pt; font-weight: bold; color: #64748b; }
-    .student-name { font-size: 26pt; font-weight: 900; color: #1e293b; margin: 5px 0; }
-    .student-note { background: #fee2e2; color: #dc2626; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14pt; display: inline-block; margin-top: 5px; }
+    .student-photo { width: 100%; height: 180px; background: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 40pt; color: white; object-fit: cover; }
+    .student-info { margin-top: 8px; text-align: center; }
+    .student-id { font-size: 14pt; font-weight: bold; color: #64748b; }
+    .student-name { font-size: 22pt; font-weight: 900; color: #1e293b; margin: 3px 0; }
+    .student-note { background: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 15px; font-weight: bold; font-size: 12pt; display: inline-block; margin-top: 3px; }
     
-    .manual-badge { position: absolute; top: 10px; right: 10px; background: #10b981; color: white; font-weight: bold; padding: 8px 12px; border-radius: 8px; font-size: 13pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); z-index: 10; }
-    .unauth-badge { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; font-weight: bold; padding: 8px 12px; border-radius: 8px; font-size: 13pt; box-shadow: 0 2px 6px rgba(239,68,68,0.5); z-index: 10; animation: blinker 1s linear infinite; }
+    .manual-badge { position: absolute; top: 8px; right: 8px; background: #10b981; color: white; font-weight: bold; padding: 6px 10px; border-radius: 8px; font-size: 11pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); z-index: 10; }
+    .unauth-badge { position: absolute; top: 8px; right: 8px; background: #ef4444; color: white; font-weight: bold; padding: 6px 10px; border-radius: 8px; font-size: 11pt; box-shadow: 0 2px 6px rgba(239,68,68,0.5); z-index: 10; animation: blinker 1s linear infinite; }
 
-    .log-box { height: 250px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
-    .log-title { background: #334155; color: white; padding: 12px 20px; font-size: 14pt; font-weight: bold; }
-    .log-content { flex: 1; overflow-y: auto; padding: 10px; font-size: 13pt; line-height: 1.8; }
-    .log-row { padding: 5px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 15px; }
+    /* 학년별 미식사 명단 (왼쪽 아래) */
+    .unfed-box { height: 260px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
+    .unfed-grid { display: flex; flex: 1; overflow: hidden; }
+    .unfed-col { flex: 1; display: flex; flex-direction: column; border-right: 2px solid #f1f5f9; }
+    .unfed-col:last-child { border-right: none; }
+    .grade-title { background: #334155; color: white; padding: 8px; text-align: center; font-size: 14pt; font-weight: bold; }
+    .grade-list { flex: 1; overflow-y: auto; padding: 10px; font-size: 12pt; line-height: 1.6; }
+    .unfed-item { padding: 5px; border-bottom: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
+
+    /* 오른쪽 패널 (통계 뱃지 + 블랙박스) */
+    .right-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden; }
+    
+    /* 학생용과 동일한 식사 현황 뱃지 */
+    .stats-box { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .stats-badges-container { display: flex; gap: 10px; justify-content: space-between; }
+    .stat-badge { flex: 1; padding: 12px 5px; border-radius: 10px; font-size: 13pt; font-weight: bold; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .stat-total { background: #3b82f6; cursor: pointer; transition: 0.2s; } .stat-total:hover { transform: scale(1.02); }
+    .stat-done { background: #10b981; } 
+    .stat-left { background: #ef4444; }
+    .stat-num { font-size: 22pt; display: block; margin-top: 5px; }
+
+    /* 블랙박스 영역 (오른쪽 아래 꽉 채움) */
+    .log-box { flex: 1; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
+    .log-title { background: #1e293b; color: white; padding: 12px 20px; font-size: 14pt; font-weight: bold; }
+    .log-content { flex: 1; overflow-y: auto; padding: 10px; font-size: 12pt; line-height: 1.8; }
+    .log-row { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 10px; }
     .log-time { color: #94a3b8; font-family: monospace; }
     
     .log-error-red { color: #cc0000; font-weight: bold; background: #fce8e8; padding: 2px 8px; border-radius: 6px; }
     .log-error-orange { color: #b35900; font-weight: bold; background: #fef0d9; padding: 2px 8px; border-radius: 6px; }
     .log-manual-green { color: #137333; font-weight: bold; background: #e6f4ea; padding: 2px 8px; border-radius: 6px; }
 
-    .right-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; position: relative; }
-    
-    .stats-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .stats-title { font-size: 16pt; font-weight: bold; color: #1e293b; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display: flex; justify-content: space-between;}
-    .stat-row { display: flex; justify-content: space-between; font-size: 18pt; margin-bottom: 10px; font-weight: bold; }
-    .stat-total-clickable { background: #eff6ff; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 2px solid #bfdbfe; }
-    .stat-total-clickable:hover { background: #dbeafe; }
-    
-    .list-box { flex: 1; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-    .list-content { flex: 1; overflow-y: auto; font-size: 14pt; line-height: 1.6; color: #475569; }
-    .unfed-item { padding: 8px; border-bottom: 1px dashed #cbd5e1; display: flex; justify-content: space-between; }
-
+    /* 경고 팝업 */
     #alert-modal { display: none; position: absolute; bottom: 20px; right: 20px; z-index: 999; }
-    .alert-content { background: #ef4444; padding: 35px; border-radius: 15px; border: 4px solid #b91c1c; text-align: center; box-shadow: 0 10px 30px rgba(239,68,68,0.7); width: 350px; }
+    .alert-content { background: #ef4444; padding: 30px; border-radius: 15px; border: 4px solid #b91c1c; text-align: center; box-shadow: 0 10px 30px rgba(239,68,68,0.7); width: 320px; }
     .alert-content.animating { animation: popAlert 0.3s infinite alternate; }
-    .alert-icon { font-size: 50pt; margin-bottom: 5px; }
-    .alert-msg { font-size: 18pt; font-weight: 900; color: white; margin-bottom: 20px; line-height: 1.5; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
-    .btn-confirm { background: white; color: #ef4444; border: none; padding: 15px 30px; font-size: 16pt; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: 100%; }
+    .alert-icon { font-size: 40pt; margin-bottom: 5px; }
+    .alert-msg { font-size: 16pt; font-weight: 900; color: white; margin-bottom: 15px; line-height: 1.5; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
+    .btn-confirm { background: white; color: #ef4444; border: none; padding: 12px 20px; font-size: 14pt; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: 100%; }
 
+    /* 통계 모달 */
     #stats-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; }
     .stats-modal-content { background: white; padding: 30px; border-radius: 15px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     .grade-stat-row { display: flex; justify-content: space-between; font-size: 14pt; padding: 12px 0; border-bottom: 1px solid #e2e8f0; font-weight: bold; }
@@ -90,8 +101,8 @@
 
   <div class="header">
     <div class="header-left">
-      <div class="clock" id="live-clock">00:00:00</div>
-      <div class="title">👩‍🏫 💻 🔍 송악고 석식 모니터링 (교사용)</div>
+      <div class="title">💻 송악고 석식 모니터링 (교사용)</div>
+      <div class="clock" id="live-clock">2026. 00. 00. 00:00:00</div>
     </div>
     <div class="header-right">
       <button class="top-btn btn-refresh" onclick="window.location.reload()">🔄 화면 새로고침</button>
@@ -100,30 +111,55 @@
   </div>
 
   <div class="main-container">
+    
+    <!-- 왼쪽 패널 -->
     <div class="left-panel">
+      <!-- 사진 뜨는 곳 -->
       <div class="photo-grid" id="photo-grid"></div>
       
+      <!-- 학년별 미식사 명단 (3분할) -->
+      <div class="unfed-box">
+        <div class="unfed-grid">
+          <div class="unfed-col">
+            <div class="grade-title">1학년 미식사</div>
+            <div class="grade-list" id="unfed-1">로딩 중...</div>
+          </div>
+          <div class="unfed-col">
+            <div class="grade-title">2학년 미식사</div>
+            <div class="grade-list" id="unfed-2">로딩 중...</div>
+          </div>
+          <div class="unfed-col">
+            <div class="grade-title">3학년 미식사</div>
+            <div class="grade-list" id="unfed-3">로딩 중...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽 패널 -->
+    <div class="right-panel">
+      <!-- 학생용과 동일한 뱃지 식사 현황 -->
+      <div class="stats-box">
+        <div class="stats-badges-container">
+          <div class="stat-badge stat-total" onclick="openStatsModal()">
+            총 신청 (클릭👆)<span class="stat-num" id="stat-total">0</span>
+          </div>
+          <div class="stat-badge stat-done">
+            식사 완료<span class="stat-num" id="stat-done">0</span>
+          </div>
+          <div class="stat-badge stat-left">
+            남은 인원<span class="stat-num" id="stat-left">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 실시간 블랙박스 기록 (길게 배치) -->
       <div class="log-box">
         <div class="log-title">⏱️ 실시간 블랙박스 기록 (최근 스캔)</div>
         <div class="log-content" id="log-content">로딩 중...</div>
       </div>
-    </div>
 
-    <div class="right-panel">
-      <div class="stats-box">
-        <div class="stats-title">📊 오늘의 식사 현황</div>
-        <div class="stat-row stat-total-clickable" onclick="openStatsModal()">
-          <span style="color:#2563eb;">총 신청자 (클릭👇)</span> <span id="stat-total" style="color:#1e293b;">0명</span>
-        </div>
-        <div class="stat-row"><span style="color:#10b981;">식사 완료</span> <span id="stat-done">0명</span></div>
-        <div class="stat-row"><span style="color:#ef4444;">남은 인원</span> <span id="stat-left">0명</span></div>
-      </div>
-
-      <div class="list-box">
-        <div class="stats-title">🏃 아직 밥 안 먹은 학생 명단</div>
-        <div class="list-content" id="unfed-list">로딩 중...</div>
-      </div>
-
+      <!-- 팝업 알림 -->
       <div id="alert-modal">
         <div class="alert-content animating" id="alert-box">
           <div class="alert-icon">🚨</div>
@@ -135,15 +171,19 @@
   </div>
 
   <script>
-    // ★ 선생님의 구글 앱스 스크립트 주소 셋팅 완료!
+    // ★ 선생님의 최신 구글 서버 주소 세팅 완료!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let lastLogTime = ""; 
     let alertAudio = new Audio('https://t1.daumcdn.net/cfile/tistory/998B4B485C9A208D16?original'); 
-    alertAudio.loop = false; // 소리 딱 1번만 울리게 세팅!
+    alertAudio.loop = false; 
     let currentStatsDetails = null;
 
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
+    setInterval(() => { 
+      let now = new Date();
+      let dateStr = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ".";
+      document.getElementById('live-clock').innerText = dateStr + " " + now.toLocaleTimeString('ko-KR'); 
+    }, 1000);
 
     function triggerAlert(msg) {
       document.getElementById('alert-text').innerHTML = msg;
@@ -194,14 +234,26 @@
         .then(res => {
           if (res.status === "SUCCESS") {
             updateSysBtn(res.sys_status === "CLOSED");
-            document.getElementById('stat-total').innerText = res.stats.total + "명";
-            document.getElementById('stat-done').innerText = res.stats.done + "명";
-            document.getElementById('stat-left').innerText = res.stats.left + "명";
             
-            let html = "";
-            if (res.unfed.length === 0) { html = "<div style='text-align:center; padding:20px; font-weight:bold;'>모두 식사를 완료했습니다! 🎉</div>"; } 
-            else { res.unfed.forEach(s => { html += `<div class="unfed-item"><span>${s.id} ${s.name}</span> ${s.note ? `<span style="color:#ef4444; font-weight:bold;">[${s.note}]</span>` : ""}</div>`; }); }
-            document.getElementById('unfed-list').innerHTML = html;
+            document.getElementById('stat-total').innerText = res.stats.total;
+            document.getElementById('stat-done').innerText = res.stats.done;
+            document.getElementById('stat-left').innerText = res.stats.left;
+            
+            // 3학년 분할 리스트 업데이트
+            let h1 = "", h2 = "", h3 = "";
+            res.unfed.forEach(s => {
+              let grade = s.id.charAt(0);
+              let noteHtml = s.note ? `<span style="color:#ef4444; font-weight:bold; font-size:11pt;">[${s.note}]</span>` : "";
+              let item = `<div class="unfed-item"><span style="color:#475569; font-weight:bold;">${s.id} ${s.name}</span> ${noteHtml}</div>`;
+              if (grade === '1') h1 += item;
+              else if (grade === '2') h2 += item;
+              else if (grade === '3') h3 += item;
+            });
+            
+            let emptyMsg = "<div style='text-align:center; padding:15px; color:#94a3b8; font-weight:bold;'>완료 🎉</div>";
+            document.getElementById('unfed-1').innerHTML = h1 || emptyMsg;
+            document.getElementById('unfed-2').innerHTML = h2 || emptyMsg;
+            document.getElementById('unfed-3').innerHTML = h3 || emptyMsg;
             
             processLogs(res.blackbox);
           }

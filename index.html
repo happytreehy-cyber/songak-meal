@@ -23,13 +23,15 @@
     
     .main-content { display: flex; flex: 1; height: 100%; position: relative; }
     
-    /* ★ 카메라 화면 100% 꽉 차게 복구 + 텍스트 밀림 방지 완벽 복구! */
+    /* 카메라 화면 100% 꽉 차게 복구! */
     .camera-section { flex: 2; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
     .camera-wrapper { position: relative; width: 100%; flex: 1; min-height: 0; border-radius: 12px; overflow: hidden; border: 4px solid #60a5fa; box-shadow: 0 0 25px rgba(96, 165, 250, 0.4); background: #000; }
     #reader { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
     #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; position: absolute !important; top: 0 !important; left: 0 !important; }
     
     .custom-target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 6px solid #4ade80; border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; z-index: 10; }
+    
+    /* 안내 멘트 밀림 방지 복구! */
     .cam-instruction { text-align: center; margin-top: 15px; font-size: 20pt; font-weight: bold; color: #9ca3af; flex-shrink: 0; }
 
     .info-section { flex: 1; background-color: #1a1e29; border-left: 2px solid #2d3748; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
@@ -114,7 +116,7 @@
         <div id="reader"></div>
         <div class="custom-target"></div>
       </div>
-      <!-- 안내 멘트 복구 -->
+      <!-- 안내 멘트 복구 완료 -->
       <div class="cam-instruction">
         ⬆️ 위 카메라에 <span style="color:#60a5fa;">QR</span> 또는 <span style="color:#60a5fa;">바코드</span>를 비춰주세요
       </div>
@@ -133,6 +135,7 @@
   </div>
 
   <script>
+    // ★ 선생님 웹앱 주소로 꼭 확인해주세요!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode;
@@ -153,7 +156,7 @@
       }
     }
 
-    // 마스킹 함수 복구!
+    // 이름 마스킹 복구
     function maskName(name) {
       if(!name) return "";
       if(name.length === 2) return name[0] + "O";
@@ -300,7 +303,7 @@
         playBeep('error'); 
         updateUI("#ef4444", `<span style="font-size: 70pt; color: #ef4444;">🔴</span>`, "경고", "당일 석식 미신청자입니다");
         delayMs = 3000; 
-        fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId); // 미신청자 기록 전송!
+        fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId); // 미신청자 기록!
       } else if (student.marked === 1) {
         playBeep('duplicate'); 
         updateUI("orange", `<span style="font-size: 70pt; color: orange;">🟠</span>`, "⚠ 중복 식사 !", `이미 식사한 학생입니다<br><span style="font-size:12pt;color:#9ca3af;">(시간: ${nowTime})</span>`);

@@ -7,9 +7,11 @@
     body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Apple SD Gothic Neo', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     
     .header { background-color: #1e293b; color: white; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; }
-    .header-left { display: flex; align-items: baseline; gap: 15px; }
-    .title { font-size: 20pt; font-weight: bold; color: #60a5fa; }
-    .clock { font-size: 14pt; font-weight: bold; color: #94a3b8; }
+    
+    /* ★ 제목과 시계가 무조건 한 줄로 예쁘게 나오도록 고정 */
+    .header-left { display: flex; align-items: center; gap: 15px; flex-wrap: nowrap; }
+    .title { font-size: 20pt; font-weight: bold; color: #60a5fa; white-space: nowrap; }
+    .clock { font-size: 14pt; font-weight: bold; color: #94a3b8; white-space: nowrap; margin-top: 4px; }
     
     .header-right { display: flex; gap: 10px; }
     .top-btn { padding: 8px 15px; font-size: 13pt; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; color: white; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
@@ -106,7 +108,6 @@
       <div class="lock-title">교사용 데스크 잠금</div>
       <div class="lock-desc">담당자 외 접근을 금지합니다.<br>비밀번호를 입력하세요.</div>
       <input type="password" id="teacher-pw" class="pw-input" placeholder="****" onkeypress="if(event.keyCode==13) checkPassword();">
-      <!-- 버튼 텍스트 깔끔하게 수정 -->
       <button class="pw-btn" onclick="checkPassword()">잠금 해제</button>
     </div>
   </div>
@@ -125,7 +126,6 @@
       <div class="clock" id="live-clock">2026. 00. 00. 00:00:00</div>
     </div>
     <div class="header-right">
-      <!-- ★ 소리 켜기/끄기 스위치 버튼 추가! -->
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
       <button class="top-btn btn-refresh" onclick="window.location.reload()">🔄 화면 새로고침</button>
       <button class="top-btn btn-close-sys" id="sys-btn" onclick="toggleSystem()">🛑 시스템 마감(차단)</button>
@@ -169,24 +169,25 @@
   </div>
 
   <script>
-    // ⚠️ 아래에 선생님의 구글 앱스 스크립트 배포 주소를 꼭 다시 넣어주세요!!
-    const SCRIPT_URL = "여기에_주소를_넣으세요";
+    // ★ 선생님 구글 앱스 스크립트 주소 자동 장착 완료!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
-    // ★ 교사용 비밀번호 8808 로 변경 완료!
-    const TEACHER_PASSWORD = "8808"; 
+    // ★ 비밀번호 1230으로 셋팅
+    const TEACHER_PASSWORD = "1230"; 
     let isUnlocked = false; 
-    let isSoundEnabled = true; // 소리 켜짐/꺼짐 상태 기억
+    let isSoundEnabled = true; 
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // ★ 소리 스위치 껐다 켰다 하는 마법의 함수!
+    let audioCtx = null;
+    let alertAudio = new Audio('https://t1.daumcdn.net/cfile/tistory/998B4B485C9A208D16?original'); 
+    alertAudio.loop = false; 
+
     function toggleSound() {
       isSoundEnabled = !isSoundEnabled;
       let btn = document.getElementById('sound-btn');
       if (isSoundEnabled) {
         btn.innerText = "🔊 소리 켜짐";
         btn.style.background = "#8b5cf6";
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       } else {
         btn.innerText = "🔇 소리 꺼짐";
         btn.style.background = "#64748b";
@@ -196,7 +197,7 @@
     }
 
     function playBeep(type) {
-      if (!isUnlocked || !isSoundEnabled) return; // 화면 잠겨있거나 소리 껐으면 조용히!
+      if (!isUnlocked || !isSoundEnabled || !audioCtx) return; 
       if (audioCtx.state === 'suspended') audioCtx.resume();
       if (type === 'success') { 
         const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
@@ -212,6 +213,9 @@
       if (inputPw === TEACHER_PASSWORD) {
         document.getElementById('lock-screen').style.display = 'none';
         isUnlocked = true; 
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
         if (audioCtx.state === 'suspended') audioCtx.resume(); 
         refreshData(); 
       } else {
@@ -221,8 +225,6 @@
     }
 
     let lastLogTime = ""; 
-    let alertAudio = new Audio('https://t1.daumcdn.net/cfile/tistory/998B4B485C9A208D16?original'); 
-    alertAudio.loop = false; 
     let currentStatsDetails = null;
 
     setInterval(() => { 
@@ -236,7 +238,7 @@
       document.getElementById('alert-text').innerHTML = msg;
       document.getElementById('alert-modal').style.display = 'block'; 
       document.getElementById('alert-box').classList.add('animating');
-      if (isSoundEnabled) { // 스위치가 켜져있을 때만 사이렌 소리 울림
+      if (isSoundEnabled) { 
         alertAudio.play().catch(e => console.log("자동재생 차단됨")); 
       }
     }

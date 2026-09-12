@@ -21,7 +21,6 @@
     .cam-btn { padding: 6px 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 5px; }
     .cam-btn:active { transform: scale(0.95); }
     
-    /* ★ 빨간색 강력 새로고침 버튼 디자인 */
     .reset-btn { padding: 6px 12px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
     .reset-btn:active { transform: scale(0.95); }
 
@@ -67,11 +66,20 @@
     .grade-stat-row { display: flex; justify-content: space-between; font-size: 13pt; padding: 10px 0; border-bottom: 1px solid #374151; font-weight: bold; }
     .close-btn { width: 100%; padding: 10px; margin-top: 15px; background: #4b5563; color: white; border: none; border-radius: 8px; font-size: 13pt; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .close-btn:hover { background: #6b7280; }
+
+    /* ★ 시스템 마감 시 덮이는 까만 화면 */
+    #closed-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
   </style>
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
   
+  <div id="closed-screen">
+    <div style="font-size: 80pt; margin-bottom: 20px;">🛑</div>
+    <div style="font-size: 30pt; font-weight: 900; color: #ef4444; margin-bottom: 15px;">오늘의 석식 시간이 종료되었습니다.</div>
+    <div style="font-size: 16pt; color: #9ca3af;">시스템이 마감되어 더 이상 스캔할 수 없습니다.</div>
+  </div>
+
   <div id="manual-modal">
     <div class="modal-content">
       <h2 style="color: #60a5fa; margin-top: 0; font-size: 24pt; font-weight: 900;">✍️ 수동 승인</h2>
@@ -107,7 +115,6 @@
     </div>
     <div style="display:flex;">
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
-      <!-- ★ 빨간색 강제 새로고침 버튼 추가! -->
       <button class="reset-btn" onclick="window.location.reload()">🔄 새로고침</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
@@ -117,7 +124,7 @@
     </div>
   </div>
 
-  <div class="main-content">
+  <div class="main-content" id="main-content">
     <div class="camera-section">
       <div class="camera-wrapper">
         <div id="reader"></div>
@@ -151,6 +158,7 @@
     let html5QrCode;
     let cameras = [];
     let currentCamIndex = 0; 
+    let sysClosed = false; // 시스템 마감 여부
 
     let studentCache = {}, isScanning = true, currentStatsDetails = null;
     let uiResetTimer = null; 
@@ -176,15 +184,35 @@
       return name;
     }
 
+    // ★ 10초마다 갱신하면서 '마감 버튼' 눌렸는지 감시!
     function refreshStats() {
       fetch(SCRIPT_URL + "?action=GET_DETAILS")
         .then(r => r.json())
         .then(res => {
+          if (res.sysStatus === "CLOSED") {
+             if(!sysClosed) showClosedScreen();
+          } else {
+             if(sysClosed) hideClosedScreen();
+          }
           if(res.totalStats) {
             currentStatsDetails = res;
             updateStatsUI();
           } else { fallbackToLocalStats(); }
         }).catch(e => { fallbackToLocalStats(); });
+    }
+
+    function showClosedScreen() {
+      sysClosed = true;
+      if (html5QrCode) { html5QrCode.stop().catch(e => console.log(e)); }
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('closed-screen').style.display = 'flex';
+    }
+
+    function hideClosedScreen() {
+      sysClosed = false;
+      document.getElementById('main-content').style.display = 'flex';
+      document.getElementById('closed-screen').style.display = 'none';
+      initCamera(); // 카메라 다시 켜기
     }
 
     function fallbackToLocalStats() {
@@ -238,7 +266,6 @@
     }
 
     window.onload = function() {
-      refreshStats();
       let progress = 0;
       let progressTimer = setInterval(() => {
         progress += 5; 
@@ -254,6 +281,8 @@
             let res = JSON.parse(text);
             if(res.status === "SUCCESS") {
               studentCache = res.data;
+              if(res.sysStatus === "CLOSED") sysClosed = true;
+
               clearInterval(progressTimer);
               document.getElementById('rocket-icon').style.left = '100%';
               document.getElementById('progress-bar').style.width = '100%';
@@ -261,8 +290,8 @@
               setTimeout(() => {
                 document.getElementById('loading-overlay').style.display = 'none';
                 fallbackToLocalStats(); 
-                initCamera(); 
-                setInterval(refreshStats, 10000); 
+                if (sysClosed) { showClosedScreen(); } else { initCamera(); }
+                setInterval(refreshStats, 10000); // 10초마다 상태 폴링
               }, 600);
             }
           } catch(e) {}
@@ -293,7 +322,7 @@
         camTarget,
         { fps: 30, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
-          if(!isScanning) return; 
+          if(!isScanning || sysClosed) return; 
           isScanning = false;
           let studentId = decodedText.trim().replace(/[^0-9]/g, '');
           processStudentScan(studentId, false);
@@ -337,14 +366,14 @@
         if(isManual) {
           let manualMsg = `
             <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
-            <div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div>
+            <div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인</div>
             <div style="color:#fca5a5; font-size:15pt; font-weight:bold; line-height:1.4;">😈 다음부터는 QR 인식을 이용해<br>빠른 입장 부탁합니다.</div>
           `;
           updateUI("#10b981", `<span style="font-size: 60pt; color: #10b981;">✅</span>`, "", manualMsg);
         } else {
           let normalMsg = `
             <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
-            <div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div>
+            <div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인</div>
             <div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>
           `;
           updateUI("#4CAF50", `<span style="font-size: 60pt; color: #4CAF50;">🟢</span>`, "", normalMsg);
@@ -388,11 +417,8 @@
 
       const warnBox = document.getElementById('warning-box');
       if(warnBox) {
-        if (color === 'yellow') {
-          warnBox.style.display = "block"; 
-        } else {
-          warnBox.style.display = "none";  
-        }
+        if (color === 'yellow') { warnBox.style.display = "block"; } 
+        else { warnBox.style.display = "none"; }
       }
     }
   </script>

@@ -7,20 +7,22 @@
   <style>
     body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #111827; color: white; font-family: 'Apple SD Gothic Neo', sans-serif; overflow: hidden; }
     
-    .header { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: #1f2937; border-bottom: 2px solid #374151; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10; }
-    .header-left { display: flex; align-items: baseline; gap: 10px; }
-    .title { font-size: 18pt; font-weight: 900; color: #60a5fa; letter-spacing: 1px; }
-    .clock { font-size: 12pt; color: #9ca3af; font-weight: bold; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1f2937; border-bottom: 2px solid #374151; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10; }
+    
+    /* ★ 제목과 시계가 절대 떨어지지 않도록 한 줄로 강제 고정! */
+    .header-left { display: flex; align-items: center; gap: 15px; flex-wrap: nowrap; }
+    .title { font-size: 20pt; font-weight: 900; color: #60a5fa; letter-spacing: 1px; white-space: nowrap; }
+    .clock { font-size: 13pt; color: #9ca3af; font-weight: bold; white-space: nowrap; margin-top: 4px; }
     
     .header-right { display: flex; gap: 8px; align-items: center; }
-    .stat-badge { padding: 6px 12px; border-radius: 8px; font-size: 12pt; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .stat-badge { padding: 8px 15px; border-radius: 8px; font-size: 13pt; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .stat-total { background: #3b82f6; cursor: pointer; } 
     .stat-done { background: #10b981; } 
     .stat-left { background: #ef4444; }
 
-    .cam-btn { padding: 6px 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 5px; }
+    .cam-btn { padding: 8px 15px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 12pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 5px; }
     .cam-btn:active { transform: scale(0.95); }
-    .reset-btn { padding: 6px 12px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+    .reset-btn { padding: 8px 15px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-size: 12pt; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 15px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
     .reset-btn:active { transform: scale(0.95); }
 
     .main-content { display: flex; flex: 1; height: 100%; position: relative; }
@@ -51,7 +53,7 @@
     .progress-bar { height: 100%; background: #60a5fa; width: 0%; border-radius: 4px; transition: width 0.5s ease; box-shadow: 0 0 15px rgba(96, 165, 250, 0.6); }
     .rocket-icon { font-size: 35pt; position: absolute; top: -45px; left: 0%; transform: translateX(-50%); transition: left 0.5s ease; }
 
-    /* ★ 시스템 마감 오버레이 */
+    /* ★ 시스템 마감 차단 화면 */
     #closed-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 500; text-align: center; }
 
     #stats-modal { display: none; position: fixed; top: 60px; right: 20px; background: #1f2937; padding: 20px; border-radius: 12px; z-index: 200; box-shadow: 0 15px 40px rgba(0,0,0,0.8); width: 380px; border: 2px solid #4b5563; }
@@ -95,8 +97,9 @@
 
   <div class="header">
     <div class="header-left">
-      <div class="clock" id="live-clock">00:00:00</div>
       <div class="title">🍴 송악고 석식 시스템 (학생용)</div>
+      <!-- ★ 학생용 시계도 선생님 화면과 100% 동일한 형식으로 출력됩니다 -->
+      <div class="clock" id="live-clock">2026. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
@@ -127,13 +130,18 @@
   </div>
 
   <script>
-    // ★ 선생님의 구글 앱스 스크립트 주소 셋팅 완료!
+    // ★ 선생님의 구글 스크립트 주소를 안전하게 내장했습니다!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode, cameras = [], currentCamIndex = 0; 
     let studentCache = {}, isScanning = true, currentStatsDetails = null, uiResetTimer = null; 
     
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('ko-KR'); }, 1000);
+    // ★ 시계 형식 교사용과 완벽 통일
+    setInterval(() => { 
+      let now = new Date();
+      let dateStr = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ".";
+      document.getElementById('live-clock').innerText = dateStr + " " + now.toLocaleTimeString('ko-KR'); 
+    }, 1000);
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(type) {

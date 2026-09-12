@@ -2,31 +2,43 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>송악고 석식 모니터링 (교사용)</title>
+  <title>👩‍🏫 💻 🔍 송악고 석식 모니터링 (교사용)</title>
   <style>
     body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Apple SD Gothic Neo', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     
     .header { background-color: #1e293b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; }
-    .title { font-size: 24pt; font-weight: bold; color: #60a5fa; }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .title { font-size: 22pt; font-weight: bold; color: #60a5fa; }
     .clock { font-size: 16pt; font-weight: bold; color: #94a3b8; }
     
+    .header-right { display: flex; gap: 10px; }
+    .top-btn { padding: 10px 20px; font-size: 14pt; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; color: white; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    .btn-refresh { background: #3b82f6; }
+    .btn-refresh:active { transform: scale(0.95); }
+    .btn-close-sys { background: #ef4444; }
+    .btn-close-sys:active { transform: scale(0.95); }
+
     .main-container { display: flex; flex: 1; padding: 20px; gap: 20px; height: calc(100vh - 110px); }
-    
     .left-panel { flex: 2; display: flex; flex-direction: column; gap: 20px; }
     
+    /* 최근 카드가 위로 올라오게 세팅 */
     .photo-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow-y: auto; align-content: start; }
     
-    .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.4s ease-out; position: relative; }
+    .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.3s ease-out; position: relative; }
     .student-card.allergy { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
-    
-    .student-photo { width: 100%; height: 250px; background: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 50pt; color: white; object-fit: cover; }
+    .student-card.unauth { border-color: #ef4444; background: #fef2f2; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+
+    .btn-close-card { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 14pt; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.2s; }
+    .btn-close-card:hover { background: #ef4444; }
+
+    .student-photo { width: 100%; height: 230px; background: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 50pt; color: white; object-fit: cover; }
     .student-info { margin-top: 10px; text-align: center; }
     .student-id { font-size: 16pt; font-weight: bold; color: #64748b; }
-    .student-name { font-size: 24pt; font-weight: 900; color: #1e293b; margin: 5px 0; }
+    .student-name { font-size: 26pt; font-weight: 900; color: #1e293b; margin: 5px 0; }
     .student-note { background: #fee2e2; color: #dc2626; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14pt; display: inline-block; margin-top: 5px; }
     
-    /* ★ 수동입력(✅) 시 사진 위에 뜨는 뱃지 */
-    .manual-badge { position: absolute; top: 10px; right: 10px; background: #10b981; color: white; font-weight: bold; padding: 8px 12px; border-radius: 8px; font-size: 13pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .manual-badge { position: absolute; top: 10px; right: 10px; background: #10b981; color: white; font-weight: bold; padding: 8px 12px; border-radius: 8px; font-size: 13pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); z-index: 10; }
+    .unauth-badge { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; font-weight: bold; padding: 8px 12px; border-radius: 8px; font-size: 13pt; box-shadow: 0 2px 6px rgba(239,68,68,0.5); z-index: 10; animation: blinker 1s linear infinite; }
 
     .log-box { height: 250px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
     .log-title { background: #334155; color: white; padding: 12px 20px; font-size: 14pt; font-weight: bold; }
@@ -34,7 +46,6 @@
     .log-row { padding: 5px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 15px; }
     .log-time { color: #94a3b8; font-family: monospace; }
     
-    /* ★ 블랙박스 로그 색상 완벽 동기화 (무단=빨강, 중복=주황, 수동=초록) */
     .log-error-red { color: #cc0000; font-weight: bold; background: #fce8e8; padding: 2px 8px; border-radius: 6px; }
     .log-error-orange { color: #b35900; font-weight: bold; background: #fef0d9; padding: 2px 8px; border-radius: 6px; }
     .log-manual-green { color: #137333; font-weight: bold; background: #e6f4ea; padding: 2px 8px; border-radius: 6px; }
@@ -42,39 +53,55 @@
     .right-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; position: relative; }
     
     .stats-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .stats-title { font-size: 16pt; font-weight: bold; color: #1e293b; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+    .stats-title { font-size: 16pt; font-weight: bold; color: #1e293b; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display: flex; justify-content: space-between;}
     .stat-row { display: flex; justify-content: space-between; font-size: 18pt; margin-bottom: 10px; font-weight: bold; }
+    .stat-total-clickable { background: #eff6ff; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 2px solid #bfdbfe; }
+    .stat-total-clickable:hover { background: #dbeafe; }
     
     .list-box { flex: 1; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
     .list-content { flex: 1; overflow-y: auto; font-size: 14pt; line-height: 1.6; color: #475569; }
     .unfed-item { padding: 8px; border-bottom: 1px dashed #cbd5e1; display: flex; justify-content: space-between; }
 
-    /* ★ 경고 팝업창 (빨간배경 + 하얀글씨) */
     #alert-modal { display: none; position: absolute; bottom: 20px; right: 20px; z-index: 999; }
-    .alert-content { background: #ef4444; padding: 35px; border-radius: 15px; border: 4px solid #b91c1c; text-align: center; box-shadow: 0 10px 30px rgba(239,68,68,0.7); width: 350px; animation: popAlert 0.5s infinite alternate; }
+    .alert-content { background: #ef4444; padding: 35px; border-radius: 15px; border: 4px solid #b91c1c; text-align: center; box-shadow: 0 10px 30px rgba(239,68,68,0.7); width: 350px; }
+    .alert-content.animating { animation: popAlert 0.3s infinite alternate; }
     .alert-icon { font-size: 50pt; margin-bottom: 5px; }
     .alert-msg { font-size: 18pt; font-weight: 900; color: white; margin-bottom: 20px; line-height: 1.5; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
-    .btn-confirm { background: white; color: #ef4444; border: none; padding: 15px 30px; font-size: 16pt; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s; width: 100%; }
-    .btn-confirm:hover { background: #f8fafc; transform: scale(1.05); }
+    .btn-confirm { background: white; color: #ef4444; border: none; padding: 15px 30px; font-size: 16pt; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: 100%; }
 
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes popAlert { from { transform: scale(1); } to { transform: scale(1.02); } }
+    #stats-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; }
+    .stats-modal-content { background: white; padding: 30px; border-radius: 15px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .grade-stat-row { display: flex; justify-content: space-between; font-size: 14pt; padding: 12px 0; border-bottom: 1px solid #e2e8f0; font-weight: bold; }
+
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes popAlert { from { transform: scale(1); } to { transform: scale(1.05); } }
+    @keyframes blinker { 50% { opacity: 0.3; } }
   </style>
 </head>
 <body>
 
+  <div id="stats-modal">
+    <div class="stats-modal-content">
+      <h2 style="margin-top:0; color:#2563eb; text-align:center;">📊 학년별 식사 현황</h2>
+      <div id="stats-detail-content">로딩 중...</div>
+      <button style="width:100%; padding:15px; margin-top:20px; background:#475569; color:white; font-size:14pt; font-weight:bold; border:none; border-radius:8px; cursor:pointer;" onclick="closeStatsModal()">닫기</button>
+    </div>
+  </div>
+
   <div class="header">
-    <div class="title">👩‍🏫 송악고 석식 모니터링 데스크</div>
-    <div class="clock" id="live-clock">0000. 00. 00. 00:00:00</div>
+    <div class="header-left">
+      <div class="clock" id="live-clock">00:00:00</div>
+      <div class="title">👩‍🏫 💻 🔍 송악고 석식 모니터링 (교사용)</div>
+    </div>
+    <div class="header-right">
+      <button class="top-btn btn-refresh" onclick="window.location.reload()">🔄 화면 새로고침</button>
+      <button class="top-btn btn-close-sys" id="sys-btn" onclick="toggleSystem()">🛑 시스템 마감(차단)</button>
+    </div>
   </div>
 
   <div class="main-container">
     <div class="left-panel">
-      <div class="photo-grid" id="photo-grid">
-        <div style="grid-column: span 3; text-align: center; color: #94a3b8; font-size: 20pt; margin-top: 50px;">
-          학생이 바코드를 스캔하면 여기에 얼굴이 표시됩니다.
-        </div>
-      </div>
+      <div class="photo-grid" id="photo-grid"></div>
       
       <div class="log-box">
         <div class="log-title">⏱️ 실시간 블랙박스 기록 (최근 스캔)</div>
@@ -85,7 +112,9 @@
     <div class="right-panel">
       <div class="stats-box">
         <div class="stats-title">📊 오늘의 식사 현황</div>
-        <div class="stat-row"><span style="color:#64748b;">총 신청자</span> <span id="stat-total" style="color:#1e293b;">0명</span></div>
+        <div class="stat-row stat-total-clickable" onclick="openStatsModal()">
+          <span style="color:#2563eb;">총 신청자 (클릭👇)</span> <span id="stat-total" style="color:#1e293b;">0명</span>
+        </div>
         <div class="stat-row"><span style="color:#10b981;">식사 완료</span> <span id="stat-done">0명</span></div>
         <div class="stat-row"><span style="color:#ef4444;">남은 인원</span> <span id="stat-left">0명</span></div>
       </div>
@@ -96,7 +125,7 @@
       </div>
 
       <div id="alert-modal">
-        <div class="alert-content">
+        <div class="alert-content animating" id="alert-box">
           <div class="alert-icon">🚨</div>
           <div class="alert-msg" id="alert-text">경고!</div>
           <button class="btn-confirm" onclick="closeAlert()">확인 (소리 끄기)</button>
@@ -106,70 +135,89 @@
   </div>
 
   <script>
-    // ★ 선생님 구글 앱스 스크립트 주소 완벽 세팅 완료!
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
+    // ⚠️ 이곳에 선생님의 [새 버전] 주소를 붙여넣어 주세요!!
+    const SCRIPT_URL = "여기에_주소를_넣으세요";
     
     let lastLogTime = ""; 
     let alertAudio = new Audio('https://t1.daumcdn.net/cfile/tistory/998B4B485C9A208D16?original'); 
-    alertAudio.loop = true; 
+    alertAudio.loop = false; // 소리 딱 1번만 울리게 세팅!
+    let currentStatsDetails = null;
 
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('ko-KR'); }, 1000);
 
     function triggerAlert(msg) {
       document.getElementById('alert-text').innerHTML = msg;
       document.getElementById('alert-modal').style.display = 'block'; 
+      document.getElementById('alert-box').classList.add('animating');
       alertAudio.play().catch(e => console.log("자동재생 차단됨")); 
     }
 
     function closeAlert() {
-      document.getElementById('alert-modal').style.display = 'none';
-      alertAudio.pause();
-      alertAudio.currentTime = 0;
+      document.getElementById('alert-box').classList.remove('animating');
+      setTimeout(() => { document.getElementById('alert-modal').style.display = 'none'; }, 200);
     }
 
-    // 구글 시트에서 2초마다 실시간으로 데이터를 끌어옵니다!
+    function removeCard(btn) { btn.parentElement.remove(); }
+
+    function toggleSystem() {
+      if(!confirm("학생용 태블릿 화면을 마감/차단 하시겠습니까?")) return;
+      fetch(SCRIPT_URL + "?action=TOGGLE_SYSTEM")
+      .then(r => r.json())
+      .then(res => {
+         let isClosed = (res.sys_status === "CLOSED");
+         updateSysBtn(isClosed);
+         alert(isClosed ? "시스템이 마감되었습니다. 학생들이 접속할 수 없습니다." : "시스템이 다시 열렸습니다!");
+      });
+    }
+
+    function updateSysBtn(isClosed) {
+      let btn = document.getElementById('sys-btn');
+      if (isClosed) { btn.innerText = "🟢 시스템 열기"; btn.style.background = "#10b981"; } 
+      else { btn.innerText = "🛑 시스템 마감(차단)"; btn.style.background = "#ef4444"; }
+    }
+
+    function openStatsModal() {
+      if(!currentStatsDetails) return;
+      let html = "";
+      [1, 2, 3].forEach(grade => {
+        let st = currentStatsDetails[grade];
+        if(st) html += `<div class="grade-stat-row"><span style="color:#2563eb;">${grade}학년</span> <span>총: ${st.total}명</span> <span style="color:#10b981;">완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; 
+      });
+      document.getElementById('stats-detail-content').innerHTML = html;
+      document.getElementById('stats-modal').style.display = 'flex';
+    }
+    function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
+
     function refreshData() {
       fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA")
         .then(r => r.json())
         .then(res => {
           if (res.status === "SUCCESS") {
-            updateStats(res.stats);
-            updateUnfedList(res.unfed);
+            updateSysBtn(res.sys_status === "CLOSED");
+            document.getElementById('stat-total').innerText = res.stats.total + "명";
+            document.getElementById('stat-done').innerText = res.stats.done + "명";
+            document.getElementById('stat-left').innerText = res.stats.left + "명";
+            
+            let html = "";
+            if (res.unfed.length === 0) { html = "<div style='text-align:center; padding:20px; font-weight:bold;'>모두 식사를 완료했습니다! 🎉</div>"; } 
+            else { res.unfed.forEach(s => { html += `<div class="unfed-item"><span>${s.id} ${s.name}</span> ${s.note ? `<span style="color:#ef4444; font-weight:bold;">[${s.note}]</span>` : ""}</div>`; }); }
+            document.getElementById('unfed-list').innerHTML = html;
+            
             processLogs(res.blackbox);
           }
         }).catch(err => console.log("데이터 통신 에러"));
-    }
-
-    function updateStats(stats) {
-      document.getElementById('stat-total').innerText = stats.total + "명";
-      document.getElementById('stat-done').innerText = stats.done + "명";
-      document.getElementById('stat-left').innerText = stats.left + "명";
-    }
-
-    function updateUnfedList(unfed) {
-      let html = "";
-      if (unfed.length === 0) { html = "<div style='text-align:center; padding:20px; font-weight:bold;'>모두 식사를 완료했습니다! 🎉</div>"; } 
-      else {
-        unfed.forEach(s => {
-          let noteHtml = s.note ? `<span style="color:#ef4444; font-size:11pt; font-weight:bold;">[${s.note}]</span>` : "";
-          html += `<div class="unfed-item"><span>${s.id} ${s.name}</span> ${noteHtml}</div>`;
-        });
-      }
-      document.getElementById('unfed-list').innerHTML = html;
+        
+      fetch(SCRIPT_URL + "?action=GET_DETAILS")
+        .then(r=>r.json()).then(res => { currentStatsDetails = res; });
     }
 
     function processLogs(logs) {
-      let logHtml = "";
-      let newFaces = [];
-
+      let logHtml = ""; let newFaces = [];
       for (let i = 0; i < logs.length; i++) {
-        let log = logs[i];
-        let timeStr = new Date(log.time).toLocaleTimeString('ko-KR');
-        let fullId = log.time + "_" + log.id; 
+        let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'), fullId = log.time + "_" + log.id; 
         
         let rowClass = "";
-        // 색상 판별 로직
-        if (log.status.includes("미신청")) rowClass = "log-error-red";
+        if (log.status.includes("무단")) rowClass = "log-error-red";
         else if (log.status.includes("중복")) rowClass = "log-error-orange";
         else if (log.status.includes("수동")) rowClass = "log-manual-green";
         
@@ -178,28 +226,33 @@
         if (i === 0 && fullId !== lastLogTime) {
           lastLogTime = fullId; 
           
-          if (log.status.includes("미신청")) {
-            triggerAlert(`🚨 경고!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자 무단 접근!`);
-          } else if (log.status.includes("중복")) {
-            triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 식사한 학생!`);
-          }
+          let allergyClass = log.status.includes("알레르기") ? "allergy" : "";
+          let unauthClass = log.status.includes("무단") ? "unauth" : "";
+          let badgeHtml = "";
           
-          if (!log.status.includes("미신청") && !log.status.includes("중복")) {
-             let allergyClass = log.status.includes("알레르기") ? "allergy" : "";
-             let manualBadge = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동승인</div>` : "";
-             
-             let faceCard = `
-               <div class="student-card ${allergyClass}">
-                 ${manualBadge}
-                 <div class="student-photo">👤</div>
-                 <div class="student-info">
-                   <div class="student-id">${log.id}</div>
-                   <div class="student-name">${log.name}</div>
-                   ${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}
-                 </div>
-               </div>
-             `;
-             newFaces.push(faceCard);
+          if (log.status.includes("무단")) {
+            triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`);
+            badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`;
+          } else if (log.status.includes("중복")) {
+            triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 통과한 학생!`);
+          } else if (log.status.includes("수동")) {
+            badgeHtml = `<div class="manual-badge">✅ 수동입력</div>`;
+          }
+
+          if(!log.status.includes("중복")) {
+            let faceCard = `
+              <div class="student-card ${allergyClass} ${unauthClass}">
+                <button class="btn-close-card" onclick="removeCard(this)">✖</button>
+                ${badgeHtml}
+                <div class="student-photo">👤</div>
+                <div class="student-info">
+                  <div class="student-id">${log.id}</div>
+                  <div class="student-name">${log.name}</div>
+                  ${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}
+                </div>
+              </div>
+            `;
+            newFaces.push(faceCard);
           }
         }
       }
@@ -208,17 +261,12 @@
       
       if (newFaces.length > 0) {
         let grid = document.getElementById('photo-grid');
-        if(grid.innerHTML.includes("바코드를 스캔하면")) grid.innerHTML = "";
-        grid.innerHTML = newFaces.join("") + grid.innerHTML;
-        
-        if(grid.children.length > 6) {
-          for(let i = 6; i < grid.children.length; i++) grid.removeChild(grid.children[i]);
-        }
+        grid.insertAdjacentHTML('afterbegin', newFaces.join(""));
+        while(grid.children.length > 6) { grid.removeChild(grid.lastChild); }
       }
     }
 
-    setInterval(refreshData, 2000);
-    refreshData();
+    setInterval(refreshData, 2000); refreshData();
   </script>
 </body>
 </html>

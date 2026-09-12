@@ -7,8 +7,6 @@
     body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Apple SD Gothic Neo', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     
     .header { background-color: #1e293b; color: white; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; }
-    
-    /* ★ 제목과 시계가 무조건 한 줄로 예쁘게 나오도록 고정 */
     .header-left { display: flex; align-items: center; gap: 15px; flex-wrap: nowrap; }
     .title { font-size: 20pt; font-weight: bold; color: #60a5fa; white-space: nowrap; }
     .clock { font-size: 14pt; font-weight: bold; color: #94a3b8; white-space: nowrap; margin-top: 4px; }
@@ -162,24 +160,21 @@
         <div class="alert-content animating" id="alert-box">
           <div class="alert-icon">🚨</div>
           <div class="alert-msg" id="alert-text">경고!</div>
-          <button class="btn-confirm" onclick="closeAlert()">확인</button>
+          <button class="btn-confirm" onclick="closeAlert()">확인 (소리 끄기)</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ★ 선생님 구글 앱스 스크립트 주소 자동 장착 완료!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
-    // ★ 비밀번호 1230으로 셋팅
+    // ★ 비밀번호 1230 고정 완료!
     const TEACHER_PASSWORD = "1230"; 
     let isUnlocked = false; 
     let isSoundEnabled = true; 
 
     let audioCtx = null;
-    let alertAudio = new Audio('https://t1.daumcdn.net/cfile/tistory/998B4B485C9A208D16?original'); 
-    alertAudio.loop = false; 
 
     function toggleSound() {
       isSoundEnabled = !isSoundEnabled;
@@ -191,11 +186,10 @@
       } else {
         btn.innerText = "🔇 소리 꺼짐";
         btn.style.background = "#64748b";
-        alertAudio.pause();
-        alertAudio.currentTime = 0;
       }
     }
 
+    // ★ 학생용과 100% 동일한 내장 사운드 시스템 (외부 MP3 제거)
     function playBeep(type) {
       if (!isUnlocked || !isSoundEnabled || !audioCtx) return; 
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -204,6 +198,7 @@
       } else if (type === 'duplicate') { 
         const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
       } else if (type === 'error') { 
+        // ★ 무단접근 경고음 (삐-삐-!)
         const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35);
       }
     }
@@ -213,9 +208,7 @@
       if (inputPw === TEACHER_PASSWORD) {
         document.getElementById('lock-screen').style.display = 'none';
         isUnlocked = true; 
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
+        if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         if (audioCtx.state === 'suspended') audioCtx.resume(); 
         refreshData(); 
       } else {
@@ -238,16 +231,11 @@
       document.getElementById('alert-text').innerHTML = msg;
       document.getElementById('alert-modal').style.display = 'block'; 
       document.getElementById('alert-box').classList.add('animating');
-      if (isSoundEnabled) { 
-        alertAudio.play().catch(e => console.log("자동재생 차단됨")); 
-      }
     }
 
     function closeAlert() {
       document.getElementById('alert-box').classList.remove('animating');
       setTimeout(() => { document.getElementById('alert-modal').style.display = 'none'; }, 200);
-      alertAudio.pause();
-      alertAudio.currentTime = 0;
     }
 
     function removeCard(btn) { btn.parentElement.remove(); }
@@ -316,6 +304,9 @@
       for (let i = 0; i < logs.length; i++) {
         let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'), fullId = log.time + "_" + log.id; 
         
+        // ★ 빈칸 스캔 시 유령 카드가 만들어지지 않도록 방어막 추가!
+        if (!log.id && !log.name) continue; 
+
         let rowClass = "";
         if (log.status.includes("무단")) rowClass = "log-error-red";
         else if (log.status.includes("중복")) rowClass = "log-error-orange";
@@ -330,6 +321,7 @@
           let unauthClass = log.status.includes("무단") ? "unauth" : "";
           let badgeHtml = "";
           
+          // ★ 무단접근 시 외부 사이렌 대신, 강력한 내장 경고음(삐-삐-!) 사용!
           if (log.status.includes("무단")) {
             playBeep('error');
             triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`);

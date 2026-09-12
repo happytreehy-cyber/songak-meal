@@ -25,7 +25,7 @@
     .student-name { font-size: 24pt; font-weight: 900; color: #1e293b; margin: 5px 0; }
     .student-note { background: #fee2e2; color: #dc2626; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14pt; display: inline-block; margin-top: 5px; }
     
-    /* ★ 수동입력(✅) 시 사진 위에 뜨는 뱃지 */
+    /* ★ 수동입력(✅) 뱃지 */
     .manual-badge { position: absolute; top: 10px; right: 10px; background: #10b981; color: white; font-weight: bold; padding: 8px 12px; border-radius: 8px; font-size: 13pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 
     .log-box { height: 250px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
@@ -34,7 +34,7 @@
     .log-row { padding: 5px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 15px; }
     .log-time { color: #94a3b8; font-family: monospace; }
     
-    /* ★ 블랙박스 로그 색상 완벽 동기화 */
+    /* ★ 블랙박스 로그 색상 완벽 동기화 (진한 구글 공식 컬러) */
     .log-error-red { color: #cc0000; font-weight: bold; background: #fce8e8; padding: 2px 8px; border-radius: 6px; }
     .log-error-orange { color: #b35900; font-weight: bold; background: #fef0d9; padding: 2px 8px; border-radius: 6px; }
     .log-manual-green { color: #137333; font-weight: bold; background: #e6f4ea; padding: 2px 8px; border-radius: 6px; }
@@ -49,7 +49,7 @@
     .list-content { flex: 1; overflow-y: auto; font-size: 14pt; line-height: 1.6; color: #475569; }
     .unfed-item { padding: 8px; border-bottom: 1px dashed #cbd5e1; display: flex; justify-content: space-between; }
 
-    /* ★ 팝업창 (빨간배경 + 하얀글씨) */
+    /* ★ 팝업창 디자인 (강렬한 레드 & 화이트) */
     #alert-modal { display: none; position: absolute; bottom: 20px; right: 20px; z-index: 999; }
     .alert-content { background: #ef4444; padding: 35px; border-radius: 15px; border: 4px solid #b91c1c; text-align: center; box-shadow: 0 10px 30px rgba(239,68,68,0.7); width: 350px; animation: popAlert 0.5s infinite alternate; }
     .alert-icon { font-size: 50pt; margin-bottom: 5px; }
@@ -127,6 +127,7 @@
       alertAudio.currentTime = 0;
     }
 
+    // 2초마다 구글 시트에서 새로운 정보를 긁어옵니다!
     function refreshData() {
       fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA")
         .then(r => r.json())
@@ -167,6 +168,7 @@
         let fullId = log.time + "_" + log.id; 
         
         let rowClass = "";
+        // 색상 판별 (미신청=빨강, 중복=주황, 수동=초록)
         if (log.status.includes("미신청")) rowClass = "log-error-red";
         else if (log.status.includes("중복")) rowClass = "log-error-orange";
         else if (log.status.includes("수동")) rowClass = "log-manual-green";
@@ -184,6 +186,7 @@
           
           if (!log.status.includes("미신청") && !log.status.includes("중복")) {
              let allergyClass = log.status.includes("알레르기") ? "allergy" : "";
+             // 수동일 때 사진 우측 상단에 달리는 초록색 뱃지
              let manualBadge = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동승인</div>` : "";
              
              let faceCard = `
@@ -204,6 +207,7 @@
       
       document.getElementById('log-content').innerHTML = logHtml;
       
+      // 사진 카드는 최신순으로 6명까지만 띄웁니다!
       if (newFaces.length > 0) {
         let grid = document.getElementById('photo-grid');
         if(grid.innerHTML.includes("바코드를 스캔하면")) grid.innerHTML = "";

@@ -39,6 +39,9 @@
     .box-title { font-size: 20pt; font-weight: 900; margin-bottom: 5px; }
     .box-content { font-size: 16pt; margin-bottom: 0; font-weight: bold; line-height: 1.3; }
     
+    /* ★ 삭제했던 경고박스 부활! */
+    .warning-text { margin-top: 10px; font-size: 12pt; color: #fca5a5; font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 12px; border-radius: 12px; line-height: 1.4; border: 1px solid rgba(239, 68, 68, 0.3); transition: opacity 0.2s; }
+
     .manual-btn { margin-top: 30px; width: 95%; max-width: 300px; background: transparent; color: white; border: 2px solid #6b7280; padding: 12px 15px; border-radius: 12px; font-size: 16pt; font-weight: 900; cursor: pointer; transition: 0.2s; line-height: 1.3; }
     .manual-btn:hover { border-color: #9ca3af; background: rgba(255,255,255,0.05); }
     .manual-btn:active { transform: scale(0.95); }
@@ -126,6 +129,11 @@
       <div class="box-title" id="status-title" style="display: none;"></div>
       <div class="box-content" id="status-message" style="color: #9ca3af; font-size: 16pt; margin-top: 5px;"></div>
       
+      <!-- ★ 경고박스 부활! (기본적으로 켜져 있음) -->
+      <div class="warning-text" id="warning-box">
+        * 교사용 모니터에 본인의 실제 사진이<br>표시되며, 대리 식사는 즉시 적발됩니다.
+      </div>
+      
       <button class="manual-btn" onclick="openManual()">
         👉 QR이 없나요?<br>
         <span style="font-size: 12pt; color: #9ca3af; font-weight: normal;">(수동입력 하기)</span>
@@ -137,7 +145,6 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode;
-    // ★ 1번 피드백 해결: 태블릿 카메라 리스트를 직접 가져와서 강제 전환하는 강력한 로직
     let cameras = [];
     let currentCamIndex = 0; 
 
@@ -258,19 +265,16 @@
         }).catch(err => {});
     };
 
-    // ★ 카메라 리스트 스캔하여 강력하게 구동시키는 방식
     function initCamera() {
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
           cameras = devices;
-          // 후면(Back/Environment) 카메라를 기본으로 찾음
           let backCamIndex = devices.findIndex(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment'));
           currentCamIndex = backCamIndex > -1 ? backCamIndex : 0;
           
           html5QrCode = new Html5Qrcode("reader");
           startCurrentCamera(cameras[currentCamIndex].id);
         } else {
-          // 기기에 카메라 리스트가 없으면 폴백(기존방식)
           html5QrCode = new Html5Qrcode("reader");
           startCurrentCamera({ facingMode: "environment" });
         }
@@ -299,7 +303,7 @@
     function switchCamera() {
       if (cameras.length > 1) {
         html5QrCode.stop().then(() => {
-          currentCamIndex = (currentCamIndex + 1) % cameras.length; // 다음 카메라로 순환
+          currentCamIndex = (currentCamIndex + 1) % cameras.length; 
           startCurrentCamera(cameras[currentCamIndex].id);
         }).catch(e => console.log("카메라 전환 실패"));
       } else {
@@ -327,7 +331,6 @@
         let safeName = maskName(student.name); 
         
         if(isManual) {
-          // ✅ 기호로 완전 통일 & 군더더기 경고멘트 삭제
           let manualMsg = `
             <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
             <div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인</div>
@@ -335,7 +338,6 @@
           `;
           updateUI("#10b981", `<span style="font-size: 60pt; color: #10b981;">✅</span>`, "", manualMsg);
         } else {
-          // 일반 QR 스캔 레이아웃 & 군더더기 멘트 삭제
           let normalMsg = `
             <div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div>
             <div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인</div>
@@ -369,6 +371,7 @@
       }, 5000); 
     }
 
+    // ★ 핵심 수정: 상태가 'yellow'(기본대기)일 때만 경고박스 표시, 나머지는 숨김!
     function updateUI(color, iconHtml, title, message) {
       const box = document.getElementById('photo-box'); box.style.borderColor = color; box.innerHTML = iconHtml;
       
@@ -379,6 +382,15 @@
       
       const msgEl = document.getElementById('status-message');
       msgEl.innerHTML = message;
+
+      const warnBox = document.getElementById('warning-box');
+      if(warnBox) {
+        if (color === 'yellow') {
+          warnBox.style.display = "block"; // 대기중일 때 경고 보이기
+        } else {
+          warnBox.style.display = "none";  // 결과 화면일 때 경고 숨기기
+        }
+      }
     }
   </script>
 </body>

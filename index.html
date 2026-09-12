@@ -144,8 +144,8 @@
   </div>
 
   <script>
-    // ⚠️ 아래 큰 따옴표 안에 선생님의 구글 앱스 스크립트 배포 주소를 꼭 붙여넣으세요!
-    const SCRIPT_URL = "여기에_주소를_넣으세요";
+    // ★ 선생님의 기존 구글 시트 주소로 세팅 완료했습니다!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode;
     let cameras = [];
@@ -236,7 +236,6 @@
       processStudentScan(val, true); 
     }
 
-    // 서버 연결 오류가 났을 때 무한로딩을 막아주는 안전 코드
     window.onload = function() {
       refreshStats();
       let progress = 0;

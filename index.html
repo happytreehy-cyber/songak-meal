@@ -98,7 +98,6 @@
   <div class="header">
     <div class="header-left">
       <div class="title">🍴 송악고 석식 시스템 (학생용)</div>
-      <!-- ★ 학생용 시계도 선생님 화면과 100% 동일한 형식으로 출력됩니다 -->
       <div class="clock" id="live-clock">2026. 00. 00. 00:00:00</div>
     </div>
     <div style="display:flex;">
@@ -130,13 +129,12 @@
   </div>
 
   <script>
-    // ★ 선생님의 구글 스크립트 주소를 안전하게 내장했습니다!
+    // ★ [매우 중요] '송악고 실전용' 진짜 스크립트 주소로 원상 복구!!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode, cameras = [], currentCamIndex = 0; 
     let studentCache = {}, isScanning = true, currentStatsDetails = null, uiResetTimer = null; 
     
-    // ★ 시계 형식 교사용과 완벽 통일
     setInterval(() => { 
       let now = new Date();
       let dateStr = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ".";

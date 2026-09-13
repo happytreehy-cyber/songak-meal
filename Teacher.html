@@ -63,7 +63,6 @@
 
     .log-box { flex: 1; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
     .log-title { background: #1e293b; color: white; padding: 12px 20px; font-size: 14pt; font-weight: bold; }
-    /* ★ 블랙박스 스크롤 확장 완벽 해결! */
     .log-content { flex: 1; overflow-y: auto; padding: 10px; font-size: 13pt; line-height: 1.8; }
     .log-row { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 10px; }
     .log-time { color: #94a3b8; font-family: monospace; }
@@ -125,7 +124,6 @@
     </div>
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
-      <!-- ★ 페이지를 아예 재시작하도록 완전 새로고침 기능으로 원상복구 -->
       <button class="top-btn btn-refresh" onclick="window.location.reload()">🔄 화면 새로고침</button>
       <button class="top-btn btn-close-sys" id="sys-btn" onclick="toggleSystem()">🛑 시스템 마감(차단)</button>
     </div>
@@ -153,7 +151,7 @@
       </div>
 
       <div class="log-box">
-        <div class="log-title">📹 실시간 블랙박스 기록 (최근 스캔)</div>
+        <div class="log-title">📹 실시간 블랙박스 기록 (최근 스캔 맨위로)</div>
         <div class="log-content" id="log-content">로딩 중...</div>
       </div>
 
@@ -174,9 +172,15 @@
     let isSoundEnabled = true; 
     let audioCtx = null;
 
-    // ★ 자동로그인 기능 완전히 삭제 완료! 무조건 잠금화면부터 시작합니다.
+    // ★ 1. 자동 로그인 부활 (새로고침해도 비밀번호 묻지 않음!)
     window.onload = function() {
-      document.getElementById('teacher-pw').focus();
+      if(sessionStorage.getItem('teacherUnlocked') === 'true') {
+        document.getElementById('lock-screen').style.display = 'none';
+        isUnlocked = true;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } else {
+        document.getElementById('teacher-pw').focus();
+      }
     };
 
     function toggleSound() {
@@ -209,6 +213,7 @@
       if (inputPw === TEACHER_PASSWORD) {
         document.getElementById('lock-screen').style.display = 'none';
         isUnlocked = true; 
+        sessionStorage.setItem('teacherUnlocked', 'true'); // 비번 패스권 저장!
         if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         if (audioCtx.state === 'suspended') audioCtx.resume(); 
         refreshData(); 
@@ -304,11 +309,13 @@
       fetch(SCRIPT_URL + "?action=GET_DETAILS").then(r=>r.json()).then(res => { currentStatsDetails = res; });
     }
 
+    // ★ 수동 스캔 누락 버그 완벽 해결 & 리스트 상위 노출 
     function processLogs(logs) {
-      let logHtml = ""; let newFaces = [];
+      let logHtml = ""; 
+      
+      // 1. 블랙박스 기록을 최신순으로 그려주기 (스크롤 가능하게 완벽 해결)
       for (let i = 0; i < logs.length; i++) {
-        let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'), fullId = log.time + "_" + log.id; 
-        
+        let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'); 
         if (!log.id && !log.name) continue; 
 
         let rowClass = "";
@@ -317,62 +324,95 @@
         else if (log.status.includes("수동")) rowClass = "log-manual-green";
         
         logHtml += `<div class="log-row"><span class="log-time">[${timeStr}]</span> <span class="${rowClass}">${log.id} ${log.name} - ${log.status}</span></div>`;
+      }
+      document.getElementById('log-content').innerHTML = logHtml;
 
-        if (i === 0 && fullId !== lastLogTime) {
-          lastLogTime = fullId; 
-          
-          let allergyClass = log.status.includes("알레르기") ? "allergy" : "";
-          let unauthClass = log.status.includes("무단") ? "unauth" : "";
-          let badgeHtml = "";
-          
-          if (log.status.includes("무단")) {
-            playBeep('error');
-            triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`);
-            badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`;
-          } else if (log.status.includes("중복")) {
-            playBeep('duplicate');
-            triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 통과한 학생!`);
-          } else if (log.status.includes("수동")) {
-            playBeep('success');
-            badgeHtml = `<div class="manual-badge">✅ 수동입력</div>`;
-          } else {
-            playBeep('success'); 
+      // 2. 새로운 사진 카드 띄우기 (놓치는 사람 없이 전부 다 띄웁니다!)
+      if (logs.length > 0) {
+        let currentLatestId = logs[0].time + "_" + logs[0].id;
+        let newFaces = [];
+
+        if (lastLogTime !== "" && currentLatestId !== lastLogTime) {
+          // 새로 추가된 사람만 쏙쏙 뽑아내기
+          let pendingLogs = [];
+          for(let i=0; i<logs.length; i++) {
+            if ((logs[i].time + "_" + logs[i].id) === lastLogTime) break;
+            pendingLogs.unshift(logs[i]); // 옛날 것부터 차례대로 넣기
           }
 
-          if(!log.status.includes("중복")) {
-            let photoHtml = log.imgUrl 
-              ? `<img src="${log.imgUrl}" class="student-photo">` 
-              : `<div class="student-photo">👤</div>`;
+          pendingLogs.forEach(log => {
+            let allergyClass = log.status.includes("알레르기") ? "allergy" : "";
+            let unauthClass = log.status.includes("무단") ? "unauth" : "";
+            let badgeHtml = "";
 
-            let faceCard = `
-              <div class="student-card ${allergyClass} ${unauthClass}">
-                <div class="newest-badge">🔥 방금 스캔</div>
-                <button class="btn-close-card" onclick="removeCard(this)">✖</button>
-                ${badgeHtml}
-                ${photoHtml}
-                <div class="student-info">
-                  <div class="student-id">${log.id}</div>
-                  <div class="student-name">${log.name}</div>
-                  ${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}
+            if (log.status.includes("무단")) {
+              playBeep('error');
+              triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`);
+              badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`;
+            } else if (log.status.includes("중복")) {
+              playBeep('duplicate');
+              triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 통과한 학생!`);
+            } else if (log.status.includes("수동")) {
+              playBeep('success');
+              badgeHtml = `<div class="manual-badge">✅ 수동입력</div>`;
+            } else {
+              playBeep('success'); 
+            }
+
+            if(!log.status.includes("중복")) {
+              let photoHtml = log.imgUrl ? `<img src="${log.imgUrl}" class="student-photo" style="object-fit:contain;">` : `<div class="student-photo">👤</div>`;
+              let faceCard = `
+                <div class="student-card ${allergyClass} ${unauthClass}">
+                  <div class="newest-badge">🔥 방금 스캔</div>
+                  <button class="btn-close-card" onclick="removeCard(this)">✖</button>
+                  ${badgeHtml}
+                  ${photoHtml}
+                  <div class="student-info">
+                    <div class="student-id">${log.id}</div>
+                    <div class="student-name">${log.name}</div>
+                    ${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}
+                  </div>
                 </div>
-              </div>
-            `;
-            newFaces.push(faceCard);
+              `;
+              newFaces.unshift(faceCard); // 최신 스캔이 무조건 맨 위(왼쪽)로 가게!
+            }
+          });
+        } else if (lastLogTime === "") {
+          // 처음 켰을 때는 맨 첫 사람만 소리 없이 띄워주기
+          let log = logs[0];
+          if (!log.status.includes("중복")) {
+              let allergyClass = log.status.includes("알레르기") ? "allergy" : "";
+              let unauthClass = log.status.includes("무단") ? "unauth" : "";
+              let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
+              let photoHtml = log.imgUrl ? `<img src="${log.imgUrl}" class="student-photo" style="object-fit:contain;">` : `<div class="student-photo">👤</div>`;
+              let faceCard = `
+                <div class="student-card ${allergyClass} ${unauthClass}">
+                  <button class="btn-close-card" onclick="removeCard(this)">✖</button>
+                  ${badgeHtml}
+                  ${photoHtml}
+                  <div class="student-info">
+                    <div class="student-id">${log.id}</div>
+                    <div class="student-name">${log.name}</div>
+                    ${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}
+                  </div>
+                </div>
+              `;
+              newFaces.push(faceCard);
           }
         }
-      }
-      
-      document.getElementById('log-content').innerHTML = logHtml;
-      
-      if (newFaces.length > 0) {
-        let grid = document.getElementById('photo-grid');
-        grid.insertAdjacentHTML('afterbegin', newFaces.join(""));
-        while(grid.children.length > 6) { grid.removeChild(grid.lastChild); }
+
+        lastLogTime = currentLatestId; // 마지막 스캔 시간 업데이트!
+
+        if (newFaces.length > 0) {
+          let grid = document.getElementById('photo-grid');
+          grid.insertAdjacentHTML('afterbegin', newFaces.join(""));
+          while(grid.children.length > 6) { grid.removeChild(grid.lastChild); }
+        }
       }
     }
 
-    // ★ 교사용 화면 20초 딜레이의 주범이었던 간격을 4.5초로 여유롭게 세팅! (이제 딜레이 없이 실시간으로 뜹니다!)
-    setInterval(refreshData, 4500); refreshData();
+    // ★ 10초 넘게 늦게 뜨던 것을 3초 간격의 초고속 스피드로 변경!
+    setInterval(refreshData, 3000); refreshData();
   </script>
 </body>
 </html>

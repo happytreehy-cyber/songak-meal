@@ -87,7 +87,7 @@
     </div>
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
-      <button class="top-btn btn-refresh" onclick="window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();">🔄 화면 새로고침</button>
+      <button class="top-btn btn-refresh" onclick="window.location.reload(true)">🔄 화면 새로고침</button>
     </div>
   </div>
 
@@ -128,13 +128,12 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
-    let lastUpdatePing = "0"; 
 
-    // ★ 구글 서버 렉(30초 지연)을 완벽 차단하는 초경량 PING 엔진 탑재!
+    // ★ 안전한 오디오 준비 및 로딩 시작
     window.onload = function() { 
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-      refreshData("INITIAL"); // 켜자마자 1번만 크게 가져오고
-      startPing();            // 그 뒤론 1.5초마다 가볍게 핑만 날립니다!
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+      refreshData(); 
+      setInterval(refreshData, 3000); // 구글 서버가 숨 쉴 수 있게 3초로 안정화
     };
     
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
@@ -151,6 +150,8 @@
       else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); } 
       else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
     }
+
+    let lastProcessedLogTime = ""; let currentStatsDetails = null;
 
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
@@ -169,46 +170,31 @@
     }
     function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
 
-    // ★ 1.5초마다 가볍게 물어보는 PING (구글 서버 절대 뻗지 않음)
-    let isPinging = false;
-    function startPing() {
-      setInterval(() => {
-        if(isPinging) return;
-        isPinging = true;
-        fetch(SCRIPT_URL + "?action=PING&t=" + new Date().getTime())
-        .then(r => r.json())
-        .then(res => {
-          isPinging = false;
-          if (res.teacher_sys_status === "CLOSED") {
-             document.getElementById('teacher-closed-overlay').style.display = 'flex';
-          } else {
-             document.getElementById('teacher-closed-overlay').style.display = 'none';
-          }
-          // 새로운 스캔이 찍혔다는 연락이 오면, 그때만 데이터를 새로 가져옵니다!
-          if (res.last_update !== lastUpdatePing) {
-             refreshData(res.last_update); 
-          }
-        }).catch(e => { isPinging = false; });
-      }, 1500);
+    // ★ 타임아웃 기능 추가: 8초 동안 구글이 대답 안 하면 쿨하게 버림! (무한 로딩 방지)
+    function fetchWithTimeout(url, timeout = 8000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
     }
 
     let isRefreshing = false;
-    function refreshData(newUpdateVal) {
+    function refreshData() {
       if(isRefreshing) return;
       isRefreshing = true;
       let cacheBuster = "&t=" + new Date().getTime();
-      fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster)
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster)
         .then(r => r.json())
         .then(res => {
           isRefreshing = false;
           if (res.status === "SUCCESS") {
-            if (newUpdateVal !== "INITIAL") lastUpdatePing = newUpdateVal; // 성공 시 핑 업데이트
-
             if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-                window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();
+                window.location.reload(true);
                 return;
             }
             localResetTime = res.reset_time || "0";
+
+            if (res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
+            else document.getElementById('teacher-closed-overlay').style.display = 'none';
 
             document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
             
@@ -223,15 +209,34 @@
             
             currentStatsDetails = res.details; 
             processLogs(res.blackbox);
+          } else {
+            document.getElementById('log-content').innerHTML = `<div class="log-row"><span class="log-error-red">구글 오류: 연결을 재시도합니다...</span></div>`;
           }
-        }).catch(err => { isRefreshing = false; });
+        }).catch(err => { 
+          isRefreshing = false; 
+          document.getElementById('log-content').innerHTML = `<div class="log-row"><span class="log-error-orange">학교 인터넷 불안정: 자동 재접속 중...</span></div>`;
+        });
     }
 
-    // ★ 무한 복사, 중복 카드 생성을 1000% 완벽 차단하는 '바코드 추적' 기능!
-    let processedLogIds = new Set();
+    // ★ 먹통 원인 완전 제거! 안전하고 완벽한 전용 사진 에러 처리 함수
+    function handleImgErr(img, id) {
+      if (!img.dataset.f1) { 
+        img.dataset.f1 = '1'; 
+        img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpg`; 
+      } else if (!img.dataset.f2) { 
+        img.dataset.f2 = '1'; 
+        img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpeg.jpeg`; 
+      } else { 
+        img.outerHTML = '<div class="student-photo">👤</div>'; 
+      }
+    }
 
     function processLogs(logs) {
-      if (!logs || logs.length === 0) return;
+      if (!logs || logs.length === 0) {
+        document.getElementById('log-content').innerHTML = `<div style='text-align:center; padding:20px; color:#94a3b8; font-weight:bold;'>기록이 없습니다.</div>`;
+        return;
+      }
+      
       let logHtml = ""; 
       for (let i = 0; i < logs.length; i++) {
         let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'); 
@@ -242,15 +247,14 @@
       }
       document.getElementById('log-content').innerHTML = logHtml;
 
-      let newFaces = [];
-      // ★ 이미 그린 카드는 무시하고 오직 '진짜 새로운 카드'만 뽑아냅니다!
-      for (let i = 0; i < logs.length; i++) {
-        let log = logs[i];
-        let uniqueId = log.time + "_" + log.id; // 절대 중복될 수 없는 고유 바코드
+      let currentLatestId = logs[0].time + "_" + logs[0].id;
+      if (lastProcessedLogTime !== "" && currentLatestId === lastProcessedLogTime) return; 
 
-        if (!processedLogIds.has(uniqueId)) {
-          processedLogIds.add(uniqueId); // 바코드 등록!
-          
+      let newFaces = [];
+      if (lastProcessedLogTime !== "") {
+        let pendingLogs = [];
+        for(let i=0; i<logs.length; i++) { if ((logs[i].time + "_" + logs[i].id) === lastProcessedLogTime) break; pendingLogs.unshift(logs[i]); }
+        pendingLogs.forEach(log => {
           let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "", badgeHtml = "";
           
           if (log.status.includes("무단")) { playBeep('error'); triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`); badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`; } 
@@ -259,26 +263,25 @@
           else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // .jpeg .jpg 뭘 올리셔도 알아서 다 찾아냅니다!
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" 
-              onerror="
-                if(!this.getAttribute('data-fail1')) {
-                  this.setAttribute('data-fail1','1'); 
-                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';
-                } else if(!this.getAttribute('data-fail2')) {
-                  this.setAttribute('data-fail2','1'); 
-                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg.jpeg';
-                } else {
-                  this.outerHTML='<div class=\\'student-photo\\'>👤</div>';
-                }
-              ">`;
+            // ★ 따옴표 에러 제로! 안전한 사진 출력 함수 연동 완료!
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="handleImgErr(this, '${log.id}')">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
-            newFaces.push(faceCard); 
+            newFaces.unshift(faceCard); 
           }
+        });
+      } else {
+        let log = logs[0];
+        if (!log.status.includes("중복")) {
+            let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
+            let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
+            
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="handleImgErr(this, '${log.id}')">`;
+            let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
+            newFaces.push(faceCard);
         }
       }
       
-      // 새로 뽑아낸 카드들을 한 방에 맨 위에 꽂아줍니다!
+      lastProcessedLogTime = currentLatestId; 
       if (newFaces.length > 0) {
         let grid = document.getElementById('photo-grid');
         grid.insertAdjacentHTML('afterbegin', newFaces.join(""));

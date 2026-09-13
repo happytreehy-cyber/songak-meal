@@ -62,14 +62,10 @@
     #stats-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; }
     .stats-modal-content { background: white; padding: 30px; border-radius: 15px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     .grade-stat-row { display: flex; justify-content: space-between; font-size: 14pt; padding: 12px 0; border-bottom: 1px solid #e2e8f0; font-weight: bold; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes popAlert { from { transform: scale(1); } to { transform: scale(1.05); } }
-    @keyframes blinker { 50% { opacity: 0.3; } }
   </style>
 </head>
 <body>
-
-  <!-- ★ 선생님의 명령대로 교사용 모니터 구글 시트 원격 차단 화면 추가! -->
+  
   <div id="teacher-closed-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; justify-content:center; align-items:center; color:white;">
     <div style="font-size:80pt; margin-bottom:20px;">🛑</div>
     <h1 style="color:#ef4444; font-size:30pt; font-weight:900;">교사용 모니터가 차단되었습니다</h1>
@@ -91,7 +87,7 @@
     </div>
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
-      <button class="top-btn btn-refresh" onclick="window.location.reload()">🔄 화면 새로고침</button>
+      <button class="top-btn btn-refresh" onclick="window.location.reload(true)">🔄 화면 새로고침</button>
     </div>
   </div>
 
@@ -115,16 +111,13 @@
           <div class="stat-badge stat-left">남은 인원<span class="stat-num" id="stat-left">0</span></div>
         </div>
       </div>
-
       <div class="log-box">
         <div class="log-title">📹 실시간 블랙박스 기록 (최근 스캔 맨위로)</div>
         <div class="log-content" id="log-content">로딩 중...</div>
       </div>
-
       <div id="alert-modal">
         <div class="alert-content animating" id="alert-box">
-          <div class="alert-icon">🚨</div>
-          <div class="alert-msg" id="alert-text">경고!</div>
+          <div class="alert-icon">🚨</div><div class="alert-msg" id="alert-text">경고!</div>
           <button class="btn-confirm" onclick="closeAlert()">닫기</button>
         </div>
       </div>
@@ -133,89 +126,63 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
-    let isSoundEnabled = true; 
-    let audioCtx = null;
+    let isSoundEnabled = true; let audioCtx = null;
+    let localResetTime = "0"; // ★ 오토-싱크를 위한 핵심 변수!
 
-    window.onload = function() {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      refreshData();
-      setInterval(refreshData, 3000); 
-    };
-
+    window.onload = function() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); refreshData(); setInterval(refreshData, 3000); };
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
 
     function toggleSound() {
-      isSoundEnabled = !isSoundEnabled;
-      let btn = document.getElementById('sound-btn');
+      isSoundEnabled = !isSoundEnabled; let btn = document.getElementById('sound-btn');
       if (isSoundEnabled) { btn.innerText = "🔊 소리 켜짐"; btn.style.background = "#8b5cf6"; if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); } 
       else { btn.innerText = "🔇 소리 꺼짐"; btn.style.background = "#64748b"; }
     }
 
     function playBeep(type) {
-      if (!isSoundEnabled || !audioCtx) return; 
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      if (type === 'success') { 
-        const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-      } else if (type === 'duplicate') { 
-        const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-      } else if (type === 'error') { 
-        const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35);
-      }
+      if (!isSoundEnabled || !audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (type === 'success') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
+      else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); } 
+      else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
     }
 
-    let lastProcessedLogTime = ""; 
-    let currentStatsDetails = null;
+    let lastProcessedLogTime = ""; let currentStatsDetails = null;
 
-    setInterval(() => { 
-      let now = new Date();
-      let dateStr = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ".";
-      document.getElementById('live-clock').innerText = dateStr + " " + now.toLocaleTimeString('ko-KR'); 
-    }, 1000);
+    setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
     let alertTimer = null;
     function triggerAlert(msg) {
-      document.getElementById('alert-text').innerHTML = msg;
-      document.getElementById('alert-modal').style.display = 'block'; 
-      document.getElementById('alert-box').classList.add('animating');
-      if(alertTimer) clearTimeout(alertTimer);
-      alertTimer = setTimeout(() => { closeAlert(); }, 3500);
+      document.getElementById('alert-text').innerHTML = msg; document.getElementById('alert-modal').style.display = 'block'; document.getElementById('alert-box').classList.add('animating');
+      if(alertTimer) clearTimeout(alertTimer); alertTimer = setTimeout(() => { closeAlert(); }, 3500);
     }
     function closeAlert() { document.getElementById('alert-box').classList.remove('animating'); setTimeout(() => { document.getElementById('alert-modal').style.display = 'none'; }, 200); }
     function removeCard(btn) { btn.parentElement.remove(); }
 
     function openStatsModal() {
-      if(!currentStatsDetails) return;
-      let html = "";
-      [1, 2, 3].forEach(grade => {
-        let st = currentStatsDetails[grade];
-        if(st) html += `<div class="grade-stat-row"><span style="color:#2563eb;">${grade}학년</span> <span>총: ${st.total}명</span> <span style="color:#10b981;">완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; 
-      });
-      document.getElementById('stats-detail-content').innerHTML = html;
-      document.getElementById('stats-modal').style.display = 'flex';
+      if(!currentStatsDetails) return; let html = "";
+      [1, 2, 3].forEach(grade => { let st = currentStatsDetails[grade]; if(st) html += `<div class="grade-stat-row"><span style="color:#2563eb;">${grade}학년</span> <span>총: ${st.total}명</span> <span style="color:#10b981;">완료: ${st.done}명</span> <span style="color:#ef4444;">미식사: ${st.left}명</span></div>`; });
+      document.getElementById('stats-detail-content').innerHTML = html; document.getElementById('stats-modal').style.display = 'flex';
     }
     function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
 
     function refreshData() {
       let cacheBuster = "&t=" + new Date().getTime();
-      fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster)
-        .then(r => r.json())
-        .then(res => {
+      fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster).then(r => r.json()).then(res => {
           if (res.status === "SUCCESS") {
-            // ★ 교사용 화면 구글 시트 원격 차단 연동!
-            if (res.teacher_sys_status === "CLOSED") {
-              document.getElementById('teacher-closed-overlay').style.display = 'flex';
-            } else {
-              document.getElementById('teacher-closed-overlay').style.display = 'none';
+            // ★ 오토 싱크(Auto-Sync): 구글 시트에서 초기화 누른 걸 감지하면 스스로 새로고침!
+            if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
+                window.location.reload(true);
+                return;
             }
+            localResetTime = res.reset_time || "0";
 
-            document.getElementById('stat-total').innerText = res.stats.total;
-            document.getElementById('stat-done').innerText = res.stats.done;
-            document.getElementById('stat-left').innerText = res.stats.left;
+            if (res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
+            else document.getElementById('teacher-closed-overlay').style.display = 'none';
+
+            document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
             
             let h1 = "", h2 = "", h3 = "";
             res.unfed.forEach(s => {
-              let grade = s.id.charAt(0);
-              let noteHtml = s.note ? `<span style="color:#ef4444; font-weight:bold; font-size:11pt;">[${s.note}]</span>` : "";
+              let grade = s.id.charAt(0), noteHtml = s.note ? `<span style="color:#ef4444; font-weight:bold; font-size:11pt;">[${s.note}]</span>` : "";
               let item = `<div class="unfed-item"><span style="color:#475569; font-weight:bold;">${s.id} ${s.name}</span> ${noteHtml}</div>`;
               if (grade === '1') h1 += item; else if (grade === '2') h2 += item; else if (grade === '3') h3 += item;
             });
@@ -230,7 +197,6 @@
 
     function processLogs(logs) {
       if (!logs || logs.length === 0) return;
-
       let logHtml = ""; 
       for (let i = 0; i < logs.length; i++) {
         let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'); 
@@ -242,65 +208,40 @@
       document.getElementById('log-content').innerHTML = logHtml;
 
       let currentLatestId = logs[0].time + "_" + logs[0].id;
-      
-      if (lastProcessedLogTime !== "" && currentLatestId === lastProcessedLogTime) {
-        return; 
-      }
+      if (lastProcessedLogTime !== "" && currentLatestId === lastProcessedLogTime) return; 
 
       let newFaces = [];
-
       if (lastProcessedLogTime !== "") {
         let pendingLogs = [];
-        for(let i=0; i<logs.length; i++) { 
-          if ((logs[i].time + "_" + logs[i].id) === lastProcessedLogTime) break; 
-          pendingLogs.unshift(logs[i]); 
-        }
-
+        for(let i=0; i<logs.length; i++) { if ((logs[i].time + "_" + logs[i].id) === lastProcessedLogTime) break; pendingLogs.unshift(logs[i]); }
         pendingLogs.forEach(log => {
           let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "", badgeHtml = "";
           
-          if (log.status.includes("무단")) { 
-            playBeep('error'); triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`); badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`; 
-          } else if (log.status.includes("중복")) { 
-            playBeep('duplicate'); triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 통과한 학생!`); 
-          } else if (log.status.includes("수동")) { 
-            playBeep('success'); badgeHtml = `<div class="manual-badge">✅ 수동입력</div>`; 
-          } else { playBeep('success'); }
+          if (log.status.includes("무단")) { playBeep('error'); triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`); badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`; } 
+          else if (log.status.includes("중복")) { playBeep('duplicate'); triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 통과한 학생!`); } 
+          else if (log.status.includes("수동")) { playBeep('success'); badgeHtml = `<div class="manual-badge">✅ 수동입력</div>`; } 
+          else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // ★ 엑스박스 없애고 즉시 사진 로딩!
-            let photoHtml = "";
-            if (log.imgUrl && log.imgUrl.trim() !== "" && log.imgUrl.includes("http")) {
-              photoHtml = `<img src="${log.imgUrl}" class="student-photo" referrerpolicy="no-referrer">`;
-            } else {
-              photoHtml = `<div class="student-photo">👤</div>`;
-            }
-
+            // ★ 깃허브 URL 직접 연결! (오류 시 회색 아이콘 👤 표시)
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="this.outerHTML='<div class=\\'student-photo\\'>👤</div>'">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.unshift(faceCard); 
           }
         });
       } else {
-        // ★ 첫 화면 켰을 때, 가장 첫 번째 학생에게도 '방금 스캔' 불꽃 배지 띄우기!
         let log = logs[0];
         if (!log.status.includes("중복")) {
             let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
             let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
             
-            let photoHtml = "";
-            if (log.imgUrl && log.imgUrl.trim() !== "" && log.imgUrl.includes("http")) {
-              photoHtml = `<img src="${log.imgUrl}" class="student-photo" referrerpolicy="no-referrer">`;
-            } else {
-              photoHtml = `<div class="student-photo">👤</div>`;
-            }
-
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="this.outerHTML='<div class=\\'student-photo\\'>👤</div>'">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.push(faceCard);
         }
       }
       
       lastProcessedLogTime = currentLatestId; 
-
       if (newFaces.length > 0) {
         let grid = document.getElementById('photo-grid');
         grid.insertAdjacentHTML('afterbegin', newFaces.join(""));

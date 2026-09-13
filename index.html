@@ -55,7 +55,8 @@
   </div>
 
   <div id="loading-overlay">
-    <div class="chef-icon">👩‍🍳</div><h2 style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 급식실은 오늘도<br>맛있게 준비 중입니다</h2>
+    <div class="chef-icon">👩‍🍳</div>
+    <h2 id="loading-msg" style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style="font-size:14pt; color:#9ca3af;">(학생 명단 연결 중...)</span></h2>
   </div>
 
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
@@ -84,13 +85,20 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let html5QrCode, cameras = [], currentCamIndex = 0; 
     let studentCache = {}, isScanning = true, currentStatsDetails = null, uiResetTimer = null; 
-    let localResetTime = "0"; 
+    let localResetTime = "0"; let lastUpdatePing = "0";
     
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    window.addEventListener('touchstart', initAudio, { once: true }); window.addEventListener('click', initAudio, { once: true });
+
     function playBeep(type) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      initAudio();
+      if (!audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume();
       if (type === 'success') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
       } else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
       } else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
@@ -98,18 +106,42 @@
 
     function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
 
-    // ★ 학생 태블릿은 구글 서버를 쉴 수 있게, 8초마다 아주 가끔씩만 '통계'만 확인합니다!
-    function refreshStats() {
-      fetch(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime()).then(r=>r.json()).then(res => {
+    // ★ 5분 렉 방지용 불도저 통신 엔진 (10초 지나면 강제로 끊고 즉시 재시도!)
+    function fetchWithTimeout(url, timeout = 10000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
+    }
+
+    let isPinging = false;
+    function startPing() {
+      setInterval(() => {
+        if(isPinging) return;
+        isPinging = true;
+        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000)
+        .then(r => r.json())
+        .then(res => {
+          isPinging = false;
           if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-              window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();
-              return;
+             window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime(); return;
           }
           localResetTime = res.reset_time || "0";
+          if(res.sys_status === "CLOSED") { document.getElementById('closed-overlay').style.display = 'flex'; if(html5QrCode) html5QrCode.stop().catch(e=>{}); } 
+          else document.getElementById('closed-overlay').style.display = 'none';
 
-          if(res.sys_status === "CLOSED") { document.getElementById('closed-overlay').style.display = 'flex'; if(html5QrCode) html5QrCode.stop().catch(e=>{}); } else document.getElementById('closed-overlay').style.display = 'none';
+          if (res.last_update !== lastUpdatePing) { lastUpdatePing = res.last_update || "0"; refreshStats(); }
+        }).catch(e => { isPinging = false; });
+      }, 2000);
+    }
+
+    let isRefreshing = false;
+    function refreshStats() {
+      if(isRefreshing) return;
+      isRefreshing = true;
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime(), 5000).then(r=>r.json()).then(res => {
+          isRefreshing = false;
           if(res.totalStats) { currentStatsDetails = res; updateStatsUI(); }
-      }).catch(e => {});
+      }).catch(e => { isRefreshing = false; });
     }
 
     function updateStatsUI() {
@@ -127,19 +159,29 @@
     function closeManual() { document.getElementById('manual-modal').style.display = 'none'; document.getElementById('manual-input-val').value = ""; setTimeout(() => { isScanning = true; }, 1000); }
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
-    window.onload = function() {
-      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime()).then(r=>r.json()).then(res => {
-          document.getElementById('loading-overlay').style.display = 'none';
+    // ★ 짜증나는 알림창 완전 삭제 & 자동 재접속 시스템!
+    let initRetryCount = 0;
+    function loadInitialData() {
+      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(학생 명단 불러오는 중...)</span>";
+      
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 10000)
+      .then(r => r.json())
+      .then(res => {
           if(res.status === "SUCCESS") { 
-            studentCache = res.data; 
-            localResetTime = res.reset_time || "0"; 
+            document.getElementById('loading-overlay').style.display = 'none';
+            studentCache = res.data; localResetTime = res.reset_time || "0"; 
             if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; 
             else initCamera(); 
-            // 8초 주기로 통계만 살짝 체크!
-            setInterval(refreshStats, 8000); refreshStats(); 
-          } else alert("⚠️ 시스템 연결 오류");
-      }).catch(err => { alert("⚠️ 인터넷 연결 오류"); document.getElementById('loading-overlay').style.display = 'none'; });
-    };
+            refreshStats(); startPing(); 
+          } else { throw new Error("서버 에러"); }
+      }).catch(err => { 
+          initRetryCount++;
+          document.getElementById('loading-msg').innerHTML = `학교 와이파이 연결이 지연되고 있습니다.<br><span style='color:#fca5a5; font-size:18pt;'>자동으로 다시 연결합니다... (재시도 ${initRetryCount}회)</span>`;
+          setTimeout(loadInitialData, 3000); // 3초 뒤에 말없이 알아서 다시 시도!
+      });
+    }
+
+    window.onload = loadInitialData;
 
     function initCamera() { Html5Qrcode.getCameras().then(devices => { if(devices && devices.length) { cameras = devices; let idx = devices.findIndex(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment')); currentCamIndex = idx > -1 ? idx : 0; html5QrCode = new Html5Qrcode("reader"); startCurrentCamera(cameras[currentCamIndex].id); } else { html5QrCode = new Html5Qrcode("reader"); startCurrentCamera({ facingMode: "environment" }); } }).catch(err => { html5QrCode = new Html5Qrcode("reader"); startCurrentCamera({ facingMode: "environment" }); }); }
     function startCurrentCamera(t) { html5QrCode.start(t, { fps: 30, qrbox: { width: 250, height: 250 } }, (txt) => { if(!isScanning) return; isScanning = false; processStudentScan(txt.trim().replace(/[^0-9]/g, ''), false); }, (e) => {}).catch(e => console.log(e)); }
@@ -151,19 +193,18 @@
 
       if(!student) {
         playBeep('error'); updateUI("#ef4444", `<span style="font-size: 70pt;">🔴</span>`, "", `<div style="color:#ef4444; font-size:20pt; font-weight:bold; margin-top:10px;">당일 석식 미신청자입니다</div>`);
-        fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId); 
+        fetchWithTimeout(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId, 8000).catch(e=>{}); 
       } else if(student.marked === 1) {
         playBeep('duplicate'); updateUI("orange", `<span style="font-size: 70pt;">🟠</span>`, "", `<div style="color:orange; font-size:22pt; font-weight:bold; margin-bottom:10px;">⚠ 중복 식사 !</div><div style="color:white; font-size:16pt;">이미 통과했습니다<br><span style="font-size:14pt;color:#9ca3af;">(${nowTime})</span></div>`);
-        fetch(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId);
+        fetchWithTimeout(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId, 8000).catch(e=>{});
       } else {
         playBeep('success'); let safeName = maskName(student.name); 
         if(isManual) { updateUI("#10b981", `<span style="font-size: 60pt;">✅</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div><div style="color:#fca5a5; font-size:15pt; font-weight:bold;">😈 QR을 사용해주세요!</div>`); } 
         else { updateUI("#4CAF50", `<span style="font-size: 60pt;">🟢</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div><div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>`); }
         
         student.marked = 1; 
-        
         if(currentStatsDetails) { currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--; let g = studentId.charAt(0); if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; } updateStatsUI(); }
-        fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId);
+        fetchWithTimeout(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId, 8000).catch(e=>{});
       }
       setTimeout(() => { isScanning = true; }, 4000); 
       uiResetTimer = setTimeout(() => { updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", ""); }, 5000); 

@@ -129,7 +129,6 @@
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
 
-    // ★ PING을 버리고, 2.5초마다 다이렉트로 데이터를 바로바로 꽂아버립니다! (5분 렉 원천 차단)
     window.onload = function() { 
       audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
       refreshData(); 
@@ -202,6 +201,7 @@
         }).catch(err => console.log("데이터 갱신 중..."));
     }
 
+    // ★ 파일명이 이상해도, 무조건 빨리 찾아서 띄우는 무적의 검색 엔진 탑재!
     function processLogs(logs) {
       if (!logs || logs.length === 0) return;
       let logHtml = ""; 
@@ -230,8 +230,20 @@
           else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // ★ 사진 .jpeg 와 .jpg 완벽 호환 시스템! 엑스박스 절대 차단!
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="if(this.getAttribute('data-fail')!=='1'){this.setAttribute('data-fail','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';}else{this.outerHTML='<div class=\\'student-photo\\'>👤</div>';}">`;
+            // ★ 1101.jpeg -> 실패하면 -> 1101.jpg -> 실패하면 -> 1101.jpeg.jpeg 까지 다 찾아보는 무적의 코드!
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" 
+              onerror="
+                if(!this.getAttribute('data-fail1')) {
+                  this.setAttribute('data-fail1','1'); 
+                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';
+                } else if(!this.getAttribute('data-fail2')) {
+                  this.setAttribute('data-fail2','1'); 
+                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg.jpeg';
+                } else {
+                  this.outerHTML='<div class=\\'student-photo\\'>👤</div>';
+                }
+              ">`;
+
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.unshift(faceCard); 
           }
@@ -242,7 +254,20 @@
             let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
             let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
             
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="if(this.getAttribute('data-fail')!=='1'){this.setAttribute('data-fail','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';}else{this.outerHTML='<div class=\\'student-photo\\'>👤</div>';}">`;
+            // ★ 첫 화면도 마찬가지로 무적 검색 적용!
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" 
+              onerror="
+                if(!this.getAttribute('data-fail1')) {
+                  this.setAttribute('data-fail1','1'); 
+                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';
+                } else if(!this.getAttribute('data-fail2')) {
+                  this.setAttribute('data-fail2','1'); 
+                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg.jpeg';
+                } else {
+                  this.outerHTML='<div class=\\'student-photo\\'>👤</div>';
+                }
+              ">`;
+
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.push(faceCard);
         }

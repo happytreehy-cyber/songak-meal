@@ -76,13 +76,13 @@
     .alert-msg { font-size: 16pt; font-weight: 900; color: white; margin-bottom: 15px; line-height: 1.5; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
     .btn-confirm { background: white; color: #ef4444; border: none; padding: 12px 20px; font-size: 14pt; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: 100%; }
     
-    /* ★ 세로 3기둥 완벽 정렬 팝업창 (flex-direction: row 사용) */
+    /* ★ 세로 3기둥 완벽 정렬 모달창! */
     #list-modal { display: none; position: absolute; bottom: 15px; right: 15px; width: 480px; height: 500px; background: #f8fafc; z-index: 2000; flex-direction: column; border-radius: 12px; box-shadow: -5px -5px 20px rgba(0,0,0,0.2); overflow: hidden; border: 3px solid #1e293b; }
     .list-modal-title-bar { display: flex; justify-content: space-between; background: #1e293b; color: white; padding: 10px 15px; align-items: center; }
     .list-modal-title { font-size: 14pt; font-weight: bold; }
     .list-close-btn { background: #ef4444; border: none; color: white; font-weight: bold; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11pt; transition: 0.2s; }
     .list-close-btn:hover { background: #dc2626; }
-    .list-cols { display: flex; flex: 1; overflow: hidden; background: white; flex-direction: row; } /* 핵심: row로 하면 3기둥 세로 나란히! */
+    .list-cols { display: flex; flex: 1; overflow: hidden; background: white; flex-direction: row; }
     .list-col { flex: 1; border-right: 2px solid #e2e8f0; display: flex; flex-direction: column; }
     .list-col:last-child { border-right: none; }
     .list-grade-title { background: #475569; color: white; text-align: center; padding: 6px; font-size: 12pt; font-weight: bold; }
@@ -152,7 +152,6 @@
       <div class="log-box">
         <div class="log-title">📹 실시간 블랙박스 기록 (최근 스캔 맨위로)</div>
         <div class="log-content" id="log-content">
-          <!-- 1초 엔진 가동 중 -->
           <div style='text-align:center; padding:20px; color:#3b82f6; font-weight:bold;'>명단을 불러오고 있습니다... (최대 5초)</div>
         </div>
       </div>
@@ -192,12 +191,11 @@
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
 
-    // ★ 1초컷 레이더망의 핵심 전역 변수
     let globalRoster = {}; 
 
     window.onload = function() { 
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-      loadInitialData(); // 한 번만 전체를 다운받고, 그 뒤론 1.5초마다 가벼운 정보만 긁어옵니다.
+      loadInitialData(); 
     };
     
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
@@ -226,7 +224,6 @@
 
     function fetchWithTimeout(url, timeout = 10000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeout); return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; }); }
 
-    // ★ 한 방에 명단을 모두 가져오는 안전 로딩기!
     function loadInitialData() {
         fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 15000)
         .then(r => r.json())
@@ -234,7 +231,7 @@
             if (res.status === "SUCCESS") {
                 globalRoster = res.data;
                 localResetTime = res.reset_time || "0";
-                startDashboardLoop(); // 로딩 성공하면 1.5초 직진 레이더망 가동!
+                startDashboardLoop(); 
             } else { throw new Error(res.message); }
         })
         .catch(err => {
@@ -243,12 +240,11 @@
         });
     }
 
-    // ★ 1.5초마다 가벼운 정보(숫자와 사진)만 직진으로 빼오는 초광속 레이더망
     let dashboardTimer = null;
     let isRefreshing = false;
     function startDashboardLoop() {
         refreshDashboard();
-        dashboardTimer = setInterval(refreshDashboard, 1500); // 1.5초 컷!
+        dashboardTimer = setInterval(refreshDashboard, 1500); 
     }
 
     function refreshDashboard() {
@@ -264,7 +260,6 @@
                 
                 if(res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex'; else document.getElementById('teacher-closed-overlay').style.display = 'none';
 
-                // 통계창 숫자 즉시 업데이트
                 document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
                 document.getElementById('t-1').innerText = res.details[1].total + "명"; document.getElementById('t-2').innerText = res.details[2].total + "명"; document.getElementById('t-3').innerText = res.details[3].total + "명";
                 document.getElementById('d-1').innerText = res.details[1].done + "명"; document.getElementById('d-2').innerText = res.details[2].done + "명"; document.getElementById('d-3').innerText = res.details[3].done + "명";
@@ -275,7 +270,6 @@
         }).catch(e => { isRefreshing = false; });
     }
 
-    // ★ 세로 3기둥 팝업창을 아주 예쁘고 직관적으로 그려주는 함수
     function renderList(targetId, arr, grade) {
        let filtered = arr.filter(a => a.id.startsWith(grade));
        let html = "";
@@ -337,7 +331,6 @@
         let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'); 
         if (!log.id && !log.name) continue; 
         
-        // ★ 괄호 시간 절대 자르기!
         let cleanStatus = String(log.status).split('(')[0].trim(); 
         
         let rowClass = "";
@@ -359,7 +352,6 @@
             processedLogIds.add(uniqueId);
             let cleanStatus = String(log.status).split('(')[0].trim(); 
             
-            // ★ 로컬 캐시 자동 연동 (팝업창 정확도 100%)
             if (globalRoster[log.id] && !cleanStatus.includes("무단")) globalRoster[log.id].marked = 1;
 
             let noteStr = globalRoster[log.id] ? globalRoster[log.id].note : "";

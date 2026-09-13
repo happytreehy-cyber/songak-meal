@@ -14,13 +14,16 @@
     .btn-refresh { background: #3b82f6; } .btn-refresh:active { transform: scale(0.95); }
     .btn-sound { background: #8b5cf6; } .btn-sound:active { transform: scale(0.95); }
     
+    /* ★ 알레르기 버튼이 눈에 확 띄도록 쿵쾅거리는 효과 */
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    .btn-allergy { background: #ef4444; animation: pulse-red 2s infinite; } .btn-allergy:hover { background: #dc2626; }
+
     .main-container { display: flex; flex: 1; padding: 15px; gap: 15px; height: calc(100vh - 80px); box-sizing: border-box; }
-    
     .left-panel { flex: 2; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
     .photo-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: white; padding: 25px 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow-y: auto; align-content: start; }
     
     .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: visible; display: flex; flex-direction: column; align-items: center; padding-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.3s ease-out; position: relative; margin-top: 15px; }
-    .student-card.allergy { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+    .student-card.allergy { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); background: #fef2f2; }
     .student-card.unauth { border-color: #ef4444; background: #fef2f2; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
     
     .newest-badge { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); color: white; padding: 4px 18px; border-radius: 20px; font-weight: 900; font-size: 12pt; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 20; white-space: nowrap; display: none; }
@@ -33,7 +36,7 @@
     .student-info { margin-top: 8px; text-align: center; width: 100%; padding: 0 5px; box-sizing: border-box; }
     .student-id { font-size: 14pt; font-weight: bold; color: #64748b; }
     .student-name { font-size: 22pt; font-weight: 900; color: #1e293b; margin: 3px 0; }
-    .student-note { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 15px; font-weight: bold; font-size: 11pt; display: inline-block; margin-top: 2px; }
+    .student-note { background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 15px; font-weight: 900; font-size: 13pt; display: inline-block; margin-top: 5px; border: 2px solid #f87171; box-shadow: 0 2px 6px rgba(239,68,68,0.3); }
     
     .manual-badge { position: absolute; top: 5px; right: 5px; background: #10b981; color: white; font-weight: bold; padding: 4px 8px; border-radius: 8px; font-size: 11pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); z-index: 10; }
     .unauth-badge { position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; font-weight: bold; padding: 4px 8px; border-radius: 8px; font-size: 11pt; box-shadow: 0 2px 6px rgba(239,68,68,0.5); z-index: 10; animation: blinker 1s linear infinite; }
@@ -73,7 +76,6 @@
     .alert-msg { font-size: 16pt; font-weight: 900; color: white; margin-bottom: 15px; line-height: 1.5; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
     .btn-confirm { background: white; color: #ef4444; border: none; padding: 12px 20px; font-size: 14pt; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: 100%; }
     
-    /* ★ 선생님 아이디어 적용! 시야를 가리지 않는 우측 콤팩트 팝업창 */
     #list-modal { display: none; position: absolute; top: 110px; left: 0; width: 100%; height: calc(100% - 110px); background: #f8fafc; z-index: 2000; flex-direction: column; border-radius: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); overflow: hidden; border: 2px solid #cbd5e1; }
     .list-modal-title-bar { display: flex; justify-content: space-between; background: #1e293b; color: white; padding: 10px 15px; align-items: center; }
     .list-modal-title { font-size: 14pt; font-weight: bold; }
@@ -101,6 +103,8 @@
       <div class="clock" id="live-clock">2026. 00. 00. 00:00:00</div>
     </div>
     <div class="header-right">
+      <!-- ★ 알레르기 명단 버튼 추가! -->
+      <button class="top-btn btn-allergy" onclick="openDetailModal('ALLERGY')">🚨 알레르기 명단</button>
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
       <button class="top-btn btn-refresh" onclick="window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();">🔄 화면 새로고침</button>
     </div>
@@ -149,7 +153,6 @@
         <div class="log-content" id="log-content">로딩 중...</div>
       </div>
 
-      <!-- ★ 사진을 가리지 않는, 우측 하단 아담한 팝업창 -->
       <div id="list-modal">
         <div class="list-modal-title-bar">
           <span id="list-modal-title" class="list-modal-title">상세 명단</span>
@@ -183,15 +186,14 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let isSoundEnabled = true; let audioCtx = null;
-    let localResetTime = "0"; 
-    let lastUpdatePing = "0"; 
+    let localResetTime = "0"; let lastUpdatePing = "0"; 
 
+    // 전역 변수로 알레르기 정보를 포함한 전체 명단 캐싱
     let globalUnfed = [], globalDone = [];
 
     window.onload = function() { 
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-      refreshData("INITIAL"); 
-      startPing(); 
+      refreshData("INITIAL"); startPing(); 
     };
     
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
@@ -214,82 +216,55 @@
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
     let alertTimer = null;
-    function triggerAlert(msg) {
-      document.getElementById('alert-text').innerHTML = msg; document.getElementById('alert-modal').style.display = 'block'; document.getElementById('alert-box').classList.add('animating');
-      if(alertTimer) clearTimeout(alertTimer); alertTimer = setTimeout(() => { closeAlert(); }, 3500);
-    }
+    function triggerAlert(msg) { document.getElementById('alert-text').innerHTML = msg; document.getElementById('alert-modal').style.display = 'block'; document.getElementById('alert-box').classList.add('animating'); if(alertTimer) clearTimeout(alertTimer); alertTimer = setTimeout(() => { closeAlert(); }, 3500); }
     function closeAlert() { document.getElementById('alert-box').classList.remove('animating'); setTimeout(() => { document.getElementById('alert-modal').style.display = 'none'; }, 200); }
-    
-    function removeCard(btn) { 
-      btn.parentElement.remove(); 
-      updateCardNumbers();
-    }
+    function removeCard(btn) { btn.parentElement.remove(); updateCardNumbers(); }
 
     function renderList(targetId, arr, grade) {
        let filtered = arr.filter(a => a.id.startsWith(grade));
        let html = "";
        filtered.forEach(a => { 
-           let noteHtml = a.note ? `<span style="color:#ef4444; font-size:10pt;">[${a.note}]</span>` : "";
+           let noteHtml = a.note ? `<span style="color:#ef4444; font-size:11pt; font-weight:900;">[${a.note}]</span>` : "";
            html += `<div class="list-item-row"><span>${a.id}</span> <span>${a.name}</span> ${noteHtml}</div>`; 
        });
        document.getElementById(targetId).innerHTML = html || "<div style='color:#94a3b8; text-align:center; margin-top:20px;'>해당 없음</div>";
     }
 
+    // ★ 알레르기 버튼 클릭 시 알레르기 있는 아이들만 뽑아내는 기능!
     function openDetailModal(type) {
        let title = "", arr = [];
        if (type === 'TOTAL') { title = "📋 총 신청 명단"; arr = globalDone.concat(globalUnfed); }
        else if (type === 'DONE') { title = "🟢 식사 완료 명단"; arr = globalDone; }
        else if (type === 'UNFED') { title = "🔴 미식사 명단"; arr = globalUnfed; }
+       else if (type === 'ALLERGY') { 
+           title = "🚨 알레르기 주의 학생 명단"; 
+           arr = globalDone.concat(globalUnfed).filter(a => a.note && a.note.trim() !== ""); 
+       }
        
        arr.sort((a,b) => parseInt(a.id) - parseInt(b.id)); 
        document.getElementById('list-modal-title').innerText = title;
-       renderList('list-1', arr, '1');
-       renderList('list-2', arr, '2');
-       renderList('list-3', arr, '3');
+       renderList('list-1', arr, '1'); renderList('list-2', arr, '2'); renderList('list-3', arr, '3');
        document.getElementById('list-modal').style.display = 'flex';
     }
 
-    function fetchWithTimeout(url, timeout = 10000) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-        return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
-    }
+    function fetchWithTimeout(url, timeout = 10000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeout); return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; }); }
 
-    // ★ 1초 속도 향상 핵심 엔진!
     let isPinging = false;
     function startPing() {
       setInterval(() => {
         if(isPinging) return;
         isPinging = true;
-        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000)
+        fetch(SCRIPT_URL + "?action=PING&t=" + new Date().getTime())
         .then(r => r.json())
         .then(res => {
           isPinging = false;
-          
-          // ★ 초기화 버튼 누르면 새로고침 없이 0.1초만에 화면 싹 비우기 (소프트 리셋)
-          if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-             localResetTime = res.reset_time;
-             document.getElementById('photo-grid').innerHTML = '';
-             document.getElementById('log-content').innerHTML = '';
-             processedLogIds.clear();
-             lastProcessedLogTime = "";
-             lastUpdatePing = "0";
-             globalUnfed = []; globalDone = [];
-             document.getElementById('stat-total').innerText = '0';
-             document.getElementById('stat-done').innerText = '0';
-             document.getElementById('stat-left').innerText = '0';
-             refreshData("INITIAL");
-             return;
-          }
-          
-          if(res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
-          else document.getElementById('teacher-closed-overlay').style.display = 'none';
+          if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) { window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime(); return; }
+          localResetTime = res.reset_time || "0";
+          if(res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex'; else document.getElementById('teacher-closed-overlay').style.display = 'none';
 
-          if (res.last_update !== lastUpdatePing) {
-             refreshData(res.last_update); 
-          }
+          if (res.last_update !== lastUpdatePing) refreshData(res.last_update); 
         }).catch(e => { isPinging = false; });
-      }, 1000); // 1초마다 초고속 확인!
+      }, 800); 
     }
 
     let isRefreshing = false;
@@ -297,50 +272,31 @@
       if(isRefreshing) return;
       isRefreshing = true;
       let cacheBuster = "&t=" + new Date().getTime();
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster, 10000)
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster, 15000)
         .then(r => r.json())
         .then(res => {
           isRefreshing = false;
           if (res.status === "SUCCESS") {
             if (newUpdateVal && newUpdateVal !== "INITIAL") lastUpdatePing = newUpdateVal;
-
-            if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-                window.location.reload(true); return;
-            }
+            if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) { window.location.reload(true); return; }
             localResetTime = res.reset_time || "0";
 
-            globalUnfed = res.unfed || [];
-            globalDone = res.done || [];
+            globalUnfed = res.unfed || []; globalDone = res.done || [];
 
-            document.getElementById('stat-total').innerText = res.stats.total; 
-            document.getElementById('stat-done').innerText = res.stats.done; 
-            document.getElementById('stat-left').innerText = res.stats.left;
-            
-            document.getElementById('t-1').innerText = res.details[1].total + "명";
-            document.getElementById('t-2').innerText = res.details[2].total + "명";
-            document.getElementById('t-3').innerText = res.details[3].total + "명";
-
-            document.getElementById('d-1').innerText = res.details[1].done + "명";
-            document.getElementById('d-2').innerText = res.details[2].done + "명";
-            document.getElementById('d-3').innerText = res.details[3].done + "명";
-
-            document.getElementById('l-1').innerText = res.details[1].left + "명";
-            document.getElementById('l-2').innerText = res.details[2].left + "명";
-            document.getElementById('l-3').innerText = res.details[3].left + "명";
+            document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
+            document.getElementById('t-1').innerText = res.details[1].total + "명"; document.getElementById('t-2').innerText = res.details[2].total + "명"; document.getElementById('t-3').innerText = res.details[3].total + "명";
+            document.getElementById('d-1').innerText = res.details[1].done + "명"; document.getElementById('d-2').innerText = res.details[2].done + "명"; document.getElementById('d-3').innerText = res.details[3].done + "명";
+            document.getElementById('l-1').innerText = res.details[1].left + "명"; document.getElementById('l-2').innerText = res.details[2].left + "명"; document.getElementById('l-3').innerText = res.details[3].left + "명";
 
             processLogs(res.blackbox);
           }
-        }).catch(err => { isRefreshing = false; });
+        }).catch(err => { isRefreshing = false; console.log("통신 지연 (무시됨)"); });
     }
 
     function handleImgErr(img, id) {
-      if (!img.dataset.f1) { 
-        img.dataset.f1 = '1'; img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpg`; 
-      } else if (!img.dataset.f2) { 
-        img.dataset.f2 = '1'; img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpeg.jpeg`; 
-      } else { 
-        img.outerHTML = '<div class="student-photo">👤</div>'; 
-      }
+      if (!img.dataset.f1) { img.dataset.f1 = '1'; img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpg`; } 
+      else if (!img.dataset.f2) { img.dataset.f2 = '1'; img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpeg.jpeg`; } 
+      else { img.outerHTML = '<div class="student-photo">👤</div>'; }
     }
 
     function updateCardNumbers() {
@@ -349,37 +305,31 @@
            let badge = card.querySelector('.newest-badge');
            if(badge) {
                badge.style.display = 'block';
-               if(index === 0) {
-                   badge.innerHTML = '🔥 1번 (최근스캔)';
-                   badge.style.background = '#ef4444'; 
-                   badge.style.animation = 'bounce 1s infinite';
-               } else {
-                   badge.innerHTML = `${index + 1}번`;
-                   badge.style.background = '#64748b'; 
-                   badge.style.animation = 'none';
-               }
+               if(index === 0) { badge.innerHTML = '🔥 1번 (최근)'; badge.style.background = '#ef4444'; badge.style.animation = 'bounce 1s infinite'; } 
+               else { badge.innerHTML = `${index + 1}번`; badge.style.background = '#64748b'; badge.style.animation = 'none'; }
            }
        });
     }
 
     let processedLogIds = new Set();
 
+    // ★ 알레르기 정보를 캐시에서 뽑아오는 함수
+    function getStudentNote(id) {
+       let found = globalDone.find(x => x.id === id) || globalUnfed.find(x => x.id === id);
+       return (found && found.note) ? found.note.trim() : "";
+    }
+
     function processLogs(logs) {
-      if (!logs || logs.length === 0) {
-        document.getElementById('log-content').innerHTML = `<div style='text-align:center; padding:20px; color:#94a3b8; font-weight:bold;'>기록이 없습니다.</div>`; return;
-      }
+      if (!logs || logs.length === 0) { document.getElementById('log-content').innerHTML = `<div style='text-align:center; padding:20px; color:#94a3b8; font-weight:bold;'>기록이 없습니다.</div>`; return; }
       
       let logHtml = ""; 
       for (let i = 0; i < logs.length; i++) {
         let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'); 
         if (!log.id && !log.name) continue; 
-        
+        let cleanStatus = log.status.replace(/\s*\([^)]*\)/g, '').trim(); 
         let rowClass = "";
-        if (log.status.includes("무단")) rowClass = "log-error-red"; 
-        else if (log.status.includes("중복")) rowClass = "log-error-orange"; 
-        else if (log.status.includes("수동")) rowClass = "log-manual-green";
-        
-        logHtml += `<div class="log-row"><span class="log-time">[${timeStr}]</span> <span class="${rowClass}">${log.id} ${log.name} - ${log.status}</span></div>`;
+        if (cleanStatus.includes("무단")) rowClass = "log-error-red"; else if (cleanStatus.includes("중복")) rowClass = "log-error-orange"; else if (cleanStatus.includes("수동")) rowClass = "log-manual-green";
+        logHtml += `<div class="log-row"><span class="log-time">[${timeStr}]</span> <span class="${rowClass}">${log.id} ${log.name} - ${cleanStatus}</span></div>`;
       }
       document.getElementById('log-content').innerHTML = logHtml;
 
@@ -395,17 +345,23 @@
           let uniqueId = log.time + "_" + log.id;
           if (!processedLogIds.has(uniqueId)) {
             processedLogIds.add(uniqueId);
+            let cleanStatus = log.status.replace(/\s*\([^)]*\)/g, '').trim(); 
             
-            let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "", badgeHtml = "";
+            // ★ 카드를 그릴 때 알레르기 정보 장착!
+            let noteStr = getStudentNote(log.id);
+            let allergyClass = noteStr ? "allergy" : "";
+            let unauthClass = cleanStatus.includes("무단") ? "unauth" : "";
+            let badgeHtml = "";
+            let allergyNoteHtml = noteStr ? `<div class="student-note">🚨 [${noteStr}]</div>` : "";
             
-            if (log.status.includes("무단")) { playBeep('error'); triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`); badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`; } 
-            else if (log.status.includes("중복")) { playBeep('duplicate'); triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 통과한 학생!`); } 
-            else if (log.status.includes("수동")) { playBeep('success'); badgeHtml = `<div class="manual-badge">✅ 수동입력</div>`; } 
+            if (cleanStatus.includes("무단")) { playBeep('error'); triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`); badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`; } 
+            else if (cleanStatus.includes("중복")) { playBeep('duplicate'); triggerAlert(`⚠️ 중복 식사!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>이미 통과한 학생!`); } 
+            else if (cleanStatus.includes("수동")) { playBeep('success'); badgeHtml = `<div class="manual-badge">✅ 수동입력</div>`; } 
             else { playBeep('success'); }
 
-            if(!log.status.includes("중복")) {
+            if(!cleanStatus.includes("중복")) {
               let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="handleImgErr(this, '${log.id}')">`;
-              let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge"></div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
+              let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge"></div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyNoteHtml}</div></div>`;
               newFaces.unshift(faceCard); 
             }
           }
@@ -415,16 +371,22 @@
         for(let i=0; i<logs.length; i++) {
             let log = logs[i];
             let uniqueId = log.time + "_" + log.id;
+            let cleanStatus = log.status.replace(/\s*\([^)]*\)/g, '').trim(); 
             
-            if (!processedLogIds.has(uniqueId) && !log.status.includes("중복")) {
+            if (!processedLogIds.has(uniqueId) && !cleanStatus.includes("중복")) {
                 processedLogIds.add(uniqueId);
-                let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
-                let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
+                
+                // ★ 여기도 알레르기 정보 장착!
+                let noteStr = getStudentNote(log.id);
+                let allergyClass = noteStr ? "allergy" : "";
+                let unauthClass = cleanStatus.includes("무단") ? "unauth" : "";
+                let badgeHtml = cleanStatus.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (cleanStatus.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
+                let allergyNoteHtml = noteStr ? `<div class="student-note">🚨 [${noteStr}]</div>` : "";
+
                 let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="handleImgErr(this, '${log.id}')">`;
-                let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge"></div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
+                let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge"></div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyNoteHtml}</div></div>`;
                 newFaces.push(faceCard); 
-                count++;
-                if(count >= 8) break; 
+                count++; if(count >= 8) break; 
             }
         }
       }

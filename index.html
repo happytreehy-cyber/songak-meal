@@ -56,7 +56,7 @@
 
   <div id="loading-overlay">
     <div class="chef-icon">👩‍🍳</div>
-    <h2 id="loading-msg" style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style="font-size:14pt; color:#9ca3af;">(학생 명단 불러오는 중...)</span></h2>
+    <h2 id="loading-msg" style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style="font-size:14pt; color:#9ca3af;">(첫 로딩은 학교 와이파이망에 따라 약 20초~1분 소요될 수 있습니다)</span></h2>
   </div>
 
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
@@ -121,10 +121,17 @@
         .then(r => r.json())
         .then(res => {
           isPinging = false;
+          
+          // ★ 초기화 버튼 누르면 새로고침 없이 학생용 화면도 0.1초만에 싹 리셋!! (초광속 소프트 리셋)
           if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-             window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime(); return;
+             localResetTime = res.reset_time;
+             for (let key in studentCache) studentCache[key].marked = 0;
+             updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", "");
+             currentStatsDetails = null;
+             refreshStats();
+             return;
           }
-          localResetTime = res.reset_time || "0";
+          
           if(res.sys_status === "CLOSED") { document.getElementById('closed-overlay').style.display = 'flex'; if(html5QrCode) html5QrCode.stop().catch(e=>{}); } 
           else document.getElementById('closed-overlay').style.display = 'none';
 
@@ -159,11 +166,10 @@
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
     let initRetryCount = 0;
-    // ★ 초반 무한 재접속 버그 삭제! (시간 제한 없이 순수하게 로딩될 때까지 느긋하게 대기합니다)
+    
+    // ★ 무한 로딩 해결! 60초(60000ms) 동안 끊지 않고 한 번에 진득하게 받아오는 안정형 엔진 장착!
     function loadInitialData() {
-      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(학생 명단 불러오는 중...)</span>";
-      
-      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime())
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 60000)
       .then(r => r.json())
       .then(res => {
           if(res.status === "SUCCESS") { 
@@ -175,7 +181,7 @@
           } else { throw new Error("서버 에러"); }
       }).catch(err => { 
           initRetryCount++;
-          document.getElementById('loading-msg').innerHTML = `학교 와이파이 연결이 지연되고 있습니다.<br><span style='color:#fca5a5; font-size:18pt;'>잠시만 기다려주세요... (재시도 ${initRetryCount}회)</span>`;
+          document.getElementById('loading-msg').innerHTML = `학교 인터넷이 구글 서버 접근을 보안 검사 중입니다.<br><span style='color:#fca5a5; font-size:16pt;'>조금만 더 기다려 주세요... (재시도 ${initRetryCount}회)</span>`;
           setTimeout(loadInitialData, 3000); 
       });
     }

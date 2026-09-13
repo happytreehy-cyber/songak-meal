@@ -33,7 +33,9 @@
     .btn-close-card { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 12pt; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.2s; }
     .btn-close-card:hover { background: #ef4444; }
 
-    .student-photo { width: 100%; height: 180px; background: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 40pt; color: white; object-fit: cover; }
+    /* ★ 사진 얼굴 잘림 100% 방지! (contain 사용) */
+    .student-photo { width: 100%; height: 190px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 40pt; color: #94a3b8; object-fit: contain; padding: 5px; box-sizing: border-box; border-bottom: 1px solid #cbd5e1; }
+    
     .student-info { margin-top: 8px; text-align: center; }
     .student-id { font-size: 14pt; font-weight: bold; color: #64748b; }
     .student-name { font-size: 22pt; font-weight: 900; color: #1e293b; margin: 3px 0; }
@@ -66,7 +68,6 @@
     .log-row { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 10px; }
     .log-time { color: #94a3b8; font-family: monospace; }
     
-    /* ★ 선생님이 원하셨던 쨍한 빨강, 주황, 초록 색상 완벽 적용! */
     .log-error-red { color: white; font-weight: bold; background: #ef4444; padding: 3px 10px; border-radius: 6px; }
     .log-error-orange { color: white; font-weight: bold; background: #f97316; padding: 3px 10px; border-radius: 6px; }
     .log-manual-green { color: white; font-weight: bold; background: #10b981; padding: 3px 10px; border-radius: 6px; }
@@ -124,7 +125,8 @@
     </div>
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
-      <button class="top-btn btn-refresh" onclick="window.location.reload()">🔄 화면 새로고침</button>
+      <!-- ★ 초고속 소프트 새로고침으로 변경! 비번 창 안 뜹니다 -->
+      <button class="top-btn btn-refresh" id="refresh-btn" onclick="softRefresh()">🔄 화면 새로고침</button>
       <button class="top-btn btn-close-sys" id="sys-btn" onclick="toggleSystem()">🛑 시스템 마감(차단)</button>
     </div>
   </div>
@@ -174,6 +176,29 @@
 
     let audioCtx = null;
 
+    // ★ 브라우저 세션을 확인해서, 한 번 로그인했으면 비밀번호 화면 바로 패스!
+    window.onload = function() {
+      if(sessionStorage.getItem('teacherUnlocked') === 'true') {
+        document.getElementById('lock-screen').style.display = 'none';
+        isUnlocked = true;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    };
+
+    // ★ 깜빡임 없는 초고속 새로고침 함수!
+    function softRefresh() {
+      if(!isUnlocked) return;
+      let btn = document.getElementById('refresh-btn');
+      btn.innerText = "⏳ 스캔 준비 중...";
+      
+      document.getElementById('photo-grid').innerHTML = ""; // 사진 화면 비우기
+      document.getElementById('log-content').innerHTML = "새로고침 완료! 다음 스캔을 대기합니다..."; 
+      lastLogTime = ""; // 최근 기록 초기화
+      
+      refreshData();
+      setTimeout(() => { btn.innerText = "🔄 화면 새로고침"; }, 800);
+    }
+
     function toggleSound() {
       isSoundEnabled = !isSoundEnabled;
       let btn = document.getElementById('sound-btn');
@@ -204,6 +229,8 @@
       if (inputPw === TEACHER_PASSWORD) {
         document.getElementById('lock-screen').style.display = 'none';
         isUnlocked = true; 
+        sessionStorage.setItem('teacherUnlocked', 'true'); // 비번 쳤다는 사실을 브라우저에 저장
+        
         if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         if (audioCtx.state === 'suspended') audioCtx.resume(); 
         refreshData(); 
@@ -222,7 +249,6 @@
       document.getElementById('live-clock').innerText = dateStr + " " + now.toLocaleTimeString('ko-KR'); 
     }, 1000);
 
-    // ★ 알림창 3.5초 뒤 자동 삭제 타이머 적용!
     let alertTimer = null;
     function triggerAlert(msg) {
       if(!isUnlocked) return; 
@@ -336,9 +362,8 @@
           }
 
           if(!log.status.includes("중복")) {
-            // ★ 드디어! 빈 껍데기(👤) 대신 학생의 진짜 사진을 띄워주는 코드 추가!
             let photoHtml = log.imgUrl 
-              ? `<img src="${log.imgUrl}" class="student-photo" style="object-fit:cover;">` 
+              ? `<img src="${log.imgUrl}" class="student-photo">` 
               : `<div class="student-photo">👤</div>`;
 
             let faceCard = `

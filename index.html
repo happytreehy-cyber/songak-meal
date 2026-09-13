@@ -84,7 +84,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let html5QrCode, cameras = [], currentCamIndex = 0; 
     let studentCache = {}, isScanning = true, currentStatsDetails = null, uiResetTimer = null; 
-    let localResetTime = "0"; let lastUpdatePing = "0";
+    let localResetTime = "0"; 
     
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
@@ -98,29 +98,16 @@
 
     function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
 
-    // ★ 학생용 태블릿도 2초 간격 PING 탑재! (구글 다운 절대 차단)
-    function startPing() {
-      setInterval(() => {
-        fetch(SCRIPT_URL + "?action=PING&t=" + new Date().getTime())
-        .then(r => r.json())
-        .then(res => {
-          if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-             window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime(); return;
-          }
-          localResetTime = res.reset_time || "0";
-          if(res.sys_status === "CLOSED") { document.getElementById('closed-overlay').style.display = 'flex'; if(html5QrCode) html5QrCode.stop().catch(e=>{}); } 
-          else document.getElementById('closed-overlay').style.display = 'none';
-
-          if (res.last_update !== lastUpdatePing) {
-             lastUpdatePing = res.last_update || "0";
-             refreshStats(); 
-          }
-        }).catch(e => {});
-      }, 2000);
-    }
-
+    // ★ 학생 태블릿은 구글 서버를 쉴 수 있게, 8초마다 아주 가끔씩만 '통계'만 확인합니다!
     function refreshStats() {
       fetch(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime()).then(r=>r.json()).then(res => {
+          if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
+              window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();
+              return;
+          }
+          localResetTime = res.reset_time || "0";
+
+          if(res.sys_status === "CLOSED") { document.getElementById('closed-overlay').style.display = 'flex'; if(html5QrCode) html5QrCode.stop().catch(e=>{}); } else document.getElementById('closed-overlay').style.display = 'none';
           if(res.totalStats) { currentStatsDetails = res; updateStatsUI(); }
       }).catch(e => {});
     }
@@ -148,8 +135,8 @@
             localResetTime = res.reset_time || "0"; 
             if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; 
             else initCamera(); 
-            refreshStats(); 
-            startPing(); // PING 시작!
+            // 8초 주기로 통계만 살짝 체크!
+            setInterval(refreshStats, 8000); refreshStats(); 
           } else alert("⚠️ 시스템 연결 오류");
       }).catch(err => { alert("⚠️ 인터넷 연결 오류"); document.getElementById('loading-overlay').style.display = 'none'; });
     };

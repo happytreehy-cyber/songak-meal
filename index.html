@@ -47,7 +47,9 @@
     .btn-submit { background: #3b82f6; color: white; } .btn-cancel { background: #ef4444; color: white; }
 
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-    .rocket-icon { font-size: 50pt; margin-bottom: 20px; animation: bounce 1s infinite alternate; }
+    
+    /* ★ 선생님이 원하신 귀여운 셰프 복귀 및 속도 최적화! */
+    .chef-icon { font-size: 80pt; margin-bottom: 20px; animation: bounce 1s infinite alternate; }
     @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
 
     #closed-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 500; text-align: center; }
@@ -78,9 +80,10 @@
     </div>
   </div>
 
+  <!-- ★ 선생님의 예쁜 멘트와 셰프 아이콘 부활! -->
   <div id="loading-overlay">
-    <div class="rocket-icon">🚀</div>
-    <h2 style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 석식 출석부<br>가져오는 중...</h2>
+    <div class="chef-icon">👩‍🍳</div>
+    <h2 style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 급식실은 오늘도<br>맛있게 준비 중입니다</h2>
   </div>
 
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
@@ -97,7 +100,8 @@
     </div>
     <div style="display:flex;">
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
-      <button class="reset-btn" onclick="window.location.reload()">🔄 새로고침 (기억초기화)</button>
+      <!-- ★ 학생용 메모리 초기화를 위한 새로고침 버튼 안내 추가 -->
+      <button class="reset-btn" onclick="window.location.reload()">🔄 초기화(새로고침)</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
         <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
@@ -180,7 +184,6 @@
     function closeManual() { document.getElementById('manual-modal').style.display = 'none'; document.getElementById('manual-input-val').value = ""; setTimeout(() => { isScanning = true; }, 1000); }
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
-    // ★ 가짜 로켓 애니메이션 대기시간 싹 빼고! 데이터 도착 즉시 빛의 속도로 화면 띄웁니다.
     window.onload = function() {
       fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS").then(r=>r.json()).then(res => {
           document.getElementById('loading-overlay').style.display = 'none';
@@ -223,7 +226,6 @@
         if(isManual) { updateUI("#10b981", `<span style="font-size: 60pt;">✅</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div><div style="color:#fca5a5; font-size:15pt; font-weight:bold;">😈 QR을 사용해주세요!</div>`); } 
         else { updateUI("#4CAF50", `<span style="font-size: 60pt;">🟢</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div><div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>`); }
         
-        // 태블릿의 기억 속에 '식사 완료' 도장 쾅!
         student.marked = 1; 
         
         if(currentStatsDetails) { currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--; let g = studentId.charAt(0); if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; } updateStatsUI(); }

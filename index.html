@@ -33,10 +33,6 @@
     .modal-content input { width: 240px; padding: 15px; font-size: 24pt; text-align: center; border-radius: 10px; border: 2px solid #9ca3af; margin: 20px 0; font-weight: bold; background: #374151; color: white; }
     .modal-btns button { padding: 12px 25px; font-size: 16pt; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; margin: 0 8px; transition: 0.2s; } .btn-submit { background: #3b82f6; color: white; } .btn-cancel { background: #ef4444; color: white; }
     
-    #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-    .chef-icon { font-size: 80pt; margin-bottom: 20px; animation: bounce 1s infinite alternate; }
-    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
-
     #closed-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 500; text-align: center; }
     #stats-modal { display: none; position: fixed; top: 60px; right: 20px; background: #1f2937; padding: 20px; border-radius: 12px; z-index: 200; box-shadow: 0 15px 40px rgba(0,0,0,0.8); width: 380px; border: 2px solid #4b5563; }
     .modal-backdrop { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 150; }
@@ -52,11 +48,6 @@
 
   <div id="manual-modal">
     <div class="modal-content"><h2 style="color: #60a5fa; margin-top: 0; font-size: 24pt; font-weight: 900;">✍️ 수동 승인</h2><div style="color: #cbd5e1; font-size: 14pt;">본인의 학번 4자리를 입력하세요.</div><input type="number" id="manual-input-val" placeholder="예: 1101" onkeypress="if(event.keyCode==13) submitManual();"><div class="modal-btns"><button class="btn-cancel" onclick="closeManual()">취소</button><button class="btn-submit" onclick="submitManual()">입장하기</button></div></div>
-  </div>
-
-  <div id="loading-overlay">
-    <div class="chef-icon">👩‍🍳</div>
-    <h2 id="loading-msg" style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style="font-size:14pt; color:#9ca3af;">(학교 보안 연결 중입니다. 최대 30~40초 소요될 수 있습니다...)</span></h2>
   </div>
 
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
@@ -84,7 +75,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let html5QrCode, cameras = [], currentCamIndex = 0; 
-    let studentCache = {}, isScanning = true, currentStatsDetails = null, uiResetTimer = null; 
+    let isScanning = true, currentStatsDetails = null, uiResetTimer = null; 
     let localResetTime = "0"; let lastUpdatePing = "0";
     
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
@@ -102,7 +93,10 @@
 
     function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
 
-    function fetchWithTimeout(url, timeout = 10000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeout); return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; }); }
+    function fetchWithTimeout(url, timeout = 10000) { 
+        const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeout); 
+        return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; }); 
+    }
 
     let isPinging = false;
     function startPing() {
@@ -113,7 +107,6 @@
           isPinging = false;
           if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
              localResetTime = res.reset_time;
-             for (let key in studentCache) studentCache[key].marked = 0;
              updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", "");
              currentStatsDetails = null; refreshStats(); return;
           }
@@ -122,13 +115,13 @@
 
           if (res.last_update !== lastUpdatePing) { lastUpdatePing = res.last_update || "0"; refreshStats(); }
         }).catch(e => { isPinging = false; });
-      }, 3000); // 학생용 핑은 3초로 늦춰서 과부하 방지
+      }, 3000); 
     }
 
     let isRefreshing = false;
     function refreshStats() {
       if(isRefreshing) return; isRefreshing = true;
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime(), 15000).then(r=>r.json()).then(res => {
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime(), 8000).then(r=>r.json()).then(res => {
           isRefreshing = false; if(res.totalStats) { currentStatsDetails = res; updateStatsUI(); }
       }).catch(e => { isRefreshing = false; });
     }
@@ -148,53 +141,61 @@
     function closeManual() { document.getElementById('manual-modal').style.display = 'none'; document.getElementById('manual-input-val').value = ""; setTimeout(() => { isScanning = true; }, 1000); }
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
-    // ★ 참을성 40초(40000ms) 대폭발 엔진 탑재!
-    function loadInitialData() {
-      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(학교 보안 연결 중입니다. 최대 30~40초 소요될 수 있습니다...)</span>";
-      
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 40000)
-      .then(r => r.json())
-      .then(res => {
-          if(res.status === "SUCCESS") { 
-            document.getElementById('loading-overlay').style.display = 'none';
-            studentCache = res.data; localResetTime = res.reset_time || "0"; 
-            if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; 
-            else initCamera(); 
-            refreshStats(); startPing(); 
-          } else { throw new Error("서버 에러"); }
-      }).catch(err => { 
-          document.getElementById('loading-msg').innerHTML = `🚨 통신 지연!<br><span style='color:#fca5a5; font-size:14pt;'>학교 인터넷 연결이 원활하지 않습니다.</span><br><br><button onclick="loadInitialData()" style="padding:10px 20px; font-size:16pt; font-weight:bold; border-radius:8px; border:none; background:#3b82f6; color:white; cursor:pointer;">🔄 다시 연결하기</button>`;
-      });
-    }
-
-    window.onload = loadInitialData;
+    // ★ 로딩 창 아예 삭제! 켜자마자 0.1초 만에 즉시 실행!!
+    window.onload = function() {
+        initCamera(); 
+        refreshStats(); 
+        startPing();
+    };
 
     function initCamera() { Html5Qrcode.getCameras().then(devices => { if(devices && devices.length) { cameras = devices; let idx = devices.findIndex(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment')); currentCamIndex = idx > -1 ? idx : 0; html5QrCode = new Html5Qrcode("reader"); startCurrentCamera(cameras[currentCamIndex].id); } else { html5QrCode = new Html5Qrcode("reader"); startCurrentCamera({ facingMode: "environment" }); } }).catch(err => { html5QrCode = new Html5Qrcode("reader"); startCurrentCamera({ facingMode: "environment" }); }); }
     function startCurrentCamera(t) { html5QrCode.start(t, { fps: 30, qrbox: { width: 250, height: 250 } }, (txt) => { if(!isScanning) return; isScanning = false; processStudentScan(txt.trim().replace(/[^0-9]/g, ''), false); }, (e) => {}).catch(e => console.log(e)); }
     function switchCamera() { if(cameras.length > 1) { html5QrCode.stop().then(() => { currentCamIndex = (currentCamIndex + 1) % cameras.length; startCurrentCamera(cameras[currentCamIndex].id); }); } else alert("전환 카메라가 없습니다."); }
 
+    // ★ QR 찍을 때만 구글에 물어보는 초고속 가벼운 스캔 엔진!
     function processStudentScan(studentId, isManual) {
       if(uiResetTimer) clearTimeout(uiResetTimer); 
-      let student = studentCache[studentId], nowTime = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' }), actionStr = isManual ? "MARK_MANUAL" : "MARK_ATTENDANCE";
+      updateUI("yellow", `<div style="font-size: 30pt;">⏳</div>`, "", `<div style="color:white; font-size:16pt; font-weight:bold;">서버 통신 중...</div>`);
 
-      if(!student) {
-        playBeep('error'); updateUI("#ef4444", `<span style="font-size: 70pt;">🔴</span>`, "", `<div style="color:#ef4444; font-size:20pt; font-weight:bold; margin-top:10px;">당일 석식 미신청자입니다</div>`);
-        fetchWithTimeout(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId, 15000).catch(e=>{}); 
-      } else if(student.marked === 1) {
-        playBeep('duplicate'); updateUI("orange", `<span style="font-size: 70pt;">🟠</span>`, "", `<div style="color:orange; font-size:22pt; font-weight:bold; margin-bottom:10px;">⚠ 중복 식사 !</div><div style="color:white; font-size:16pt;">이미 통과했습니다<br><span style="font-size:14pt;color:#9ca3af;">(${nowTime})</span></div>`);
-        fetchWithTimeout(SCRIPT_URL + "?action=MARK_ATTENDANCE&id=" + studentId, 15000).catch(e=>{});
-      } else {
-        playBeep('success'); let safeName = maskName(student.name); 
-        if(isManual) { updateUI("#10b981", `<span style="font-size: 60pt;">✅</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div><div style="color:#fca5a5; font-size:15pt; font-weight:bold;">😈 QR을 사용해주세요!</div>`); } 
-        else { updateUI("#4CAF50", `<span style="font-size: 60pt;">🟢</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div><div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>`); }
+      let actionStr = isManual ? "MARK_MANUAL" : "MARK_ATTENDANCE";
+      
+      fetchWithTimeout(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId, 10000)
+      .then(r => r.json())
+      .then(res => {
+        let nowTime = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
         
-        student.marked = 1; 
-        if(currentStatsDetails) { currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--; let g = studentId.charAt(0); if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; } updateStatsUI(); }
-        fetchWithTimeout(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId, 15000).catch(e=>{});
-      }
-      setTimeout(() => { isScanning = true; }, 4000); 
-      uiResetTimer = setTimeout(() => { updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", ""); }, 5000); 
+        if (res.status === "NOT_FOUND") {
+          playBeep('error');
+          updateUI("#ef4444", `<span style="font-size: 70pt;">🔴</span>`, "", `<div style="color:#ef4444; font-size:20pt; font-weight:bold; margin-top:10px;">당일 석식 미신청자입니다</div>`);
+        } 
+        else if (res.status === "DUPLICATE") {
+          playBeep('duplicate');
+          let safeName = maskName(res.name);
+          updateUI("orange", `<span style="font-size: 70pt;">🟠</span>`, "", `<div style="color:orange; font-size:22pt; font-weight:bold; margin-bottom:10px;">⚠ 중복 식사 !</div><div style="color:white; font-size:16pt;">${studentId} ${safeName}<br><span style="font-size:14pt;color:#9ca3af;">이미 통과했습니다 (${nowTime})</span></div>`);
+        } 
+        else if (res.status === "SUCCESS") {
+          playBeep('success');
+          let safeName = maskName(res.name);
+          if (isManual) {
+            updateUI("#10b981", `<span style="font-size: 60pt;">✅</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div><div style="color:#fca5a5; font-size:15pt; font-weight:bold;">😈 QR을 사용해주세요!</div>`);
+          } else {
+            updateUI("#4CAF50", `<span style="font-size: 60pt;">🟢</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div><div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>`);
+          }
+          refreshStats();
+        } else {
+          throw new Error("서버 오류");
+        }
+      })
+      .catch(e => {
+         playBeep('error');
+         updateUI("#ef4444", `📶`, "", `<div style="color:#ef4444; font-size:20pt; font-weight:bold;">인터넷 연결이 불안정합니다!<br>다시 찍어주세요.</div>`);
+      })
+      .finally(() => {
+         setTimeout(() => { isScanning = true; }, 3000); 
+         uiResetTimer = setTimeout(() => { updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", ""); }, 4000); 
+      });
     }
+
     function updateUI(color, iconHtml, title, message) { document.getElementById('photo-box').style.borderColor = color; document.getElementById('photo-box').innerHTML = iconHtml; document.getElementById('status-message').innerHTML = message; document.getElementById('warning-box').style.display = (color === 'yellow') ? "block" : "none"; }
   </script>
 </body>

@@ -87,7 +87,6 @@
     </div>
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
-      <!-- 강제 새로고침 적용 -->
       <button class="top-btn btn-refresh" onclick="window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();">🔄 화면 새로고침</button>
     </div>
   </div>
@@ -129,12 +128,13 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
+    let lastUpdatePing = "0"; 
 
-    // ★ 2.5초마다 다이렉트로 빠르게 가져오기 (5분 렉 원천 차단)
+    // ★ 구글 서버 렉(30초 지연)을 완벽 차단하는 초경량 PING 엔진 탑재!
     window.onload = function() { 
       audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-      refreshData(); 
-      setInterval(refreshData, 2500); 
+      refreshData("INITIAL"); // 켜자마자 1번만 크게 가져오고
+      startPing();            // 그 뒤론 1.5초마다 가볍게 핑만 날립니다!
     };
     
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
@@ -151,8 +151,6 @@
       else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); } 
       else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
     }
-
-    let lastProcessedLogTime = ""; let currentStatsDetails = null;
 
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
@@ -171,31 +169,46 @@
     }
     function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
 
-    // ★ 통신 끊김 대비 불도저 엔진 (10초 안에 안 오면 버리고 다음 턴에 다시!)
-    function fetchWithTimeout(url, timeout = 10000) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-        return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
+    // ★ 1.5초마다 가볍게 물어보는 PING (구글 서버 절대 뻗지 않음)
+    let isPinging = false;
+    function startPing() {
+      setInterval(() => {
+        if(isPinging) return;
+        isPinging = true;
+        fetch(SCRIPT_URL + "?action=PING&t=" + new Date().getTime())
+        .then(r => r.json())
+        .then(res => {
+          isPinging = false;
+          if (res.teacher_sys_status === "CLOSED") {
+             document.getElementById('teacher-closed-overlay').style.display = 'flex';
+          } else {
+             document.getElementById('teacher-closed-overlay').style.display = 'none';
+          }
+          // 새로운 스캔이 찍혔다는 연락이 오면, 그때만 데이터를 새로 가져옵니다!
+          if (res.last_update !== lastUpdatePing) {
+             refreshData(res.last_update); 
+          }
+        }).catch(e => { isPinging = false; });
+      }, 1500);
     }
 
     let isRefreshing = false;
-    function refreshData() {
+    function refreshData(newUpdateVal) {
       if(isRefreshing) return;
       isRefreshing = true;
       let cacheBuster = "&t=" + new Date().getTime();
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster, 8000)
+      fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster)
         .then(r => r.json())
         .then(res => {
           isRefreshing = false;
           if (res.status === "SUCCESS") {
+            if (newUpdateVal !== "INITIAL") lastUpdatePing = newUpdateVal; // 성공 시 핑 업데이트
+
             if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-                window.location.reload(true);
+                window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();
                 return;
             }
             localResetTime = res.reset_time || "0";
-
-            if (res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
-            else document.getElementById('teacher-closed-overlay').style.display = 'none';
 
             document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
             
@@ -211,11 +224,11 @@
             currentStatsDetails = res.details; 
             processLogs(res.blackbox);
           }
-        }).catch(err => {
-          isRefreshing = false;
-          console.log("통신 지연, 다음 주기에 재시도합니다.");
-        });
+        }).catch(err => { isRefreshing = false; });
     }
+
+    // ★ 무한 복사, 중복 카드 생성을 1000% 완벽 차단하는 '바코드 추적' 기능!
+    let processedLogIds = new Set();
 
     function processLogs(logs) {
       if (!logs || logs.length === 0) return;
@@ -229,14 +242,15 @@
       }
       document.getElementById('log-content').innerHTML = logHtml;
 
-      let currentLatestId = logs[0].time + "_" + logs[0].id;
-      if (lastProcessedLogTime !== "" && currentLatestId === lastProcessedLogTime) return; 
-
       let newFaces = [];
-      if (lastProcessedLogTime !== "") {
-        let pendingLogs = [];
-        for(let i=0; i<logs.length; i++) { if ((logs[i].time + "_" + logs[i].id) === lastProcessedLogTime) break; pendingLogs.unshift(logs[i]); }
-        pendingLogs.forEach(log => {
+      // ★ 이미 그린 카드는 무시하고 오직 '진짜 새로운 카드'만 뽑아냅니다!
+      for (let i = 0; i < logs.length; i++) {
+        let log = logs[i];
+        let uniqueId = log.time + "_" + log.id; // 절대 중복될 수 없는 고유 바코드
+
+        if (!processedLogIds.has(uniqueId)) {
+          processedLogIds.add(uniqueId); // 바코드 등록!
+          
           let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "", badgeHtml = "";
           
           if (log.status.includes("무단")) { playBeep('error'); triggerAlert(`🚨 무단 접근!<br><span style="color:#fef08a;">${log.id} ${log.name}</span><br>미신청자입니다!`); badgeHtml = `<div class="unauth-badge">🚨 무단접근</div>`; } 
@@ -245,7 +259,7 @@
           else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // ★ .jpeg / .jpg / .jpeg.jpeg 어떤 확장자도 완벽하게 찾아내는 마법의 코드!
+            // .jpeg .jpg 뭘 올리셔도 알아서 다 찾아냅니다!
             let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" 
               onerror="
                 if(!this.getAttribute('data-fail1')) {
@@ -259,33 +273,12 @@
                 }
               ">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
-            newFaces.unshift(faceCard); 
+            newFaces.push(faceCard); 
           }
-        });
-      } else {
-        let log = logs[0];
-        if (!log.status.includes("중복")) {
-            let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
-            let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
-            
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" 
-              onerror="
-                if(!this.getAttribute('data-fail1')) {
-                  this.setAttribute('data-fail1','1'); 
-                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';
-                } else if(!this.getAttribute('data-fail2')) {
-                  this.setAttribute('data-fail2','1'); 
-                  this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg.jpeg';
-                } else {
-                  this.outerHTML='<div class=\\'student-photo\\'>👤</div>';
-                }
-              ">`;
-            let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
-            newFaces.push(faceCard);
         }
       }
       
-      lastProcessedLogTime = currentLatestId; 
+      // 새로 뽑아낸 카드들을 한 방에 맨 위에 꽂아줍니다!
       if (newFaces.length > 0) {
         let grid = document.getElementById('photo-grid');
         grid.insertAdjacentHTML('afterbegin', newFaces.join(""));

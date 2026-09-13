@@ -19,7 +19,6 @@
     .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: visible; display: flex; flex-direction: column; align-items: center; padding-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.3s ease-out; position: relative; margin-top: 10px; }
     .student-card.allergy { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
     .student-card.unauth { border-color: #ef4444; background: #fef2f2; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
-    /* ★ 1~8번 숫자 배지 디자인 */
     .newest-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); color: white; padding: 4px 16px; border-radius: 20px; font-weight: 900; font-size: 11pt; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 20; white-space: nowrap; display: none; }
     @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -5px); } }
     .btn-close-card { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 10pt; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.2s; }
@@ -123,11 +122,13 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
+    let lastUpdatePing = "0"; 
 
+    // ★ 구글 서버 과부하를 막는 PING 엔진 부활!!
     window.onload = function() { 
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-      refreshData(); 
-      setInterval(refreshData, 3000); 
+      refreshData("INITIAL"); 
+      startPing(); 
     };
     
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
@@ -156,7 +157,6 @@
     }
     function closeAlert() { document.getElementById('alert-box').classList.remove('animating'); setTimeout(() => { document.getElementById('alert-modal').style.display = 'none'; }, 200); }
     
-    // ★ 카드를 지우면 번호표를 1번부터 다시 붙여줍니다!
     function removeCard(btn) { 
       btn.parentElement.remove(); 
       updateCardNumbers();
@@ -175,23 +175,46 @@
         return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
     }
 
+    // ★ 가벼운 오토바이(핑) 출동!
+    let isPinging = false;
+    function startPing() {
+      setInterval(() => {
+        if(isPinging) return;
+        isPinging = true;
+        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000)
+        .then(r => r.json())
+        .then(res => {
+          isPinging = false;
+          if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
+             window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime(); return;
+          }
+          localResetTime = res.reset_time || "0";
+          if(res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
+          else document.getElementById('teacher-closed-overlay').style.display = 'none';
+
+          if (res.last_update !== lastUpdatePing) {
+             refreshData(res.last_update); // 새로 스캔된 아이가 있을 때만 가져옴!
+          }
+        }).catch(e => { isPinging = false; });
+      }, 1500);
+    }
+
     let isRefreshing = false;
-    function refreshData() {
+    function refreshData(newUpdateVal) {
       if(isRefreshing) return;
       isRefreshing = true;
       let cacheBuster = "&t=" + new Date().getTime();
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster)
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster, 15000)
         .then(r => r.json())
         .then(res => {
           isRefreshing = false;
           if (res.status === "SUCCESS") {
+            if (newUpdateVal && newUpdateVal !== "INITIAL") lastUpdatePing = newUpdateVal;
+
             if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
                 window.location.reload(true); return;
             }
             localResetTime = res.reset_time || "0";
-
-            if (res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
-            else document.getElementById('teacher-closed-overlay').style.display = 'none';
 
             document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
             
@@ -206,12 +229,11 @@
             
             currentStatsDetails = res.details; 
             processLogs(res.blackbox);
-          } else {
-            document.getElementById('log-content').innerHTML = `<div class="log-row"><span class="log-error-red">구글 오류: 연결을 재시도합니다...</span></div>`;
           }
         }).catch(err => { 
           isRefreshing = false; 
-          document.getElementById('log-content').innerHTML = `<div class="log-row"><span class="log-error-orange">학교 인터넷 불안정: 자동 재접속 중...</span></div>`;
+          // ★ 화면 하얗게 지워버리는 에러 메시지 완전 삭제! 아무 일 없던 척 조용히 넘어감
+          console.log("통신 지연 (무시됨)");
         });
     }
 
@@ -227,7 +249,6 @@
       }
     }
 
-    // ★ 순서대로 번호표를 예쁘게 붙여주는 마법의 함수!
     function updateCardNumbers() {
        let cards = document.querySelectorAll('.student-card');
        cards.forEach((card, index) => {
@@ -236,11 +257,11 @@
                badge.style.display = 'block';
                if(index === 0) {
                    badge.innerHTML = '🔥 1번 (최근)';
-                   badge.style.background = '#ef4444'; // 제일 최근은 빨간색!
+                   badge.style.background = '#ef4444'; 
                    badge.style.animation = 'bounce 1s infinite';
                } else {
                    badge.innerHTML = `${index + 1}번`;
-                   badge.style.background = '#64748b'; // 나머지는 회색!
+                   badge.style.background = '#64748b'; 
                    badge.style.animation = 'none';
                }
            }
@@ -270,7 +291,6 @@
       let newFaces = [];
       
       if (lastProcessedLogTime !== "") {
-        // ★ 실시간 스캔 처리 (새로 찍을 때마다 1번으로 들어옴)
         let pendingLogs = [];
         for(let i=0; i<logs.length; i++) { if ((logs[i].time + "_" + logs[i].id) === lastProcessedLogTime) break; pendingLogs.unshift(logs[i]); }
         pendingLogs.forEach(log => {
@@ -292,7 +312,6 @@
           }
         });
       } else {
-        // ★ 처음 켰을 때 / 새로고침 했을 때 (가장 최근 8명 복구)
         let count = 0;
         for(let i=0; i<logs.length; i++) {
             let log = logs[i];
@@ -303,9 +322,9 @@
                 let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
                 let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="handleImgErr(this, '${log.id}')">`;
                 let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge"></div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
-                newFaces.push(faceCard); // 순서대로 착착착! (가장 최근이 맨 앞)
+                newFaces.push(faceCard); 
                 count++;
-                if(count >= 8) break; // 최대 8명 표시!
+                if(count >= 8) break; 
             }
         }
       }
@@ -315,7 +334,7 @@
         let grid = document.getElementById('photo-grid');
         grid.insertAdjacentHTML('afterbegin', newFaces.join(""));
         while(grid.children.length > 8) { grid.removeChild(grid.lastChild); } 
-        updateCardNumbers(); // ★ 마지막으로 1~8번 번호표를 싹 붙여줍니다!
+        updateCardNumbers(); 
       }
     }
   </script>

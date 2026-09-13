@@ -111,7 +111,6 @@
         isPinging = true;
         fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000).then(r => r.json()).then(res => {
           isPinging = false;
-          // 초기화 감지 즉시 반영
           if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
              localResetTime = res.reset_time;
              for (let key in studentCache) studentCache[key].marked = 0;
@@ -149,13 +148,11 @@
     function closeManual() { document.getElementById('manual-modal').style.display = 'none'; document.getElementById('manual-input-val').value = ""; setTimeout(() => { isScanning = true; }, 1000); }
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
-    let initRetryCount = 0;
-    
-    // ★ 에러 분석기 탑재!
+    // ★ 로딩 무한 루프 삭제! 수동 재시도 버튼 도입!
     function loadInitialData() {
-      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(안전하게 명단을 불러오는 중입니다...)</span>";
+      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(구글 명단 다운로드 중...)</span>";
       
-      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime())
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 10000)
       .then(r => r.json())
       .then(res => {
           if(res.status === "SUCCESS") { 
@@ -164,15 +161,9 @@
             if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; 
             else initCamera(); 
             refreshStats(); startPing(); 
-          } else { throw new Error(res.message || "구글 서버 내부 오류"); }
+          } else { throw new Error("서버 에러"); }
       }).catch(err => { 
-          initRetryCount++;
-          let errorDesc = err.message;
-          if(err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
-              errorDesc = "구글 배포 권한이 풀렸습니다! (모든 사용자 필요)";
-          }
-          document.getElementById('loading-msg').innerHTML = `🚨 연결 실패!<br><span style='color:#fca5a5; font-size:16pt;'>원인: ${errorDesc}<br>자동 재연결 중... (${initRetryCount}회)</span>`;
-          setTimeout(loadInitialData, 3000); 
+          document.getElementById('loading-msg').innerHTML = `🚨 통신 지연!<br><span style='color:#fca5a5; font-size:14pt;'>학교 인터넷 연결이 원활하지 않습니다.</span><br><br><button onclick="loadInitialData()" style="padding:10px 20px; font-size:16pt; font-weight:bold; border-radius:8px; border:none; background:#3b82f6; color:white; cursor:pointer;">🔄 다시 연결하기</button>`;
       });
     }
 

@@ -95,9 +95,9 @@
 
     function playBeep(type) {
       initAudio(); if (!audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume();
-      if (type === 'success') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
-      else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); } 
-      else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
+      if (type === 'success') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+      } else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      } else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
     }
 
     function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
@@ -151,9 +151,9 @@
 
     let initRetryCount = 0;
     
-    // ★ 시간 제한 폭탄 제거! 무조건 끝까지 진득하게 기다립니다.
+    // ★ 에러 분석기 탑재!
     function loadInitialData() {
-      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(구글 명단 다운로드 중... 잠시만 기다려주세요)</span>";
+      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(안전하게 명단을 불러오는 중입니다...)</span>";
       
       fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime())
       .then(r => r.json())
@@ -164,10 +164,14 @@
             if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; 
             else initCamera(); 
             refreshStats(); startPing(); 
-          } else { throw new Error("서버 에러"); }
+          } else { throw new Error(res.message || "구글 서버 내부 오류"); }
       }).catch(err => { 
           initRetryCount++;
-          document.getElementById('loading-msg').innerHTML = `학교 와이파이가 잠시 지연되고 있습니다.<br><span style='color:#fca5a5; font-size:18pt;'>자동 재연결 중입니다... (새로고침 하지 마세요! ${initRetryCount})</span>`;
+          let errorDesc = err.message;
+          if(err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
+              errorDesc = "구글 배포 권한이 풀렸습니다! (모든 사용자 필요)";
+          }
+          document.getElementById('loading-msg').innerHTML = `🚨 연결 실패!<br><span style='color:#fca5a5; font-size:16pt;'>원인: ${errorDesc}<br>자동 재연결 중... (${initRetryCount}회)</span>`;
           setTimeout(loadInitialData, 3000); 
       });
     }

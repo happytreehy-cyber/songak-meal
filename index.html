@@ -106,8 +106,7 @@
 
     function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
 
-    // ★ 학생용 로딩 타임아웃 15초 (15000ms)로 대폭 상향!!
-    function fetchWithTimeout(url, timeout = 15000) {
+    function fetchWithTimeout(url, timeout = 10000) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
         return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
@@ -118,7 +117,7 @@
       setInterval(() => {
         if(isPinging) return;
         isPinging = true;
-        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 8000)
+        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000)
         .then(r => r.json())
         .then(res => {
           isPinging = false;
@@ -160,11 +159,11 @@
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
     let initRetryCount = 0;
+    // ★ 초반 무한 재접속 버그 삭제! (시간 제한 없이 순수하게 로딩될 때까지 느긋하게 대기합니다)
     function loadInitialData() {
       document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(학생 명단 불러오는 중...)</span>";
       
-      // ★ 15초(15000ms) 동안 참을성 있게 기다려줍니다!
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 15000)
+      fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime())
       .then(r => r.json())
       .then(res => {
           if(res.status === "SUCCESS") { 
@@ -176,7 +175,7 @@
           } else { throw new Error("서버 에러"); }
       }).catch(err => { 
           initRetryCount++;
-          document.getElementById('loading-msg').innerHTML = `학교 와이파이 연결이 지연되고 있습니다.<br><span style='color:#fca5a5; font-size:18pt;'>자동으로 다시 연결합니다... (재시도 ${initRetryCount}회)</span>`;
+          document.getElementById('loading-msg').innerHTML = `학교 와이파이 연결이 지연되고 있습니다.<br><span style='color:#fca5a5; font-size:18pt;'>잠시만 기다려주세요... (재시도 ${initRetryCount}회)</span>`;
           setTimeout(loadInitialData, 3000); 
       });
     }

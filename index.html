@@ -27,7 +27,7 @@
     .box-title { font-size: 20pt; font-weight: 900; margin-bottom: 5px; }
     .box-content { font-size: 16pt; margin-bottom: 0; font-weight: bold; line-height: 1.3; }
     .warning-text { margin-top: 10px; font-size: 12pt; color: #fca5a5; font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 12px; border-radius: 12px; line-height: 1.4; border: 1px solid rgba(239, 68, 68, 0.3); transition: opacity 0.2s; }
-    .manual-btn { margin-top: 30px; width: 95%; max-width: 300px; background: transparent; color: white; border: 2px solid #6b7280; padding: 12px 15px; border-radius: 12px; font-size: 16pt; font-weight: 900; cursor: transition: 0.2s; line-height: 1.3; }
+    .manual-btn { margin-top: 30px; width: 95%; max-width: 300px; background: transparent; color: white; border: 2px solid #6b7280; padding: 12px 15px; border-radius: 12px; font-size: 16pt; font-weight: 900; cursor: pointer; transition: 0.2s; line-height: 1.3; }
     #manual-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
     .modal-content { background: #1f2937; padding: 40px; border-radius: 16px; border: 3px solid #60a5fa; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
     .modal-content input { width: 240px; padding: 15px; font-size: 24pt; text-align: center; border-radius: 10px; border: 2px solid #9ca3af; margin: 20px 0; font-weight: bold; background: #374151; color: white; }
@@ -106,7 +106,8 @@
 
     function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
 
-    function fetchWithTimeout(url, timeout = 10000) {
+    // ★ 학생용 로딩 타임아웃 15초 (15000ms)로 대폭 상향!!
+    function fetchWithTimeout(url, timeout = 15000) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
         return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
@@ -117,7 +118,7 @@
       setInterval(() => {
         if(isPinging) return;
         isPinging = true;
-        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000)
+        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 8000)
         .then(r => r.json())
         .then(res => {
           isPinging = false;
@@ -137,7 +138,7 @@
     function refreshStats() {
       if(isRefreshing) return;
       isRefreshing = true;
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime(), 5000).then(r=>r.json()).then(res => {
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime(), 8000).then(r=>r.json()).then(res => {
           isRefreshing = false;
           if(res.totalStats) { currentStatsDetails = res; updateStatsUI(); }
       }).catch(e => { isRefreshing = false; });
@@ -162,7 +163,8 @@
     function loadInitialData() {
       document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(학생 명단 불러오는 중...)</span>";
       
-      fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 10000)
+      // ★ 15초(15000ms) 동안 참을성 있게 기다려줍니다!
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime(), 15000)
       .then(r => r.json())
       .then(res => {
           if(res.status === "SUCCESS") { 

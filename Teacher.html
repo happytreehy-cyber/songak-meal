@@ -20,28 +20,30 @@
     .main-container { display: flex; flex: 1; padding: 15px; gap: 15px; height: calc(100vh - 80px); box-sizing: border-box; }
     
     .left-panel { flex: 2; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
-    .photo-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow-y: auto; align-content: start; min-height: 250px; }
+    /* ★ 카드 사이 여백 조절 및 꽉 차게 변경 */
+    .photo-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow-y: auto; align-content: start; min-height: 250px; }
     
-    .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.3s ease-out; position: relative; }
+    .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; animation: slideDown 0.3s ease-out; position: relative; }
     .student-card.allergy { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
     .student-card.unauth { border-color: #ef4444; background: #fef2f2; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
 
-    .newest-badge { display: none; position: absolute; top: -5px; background: #ef4444; color: white; padding: 4px 15px; border-radius: 15px; font-weight: 900; font-size: 13pt; box-shadow: 0 4px 10px rgba(239,68,68,0.5); z-index: 20; animation: bounce 1s infinite; letter-spacing: 1px; }
+    .newest-badge { display: none; position: absolute; top: -5px; background: #ef4444; color: white; padding: 4px 12px; border-radius: 15px; font-weight: 900; font-size: 11pt; box-shadow: 0 4px 10px rgba(239,68,68,0.5); z-index: 20; animation: bounce 1s infinite; letter-spacing: 1px; }
     .student-card:first-child .newest-badge { display: block; }
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-    .btn-close-card { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 12pt; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.2s; }
+    .btn-close-card { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 10pt; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.2s; }
     .btn-close-card:hover { background: #ef4444; }
 
-    .student-photo { width: 100%; height: 190px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 40pt; color: #94a3b8; object-fit: contain; padding: 5px; box-sizing: border-box; border-bottom: 1px solid #cbd5e1; }
+    /* ★ 사진 세로 길이를 대폭 줄이고 여백 최소화 (이름 잘림 완벽 해결) */
+    .student-photo { width: 100%; height: 130px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 30pt; color: #94a3b8; object-fit: contain; box-sizing: border-box; border-bottom: 1px solid #cbd5e1; }
     
-    .student-info { margin-top: 8px; text-align: center; }
-    .student-id { font-size: 14pt; font-weight: bold; color: #64748b; }
-    .student-name { font-size: 22pt; font-weight: 900; color: #1e293b; margin: 3px 0; }
-    .student-note { background: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 15px; font-weight: bold; font-size: 12pt; display: inline-block; margin-top: 3px; }
+    .student-info { margin-top: 5px; text-align: center; width: 100%; padding: 0 5px; box-sizing: border-box; }
+    .student-id { font-size: 12pt; font-weight: bold; color: #64748b; }
+    .student-name { font-size: 18pt; font-weight: 900; color: #1e293b; margin: 2px 0; }
+    .student-note { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 15px; font-weight: bold; font-size: 10pt; display: inline-block; margin-top: 2px; }
     
-    .manual-badge { position: absolute; top: 25px; right: 8px; background: #10b981; color: white; font-weight: bold; padding: 6px 10px; border-radius: 8px; font-size: 11pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); z-index: 10; }
-    .unauth-badge { position: absolute; top: 25px; right: 8px; background: #ef4444; color: white; font-weight: bold; padding: 6px 10px; border-radius: 8px; font-size: 11pt; box-shadow: 0 2px 6px rgba(239,68,68,0.5); z-index: 10; animation: blinker 1s linear infinite; }
+    .manual-badge { position: absolute; top: 5px; right: 5px; background: #10b981; color: white; font-weight: bold; padding: 4px 8px; border-radius: 8px; font-size: 10pt; box-shadow: 0 2px 6px rgba(0,0,0,0.3); z-index: 10; }
+    .unauth-badge { position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; font-weight: bold; padding: 4px 8px; border-radius: 8px; font-size: 10pt; box-shadow: 0 2px 6px rgba(239,68,68,0.5); z-index: 10; animation: blinker 1s linear infinite; }
 
     .unfed-box { height: 260px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
     .unfed-grid { display: flex; flex: 1; overflow: hidden; }
@@ -87,6 +89,7 @@
     .lock-icon { font-size: 60pt; margin-bottom: 10px; }
     .lock-title { color: #f8fafc; font-size: 24pt; font-weight: 900; margin-bottom: 10px; }
     .lock-desc { color: #94a3b8; font-size: 14pt; margin-bottom: 30px; }
+    /* ★ 자동완성(기억) 완전 차단! 무조건 입력하게 만듦 */
     .pw-input { width: 200px; padding: 15px; font-size: 28pt; text-align: center; border-radius: 10px; border: none; background: #f1f5f9; color: #0f172a; font-weight: bold; letter-spacing: 5px; margin-bottom: 20px; outline: none; }
     .pw-input:focus { box-shadow: 0 0 0 4px #3b82f6; }
     .pw-btn { background: #3b82f6; color: white; border: none; padding: 15px 40px; font-size: 16pt; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.2s; width: 100%; }
@@ -99,12 +102,15 @@
 </head>
 <body>
 
+  <!-- ★ 브라우저 비밀번호 저장 기능 완전히 무력화 -->
   <div id="lock-screen">
     <div class="lock-box">
       <div class="lock-icon">🔒</div>
       <div class="lock-title">교사용 데스크 잠금</div>
-      <div class="lock-desc">담당자 외 접근을 금지합니다.<br>비밀번호를 입력하세요.</div>
-      <input type="password" id="teacher-pw" class="pw-input" placeholder="****" onkeypress="if(event.keyCode==13) checkPassword();">
+      <div class="lock-desc">담당자 외 접근을 금지합니다.<br>비밀번호를 직접 입력하세요.</div>
+      <form onsubmit="event.preventDefault(); checkPassword();" autocomplete="off">
+        <input type="password" id="teacher-pw" class="pw-input" placeholder="****" autocomplete="new-password">
+      </form>
       <button class="pw-btn" onclick="checkPassword()">잠금 해제</button>
     </div>
   </div>
@@ -125,7 +131,8 @@
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
       <button class="top-btn btn-refresh" onclick="window.location.reload()">🔄 화면 새로고침</button>
-      <button class="top-btn btn-close-sys" id="sys-btn" onclick="toggleSystem()">🛑 시스템 마감(차단)</button>
+      <!-- ★ 버튼 텍스트 변경 완료 -->
+      <button class="top-btn btn-close-sys" id="sys-btn" onclick="toggleSystem()">🛑 학생용 화면 시스템 일시 마감(차단)</button>
     </div>
   </div>
 
@@ -172,15 +179,10 @@
     let isSoundEnabled = true; 
     let audioCtx = null;
 
-    // ★ 1. 자동 로그인 부활 (새로고침해도 비밀번호 묻지 않음!)
+    // ★ 자동로그인 기능 완벽 삭제. F5 누르면 무조건 튕겨냄.
     window.onload = function() {
-      if(sessionStorage.getItem('teacherUnlocked') === 'true') {
-        document.getElementById('lock-screen').style.display = 'none';
-        isUnlocked = true;
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      } else {
-        document.getElementById('teacher-pw').focus();
-      }
+      document.getElementById('teacher-pw').value = "";
+      document.getElementById('teacher-pw').focus();
     };
 
     function toggleSound() {
@@ -213,13 +215,13 @@
       if (inputPw === TEACHER_PASSWORD) {
         document.getElementById('lock-screen').style.display = 'none';
         isUnlocked = true; 
-        sessionStorage.setItem('teacherUnlocked', 'true'); // 비번 패스권 저장!
         if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         if (audioCtx.state === 'suspended') audioCtx.resume(); 
         refreshData(); 
       } else {
         alert("비밀번호가 틀렸습니다!");
         document.getElementById('teacher-pw').value = "";
+        document.getElementById('teacher-pw').focus();
       }
     }
 
@@ -257,14 +259,14 @@
       .then(res => {
          let isClosed = (res.sys_status === "CLOSED");
          updateSysBtn(isClosed);
-         alert(isClosed ? "시스템이 마감되었습니다. 학생들이 접속할 수 없습니다." : "시스템이 다시 열렸습니다!");
+         alert(isClosed ? "시스템이 일시 마감되었습니다. 학생들이 접속할 수 없습니다." : "시스템이 다시 열렸습니다!");
       });
     }
 
     function updateSysBtn(isClosed) {
       let btn = document.getElementById('sys-btn');
-      if (isClosed) { btn.innerText = "🟢 시스템 열기"; btn.style.background = "#10b981"; } 
-      else { btn.innerText = "🛑 시스템 마감(차단)"; btn.style.background = "#ef4444"; }
+      if (isClosed) { btn.innerText = "🟢 학생용 화면 시스템 열기"; btn.style.background = "#10b981"; } 
+      else { btn.innerText = "🛑 학생용 화면 시스템 일시 마감(차단)"; btn.style.background = "#ef4444"; }
     }
 
     function openStatsModal() {
@@ -279,10 +281,13 @@
     }
     function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
 
+    // ★ 브라우저 캐시 무시 (초고속 업데이트 핵심 비법! 't' 파라미터 추가)
     function refreshData() {
       if(!isUnlocked) return; 
+      
+      let cacheBuster = "&t=" + new Date().getTime();
 
-      fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA")
+      fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster)
         .then(r => r.json())
         .then(res => {
           if (res.status === "SUCCESS") {
@@ -306,14 +311,12 @@
           }
         }).catch(err => console.log("데이터 통신 대기 중..."));
         
-      fetch(SCRIPT_URL + "?action=GET_DETAILS").then(r=>r.json()).then(res => { currentStatsDetails = res; });
+      fetch(SCRIPT_URL + "?action=GET_DETAILS" + cacheBuster).then(r=>r.json()).then(res => { currentStatsDetails = res; });
     }
 
-    // ★ 수동 스캔 누락 버그 완벽 해결 & 리스트 상위 노출 
     function processLogs(logs) {
       let logHtml = ""; 
       
-      // 1. 블랙박스 기록을 최신순으로 그려주기 (스크롤 가능하게 완벽 해결)
       for (let i = 0; i < logs.length; i++) {
         let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'); 
         if (!log.id && !log.name) continue; 
@@ -327,17 +330,15 @@
       }
       document.getElementById('log-content').innerHTML = logHtml;
 
-      // 2. 새로운 사진 카드 띄우기 (놓치는 사람 없이 전부 다 띄웁니다!)
       if (logs.length > 0) {
         let currentLatestId = logs[0].time + "_" + logs[0].id;
         let newFaces = [];
 
         if (lastLogTime !== "" && currentLatestId !== lastLogTime) {
-          // 새로 추가된 사람만 쏙쏙 뽑아내기
           let pendingLogs = [];
           for(let i=0; i<logs.length; i++) {
             if ((logs[i].time + "_" + logs[i].id) === lastLogTime) break;
-            pendingLogs.unshift(logs[i]); // 옛날 것부터 차례대로 넣기
+            pendingLogs.unshift(logs[i]); 
           }
 
           pendingLogs.forEach(log => {
@@ -374,11 +375,10 @@
                   </div>
                 </div>
               `;
-              newFaces.unshift(faceCard); // 최신 스캔이 무조건 맨 위(왼쪽)로 가게!
+              newFaces.unshift(faceCard); 
             }
           });
         } else if (lastLogTime === "") {
-          // 처음 켰을 때는 맨 첫 사람만 소리 없이 띄워주기
           let log = logs[0];
           if (!log.status.includes("중복")) {
               let allergyClass = log.status.includes("알레르기") ? "allergy" : "";
@@ -401,18 +401,18 @@
           }
         }
 
-        lastLogTime = currentLatestId; // 마지막 스캔 시간 업데이트!
+        lastLogTime = currentLatestId; 
 
         if (newFaces.length > 0) {
           let grid = document.getElementById('photo-grid');
           grid.insertAdjacentHTML('afterbegin', newFaces.join(""));
-          while(grid.children.length > 6) { grid.removeChild(grid.lastChild); }
+          while(grid.children.length > 12) { grid.removeChild(grid.lastChild); } // 카드 더 많이 남겨두기
         }
       }
     }
 
-    // ★ 10초 넘게 늦게 뜨던 것을 3초 간격의 초고속 스피드로 변경!
-    setInterval(refreshData, 3000); refreshData();
+    // ★ 20초 딜레이의 주범이었던 간격을 '3초'로 완벽 단축 완료!
+    setInterval(refreshData, 3000); 
   </script>
 </body>
 </html>

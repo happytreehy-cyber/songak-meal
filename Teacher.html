@@ -127,7 +127,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let isSoundEnabled = true; let audioCtx = null;
-    let localResetTime = "0"; // ★ 오토-싱크를 위한 핵심 변수!
+    let localResetTime = "0"; 
 
     window.onload = function() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); refreshData(); setInterval(refreshData, 3000); };
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
@@ -223,8 +223,8 @@
           else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // ★ 깃허브 URL 직접 연결! (오류 시 회색 아이콘 👤 표시)
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="this.outerHTML='<div class=\\'student-photo\\'>👤</div>'">`;
+            // ★ 사진 절대 경로 + .jpeg / .jpg 완벽 호환 엔진! (엑스박스 절대 차단)
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="if(this.getAttribute('data-fail')!=='1'){this.setAttribute('data-fail','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';}else{this.outerHTML='<div class=\\'student-photo\\'>👤</div>';}">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.unshift(faceCard); 
           }
@@ -235,7 +235,7 @@
             let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
             let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
             
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="this.outerHTML='<div class=\\'student-photo\\'>👤</div>'">`;
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="if(this.getAttribute('data-fail')!=='1'){this.setAttribute('data-fail','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';}else{this.outerHTML='<div class=\\'student-photo\\'>👤</div>';}">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.push(faceCard);
         }

@@ -65,13 +65,11 @@
   </style>
 </head>
 <body>
-  
   <div id="teacher-closed-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; justify-content:center; align-items:center; color:white;">
     <div style="font-size:80pt; margin-bottom:20px;">🛑</div>
     <h1 style="color:#ef4444; font-size:30pt; font-weight:900;">교사용 모니터가 차단되었습니다</h1>
     <p style="color:#9ca3af; font-size:16pt;">구글 시트 메뉴 [🔒 웹 화면 차단/열기 제어] 에서 열어주세요.</p>
   </div>
-
   <div id="stats-modal">
     <div class="stats-modal-content">
       <h2 style="margin-top:0; color:#2563eb; text-align:center;">📊 학년별 식사 현황</h2>
@@ -79,7 +77,6 @@
       <button style="width:100%; padding:15px; margin-top:20px; background:#475569; color:white; font-size:14pt; font-weight:bold; border:none; border-radius:8px; cursor:pointer;" onclick="closeStatsModal()">닫기</button>
     </div>
   </div>
-
   <div class="header">
     <div class="header-left">
       <div class="title">💻 송악고 석식 모니터링 (교사용)</div>
@@ -87,10 +84,9 @@
     </div>
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
-      <button class="top-btn btn-refresh" onclick="window.location.reload(true)">🔄 화면 새로고침</button>
+      <button class="top-btn btn-refresh" onclick="window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();">🔄 화면 새로고침</button>
     </div>
   </div>
-
   <div class="main-container">
     <div class="left-panel">
       <div class="photo-grid" id="photo-grid"></div>
@@ -102,7 +98,6 @@
         </div>
       </div>
     </div>
-
     <div class="right-panel">
       <div class="stats-box">
         <div class="stats-badges-container">
@@ -129,11 +124,10 @@
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
 
-    // ★ 안전한 오디오 준비 및 로딩 시작
     window.onload = function() { 
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
       refreshData(); 
-      setInterval(refreshData, 3000); // 구글 서버가 숨 쉴 수 있게 3초로 안정화
+      setInterval(refreshData, 3000); 
     };
     
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
@@ -170,8 +164,8 @@
     }
     function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
 
-    // ★ 타임아웃 기능 추가: 8초 동안 구글이 대답 안 하면 쿨하게 버림! (무한 로딩 방지)
-    function fetchWithTimeout(url, timeout = 8000) {
+    // ★ 참을성 15초로 대폭 증가! 무한 멈춤 완전 종결!
+    function fetchWithTimeout(url, timeout = 15000) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
         return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
@@ -188,8 +182,7 @@
           isRefreshing = false;
           if (res.status === "SUCCESS") {
             if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-                window.location.reload(true);
-                return;
+                window.location.reload(true); return;
             }
             localResetTime = res.reset_time || "0";
 
@@ -218,23 +211,9 @@
         });
     }
 
-    // ★ 먹통 원인 완전 제거! 안전하고 완벽한 전용 사진 에러 처리 함수
-    function handleImgErr(img, id) {
-      if (!img.dataset.f1) { 
-        img.dataset.f1 = '1'; 
-        img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpg`; 
-      } else if (!img.dataset.f2) { 
-        img.dataset.f2 = '1'; 
-        img.src = `https://happytreehy-cyber.github.io/songak-meal/${id}.jpeg.jpeg`; 
-      } else { 
-        img.outerHTML = '<div class="student-photo">👤</div>'; 
-      }
-    }
-
     function processLogs(logs) {
       if (!logs || logs.length === 0) {
-        document.getElementById('log-content').innerHTML = `<div style='text-align:center; padding:20px; color:#94a3b8; font-weight:bold;'>기록이 없습니다.</div>`;
-        return;
+        document.getElementById('log-content').innerHTML = `<div style='text-align:center; padding:20px; color:#94a3b8; font-weight:bold;'>기록이 없습니다.</div>`; return;
       }
       
       let logHtml = ""; 
@@ -263,22 +242,27 @@
           else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // ★ 따옴표 에러 제로! 안전한 사진 출력 함수 연동 완료!
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="handleImgErr(this, '${log.id}')">`;
+            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="if(!this.getAttribute('data-fail1')){this.setAttribute('data-fail1','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';}else if(!this.getAttribute('data-fail2')){this.setAttribute('data-fail2','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg.jpeg';}else{this.outerHTML='<div class=\\'student-photo\\'>👤</div>';}">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.unshift(faceCard); 
           }
         });
       } else {
-        let log = logs[0];
-        if (!log.status.includes("중복")) {
-            let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
-            let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
-            
-            let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="handleImgErr(this, '${log.id}')">`;
-            let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
-            newFaces.push(faceCard);
+        // ★ 새로고침 했을 때, 최근 찍은 4명까지 한 번에 복원해서 보여줍니다! (단, 중복 제외)
+        let count = 0;
+        for(let i=0; i<logs.length; i++) {
+            let log = logs[i];
+            if (!log.status.includes("중복")) {
+                let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
+                let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
+                let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="if(!this.getAttribute('data-fail1')){this.setAttribute('data-fail1','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';}else if(!this.getAttribute('data-fail2')){this.setAttribute('data-fail2','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg.jpeg';}else{this.outerHTML='<div class=\\'student-photo\\'>👤</div>';}">`;
+                let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🕒 이전 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
+                newFaces.push(faceCard);
+                count++;
+                if(count >= 4) break; // 최대 4명까지만 복구
+            }
         }
+        newFaces.reverse(); // 화면에 최신순으로 깔끔하게 배치
       }
       
       lastProcessedLogTime = currentLatestId; 

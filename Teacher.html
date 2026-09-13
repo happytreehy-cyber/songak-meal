@@ -54,8 +54,7 @@
     .stat-title { font-size: 13pt; font-weight: bold; margin-bottom: 5px; }
     .stat-num { font-size: 28pt; font-weight: 900; }
     
-    /* ★ 위아래 분리형 표 디자인 (절대 안 깨짐) */
-    .stat-sub-box { display: flex; width: 95%; margin-top: 10px; background: rgba(0,0,0,0.25); border-radius: 8px; padding: 8px 0; }
+    .stat-sub-box { display: flex; width: 90%; margin-top: 10px; background: rgba(0,0,0,0.25); border-radius: 8px; padding: 6px 0; }
     .sub-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid rgba(255,255,255,0.2); line-height: 1.4; }
     .sub-col:last-child { border-right: none; }
     .grade-label { font-size: 10pt; color: rgba(255,255,255,0.85); font-weight: bold; margin-bottom: 3px; }
@@ -152,8 +151,7 @@
       <div class="log-box">
         <div class="log-title">📹 실시간 블랙박스 기록 (최근 스캔 맨위로)</div>
         <div class="log-content" id="log-content">
-          <!-- 켰을 때 하얀 백지가 안 보이도록 안전 문구 삽입! -->
-          <div style='text-align:center; padding:20px; color:#3b82f6; font-weight:bold;'>구글 서버와 안전하게 연결 중입니다...<br>(최대 10초 소요)</div>
+          <div style='text-align:center; padding:20px; color:#3b82f6; font-weight:bold;'>구글 서버와 연결 중입니다...<br>(최대 10초 소요)</div>
         </div>
       </div>
 
@@ -194,7 +192,6 @@
 
     let globalUnfed = [], globalDone = [];
 
-    // ★ 구글 서버가 허용하는 가장 빠르고 안전한 2초 핑 엔진!
     window.onload = function() { 
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
       loadInitialData(); 
@@ -216,7 +213,6 @@
     }
 
     let lastProcessedLogTime = "";
-
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
     let alertTimer = null;
@@ -249,9 +245,9 @@
        document.getElementById('list-modal').style.display = 'flex';
     }
 
-    function fetchWithTimeout(url, timeout = 10000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeout); return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; }); }
+    function fetchWithTimeout(url, timeout = 15000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeout); return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; }); }
 
-    // ★ 뻗지 않는 안전한 초기 로딩 엔진!
+    // ★ 똑똑한 에러 분석기 탑재! 왜 안 되는지 정확히 알려줍니다.
     function loadInitialData() {
         fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA&t=" + new Date().getTime(), 15000)
         .then(r => r.json())
@@ -260,11 +256,17 @@
                 lastUpdatePing = res.last_update || "INITIAL";
                 localResetTime = res.reset_time || "0";
                 updateUIWithData(res);
-                startPing(); // 로딩 성공하면 레이더망 가동!
-            } else { throw new Error("서버 에러"); }
+                startPing(); 
+            } else { 
+                throw new Error(res.message || "구글 서버 내부 오류"); 
+            }
         })
         .catch(err => {
-            document.getElementById('log-content').innerHTML = `<div style='text-align:center; padding:20px; color:#ef4444; font-weight:bold;'>학교 인터넷 연결 지연<br>자동으로 재시도 중입니다...</div>`;
+            let errorDesc = err.message;
+            if(err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
+                errorDesc = "구글 배포 권한이 풀렸거나(모든 사용자 아님), 주소가 바뀌었습니다!";
+            }
+            document.getElementById('log-content').innerHTML = `<div style='text-align:center; padding:20px; color:#ef4444; font-weight:bold;'>🚨 연결 실패!<br><br>원인: ${errorDesc}<br><br>자동 재시도 중...</div>`;
             setTimeout(loadInitialData, 3000);
         });
     }
@@ -284,7 +286,7 @@
 
           if (res.last_update !== lastUpdatePing) refreshData(res.last_update); 
         }).catch(e => { isPinging = false; });
-      }, 2000); // 2초! (구글이 절대 차단 안 하는 가장 빠른 속도)
+      }, 1500); // 1.5초가 가장 안전한 최대 한계치입니다!
     }
 
     let isRefreshing = false;
@@ -305,18 +307,12 @@
         }).catch(err => { isRefreshing = false; });
     }
 
-    // ★ 화면에 데이터를 예쁘게 뿌려주는 함수 통합
     function updateUIWithData(res) {
         globalUnfed = res.unfed || []; globalDone = res.done || [];
-
-        document.getElementById('stat-total').innerText = res.stats.total; 
-        document.getElementById('stat-done').innerText = res.stats.done; 
-        document.getElementById('stat-left').innerText = res.stats.left;
-        
+        document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
         document.getElementById('t-1').innerText = res.details[1].total + "명"; document.getElementById('t-2').innerText = res.details[2].total + "명"; document.getElementById('t-3').innerText = res.details[3].total + "명";
         document.getElementById('d-1').innerText = res.details[1].done + "명"; document.getElementById('d-2').innerText = res.details[2].done + "명"; document.getElementById('d-3').innerText = res.details[3].done + "명";
         document.getElementById('l-1').innerText = res.details[1].left + "명"; document.getElementById('l-2').innerText = res.details[2].left + "명"; document.getElementById('l-3').innerText = res.details[3].left + "명";
-
         processLogs(res.blackbox);
     }
 
@@ -349,7 +345,6 @@
         let log = logs[i], timeStr = new Date(log.time).toLocaleTimeString('ko-KR'); 
         if (!log.id && !log.name) continue; 
         
-        // ★ 무단접근 (15:00) 같은 괄호 시간 절대 안 나오게 칼같이 자름!
         let cleanStatus = String(log.status).split('(')[0].trim(); 
         
         let rowClass = "";

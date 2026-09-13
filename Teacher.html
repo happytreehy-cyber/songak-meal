@@ -87,7 +87,8 @@
     </div>
     <div class="header-right">
       <button class="top-btn btn-sound" id="sound-btn" onclick="toggleSound()">🔊 소리 켜짐</button>
-      <button class="top-btn btn-refresh" onclick="window.location.reload(true)">🔄 화면 새로고침</button>
+      <!-- 강제 새로고침 적용 -->
+      <button class="top-btn btn-refresh" onclick="window.location.href = window.location.href.split('?')[0] + '?t=' + new Date().getTime();">🔄 화면 새로고침</button>
     </div>
   </div>
 
@@ -129,6 +130,7 @@
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
 
+    // ★ 2.5초마다 다이렉트로 빠르게 가져오기 (5분 렉 원천 차단)
     window.onload = function() { 
       audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
       refreshData(); 
@@ -169,11 +171,22 @@
     }
     function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
 
+    // ★ 통신 끊김 대비 불도저 엔진 (10초 안에 안 오면 버리고 다음 턴에 다시!)
+    function fetchWithTimeout(url, timeout = 10000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        return fetch(url, { signal: controller.signal }).then(res => { clearTimeout(id); return res; }).catch(err => { clearTimeout(id); throw err; });
+    }
+
+    let isRefreshing = false;
     function refreshData() {
+      if(isRefreshing) return;
+      isRefreshing = true;
       let cacheBuster = "&t=" + new Date().getTime();
-      fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster)
+      fetchWithTimeout(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster, 8000)
         .then(r => r.json())
         .then(res => {
+          isRefreshing = false;
           if (res.status === "SUCCESS") {
             if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
                 window.location.reload(true);
@@ -198,10 +211,12 @@
             currentStatsDetails = res.details; 
             processLogs(res.blackbox);
           }
-        }).catch(err => console.log("데이터 갱신 중..."));
+        }).catch(err => {
+          isRefreshing = false;
+          console.log("통신 지연, 다음 주기에 재시도합니다.");
+        });
     }
 
-    // ★ 파일명이 이상해도, 무조건 빨리 찾아서 띄우는 무적의 검색 엔진 탑재!
     function processLogs(logs) {
       if (!logs || logs.length === 0) return;
       let logHtml = ""; 
@@ -230,7 +245,7 @@
           else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // ★ 1101.jpeg -> 실패하면 -> 1101.jpg -> 실패하면 -> 1101.jpeg.jpeg 까지 다 찾아보는 무적의 코드!
+            // ★ .jpeg / .jpg / .jpeg.jpeg 어떤 확장자도 완벽하게 찾아내는 마법의 코드!
             let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" 
               onerror="
                 if(!this.getAttribute('data-fail1')) {
@@ -243,7 +258,6 @@
                   this.outerHTML='<div class=\\'student-photo\\'>👤</div>';
                 }
               ">`;
-
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.unshift(faceCard); 
           }
@@ -254,7 +268,6 @@
             let allergyClass = log.status.includes("알레르기") ? "allergy" : "", unauthClass = log.status.includes("무단") ? "unauth" : "";
             let badgeHtml = log.status.includes("수동") ? `<div class="manual-badge">✅ 수동입력</div>` : (log.status.includes("무단") ? `<div class="unauth-badge">🚨 무단접근</div>` : "");
             
-            // ★ 첫 화면도 마찬가지로 무적 검색 적용!
             let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" 
               onerror="
                 if(!this.getAttribute('data-fail1')) {
@@ -267,7 +280,6 @@
                   this.outerHTML='<div class=\\'student-photo\\'>👤</div>';
                 }
               ">`;
-
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.push(faceCard);
         }

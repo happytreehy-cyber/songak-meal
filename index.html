@@ -90,18 +90,14 @@
     setInterval(() => { let now = new Date(); document.getElementById('live-clock').innerText = now.getFullYear() + ". " + String(now.getMonth()+1).padStart(2,'0') + ". " + String(now.getDate()).padStart(2,'0') + ". " + now.toLocaleTimeString('ko-KR'); }, 1000);
 
     let audioCtx = null;
-    function initAudio() {
-      if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    }
+    function initAudio() { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} } if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
     window.addEventListener('touchstart', initAudio, { once: true }); window.addEventListener('click', initAudio, { once: true });
 
     function playBeep(type) {
-      initAudio();
-      if (!audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume();
-      if (type === 'success') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-      } else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-      } else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
+      initAudio(); if (!audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (type === 'success') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
+      else if (type === 'duplicate') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); } 
+      else if (type === 'error') { const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.15); const osc2 = audioCtx.createOscillator(), gainNode2 = audioCtx.createGain(); osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(300, audioCtx.currentTime + 0.2); osc2.connect(gainNode2); gainNode2.connect(audioCtx.destination); gainNode2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.2); gainNode2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc2.start(audioCtx.currentTime + 0.2); osc2.stop(audioCtx.currentTime + 0.35); }
     }
 
     function maskName(n) { if(!n) return""; if(n.length===2)return n[0]+"O"; return n[0]+"O"+n.substring(2); }
@@ -113,21 +109,15 @@
       setInterval(() => {
         if(isPinging) return;
         isPinging = true;
-        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000)
-        .then(r => r.json())
-        .then(res => {
+        fetchWithTimeout(SCRIPT_URL + "?action=PING&t=" + new Date().getTime(), 5000).then(r => r.json()).then(res => {
           isPinging = false;
-          
-          // ★ 초기화 버튼 누르면 화면 깜빡임 없이 0.1초만에 스르륵 비워지는 매직 리셋!!
+          // 초기화 감지 즉시 반영
           if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
              localResetTime = res.reset_time;
              for (let key in studentCache) studentCache[key].marked = 0;
              updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", "");
-             currentStatsDetails = null;
-             refreshStats();
-             return;
+             currentStatsDetails = null; refreshStats(); return;
           }
-          
           if(res.sys_status === "CLOSED") { document.getElementById('closed-overlay').style.display = 'flex'; if(html5QrCode) html5QrCode.stop().catch(e=>{}); } 
           else document.getElementById('closed-overlay').style.display = 'none';
 
@@ -138,11 +128,9 @@
 
     let isRefreshing = false;
     function refreshStats() {
-      if(isRefreshing) return;
-      isRefreshing = true;
+      if(isRefreshing) return; isRefreshing = true;
       fetchWithTimeout(SCRIPT_URL + "?action=GET_DETAILS&t=" + new Date().getTime(), 8000).then(r=>r.json()).then(res => {
-          isRefreshing = false;
-          if(res.totalStats) { currentStatsDetails = res; updateStatsUI(); }
+          isRefreshing = false; if(res.totalStats) { currentStatsDetails = res; updateStatsUI(); }
       }).catch(e => { isRefreshing = false; });
     }
 
@@ -161,9 +149,11 @@
     function closeManual() { document.getElementById('manual-modal').style.display = 'none'; document.getElementById('manual-input-val').value = ""; setTimeout(() => { isScanning = true; }, 1000); }
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
-    // ★ 로딩 폭탄 제거! 무한 로딩 재시작 없이 60초간 느긋하게 다운로드합니다.
+    let initRetryCount = 0;
+    
+    // ★ 시간 제한 폭탄 제거! 무조건 끝까지 진득하게 기다립니다.
     function loadInitialData() {
-      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(안전하게 명단을 불러오는 중입니다...)</span>";
+      document.getElementById('loading-msg').innerHTML = "송악고 급식실은 오늘도<br>맛있게 준비 중입니다<br><span style='font-size:14pt; color:#9ca3af;'>(구글 명단 다운로드 중... 잠시만 기다려주세요)</span>";
       
       fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS&t=" + new Date().getTime())
       .then(r => r.json())
@@ -176,8 +166,9 @@
             refreshStats(); startPing(); 
           } else { throw new Error("서버 에러"); }
       }).catch(err => { 
-          document.getElementById('loading-msg').innerHTML = `학교 와이파이가 잠시 지연되고 있습니다.<br><span style='color:#fca5a5; font-size:18pt;'>자동 재연결 중입니다... (새로고침 하지 마세요!)</span>`;
-          setTimeout(loadInitialData, 5000); 
+          initRetryCount++;
+          document.getElementById('loading-msg').innerHTML = `학교 와이파이가 잠시 지연되고 있습니다.<br><span style='color:#fca5a5; font-size:18pt;'>자동 재연결 중입니다... (새로고침 하지 마세요! ${initRetryCount})</span>`;
+          setTimeout(loadInitialData, 3000); 
       });
     }
 

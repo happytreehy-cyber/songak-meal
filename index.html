@@ -8,8 +8,6 @@
     body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #111827; color: white; font-family: 'Apple SD Gothic Neo', sans-serif; overflow: hidden; }
     
     .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1f2937; border-bottom: 2px solid #374151; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10; }
-    
-    /* ★ 제목과 시계가 절대 떨어지지 않도록 한 줄로 강제 고정! */
     .header-left { display: flex; align-items: center; gap: 15px; flex-wrap: nowrap; }
     .title { font-size: 20pt; font-weight: 900; color: #60a5fa; letter-spacing: 1px; white-space: nowrap; }
     .clock { font-size: 13pt; color: #9ca3af; font-weight: bold; white-space: nowrap; margin-top: 4px; }
@@ -49,11 +47,9 @@
     .btn-submit { background: #3b82f6; color: white; } .btn-cancel { background: #ef4444; color: white; }
 
     #loading-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-    .progress-container { width: 80%; max-width: 400px; height: 8px; background: #374151; border-radius: 4px; position: relative; margin-top: 40px; }
-    .progress-bar { height: 100%; background: #60a5fa; width: 0%; border-radius: 4px; transition: width 0.5s ease; box-shadow: 0 0 15px rgba(96, 165, 250, 0.6); }
-    .rocket-icon { font-size: 35pt; position: absolute; top: -45px; left: 0%; transform: translateX(-50%); transition: left 0.5s ease; }
+    .rocket-icon { font-size: 50pt; margin-bottom: 20px; animation: bounce 1s infinite alternate; }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
 
-    /* ★ 시스템 마감 차단 화면 */
     #closed-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 500; text-align: center; }
 
     #stats-modal { display: none; position: fixed; top: 60px; right: 20px; background: #1f2937; padding: 20px; border-radius: 12px; z-index: 200; box-shadow: 0 15px 40px rgba(0,0,0,0.8); width: 380px; border: 2px solid #4b5563; }
@@ -83,9 +79,8 @@
   </div>
 
   <div id="loading-overlay">
-    <div style="font-size: 70pt; margin-bottom: 10px;">👩‍🍳</div>
-    <h2 id="loading-msg" style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">오늘도 송악고 급식실은<br>맛있게 조리 중입니다</h2>
-    <div class="progress-container"><div class="rocket-icon" id="rocket-icon">🚀</div><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="rocket-icon">🚀</div>
+    <h2 style="color: #60a5fa; font-size: 26pt; margin-bottom: 10px; line-height: 1.4; font-weight: 900;">송악고 석식 출석부<br>가져오는 중...</h2>
   </div>
 
   <div class="modal-backdrop" id="modal-bg" onclick="closeStats()"></div>
@@ -102,7 +97,7 @@
     </div>
     <div style="display:flex;">
       <button class="cam-btn" onclick="switchCamera()">🔄 카메라 전환</button>
-      <button class="reset-btn" onclick="window.location.reload()">🔄 새로고침</button>
+      <button class="reset-btn" onclick="window.location.reload()">🔄 새로고침 (기억초기화)</button>
       <div class="header-right">
         <div class="stat-badge stat-total" onclick="openStats()">총신청: <span id="val-total">0</span></div>
         <div class="stat-badge stat-done">완료: <span id="val-done">0</span></div>
@@ -129,7 +124,6 @@
   </div>
 
   <script>
-    // ★ [매우 중요] '송악고 실전용' 진짜 스크립트 주소로 원상 복구!!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     
     let html5QrCode, cameras = [], currentCamIndex = 0; 
@@ -186,16 +180,22 @@
     function closeManual() { document.getElementById('manual-modal').style.display = 'none'; document.getElementById('manual-input-val').value = ""; setTimeout(() => { isScanning = true; }, 1000); }
     function submitManual() { let val = document.getElementById('manual-input-val').value.trim(); if(val.length < 4) { alert("학번을 정확히 입력하세요."); return; } closeManual(); processStudentScan(val, true); }
 
+    // ★ 가짜 로켓 애니메이션 대기시간 싹 빼고! 데이터 도착 즉시 빛의 속도로 화면 띄웁니다.
     window.onload = function() {
-      let progress = 0; let pt = setInterval(() => { progress += 5; if(progress>90) progress=90; document.getElementById('rocket-icon').style.left = progress+'%'; document.getElementById('progress-bar').style.width = progress+'%'; }, 500);
       fetch(SCRIPT_URL + "?action=GET_ALL_STUDENTS").then(r=>r.json()).then(res => {
-          clearInterval(pt); document.getElementById('rocket-icon').style.left = '100%'; document.getElementById('progress-bar').style.width = '100%';
-          setTimeout(() => {
-            document.getElementById('loading-overlay').style.display = 'none';
-            if(res.status === "SUCCESS") { studentCache = res.data; if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; else initCamera(); setInterval(refreshStats, 5000); refreshStats(); } 
-            else { alert("⚠️ 구글 시트 출석부에 달력이 없거나, 새버전 배포가 되지 않았습니다!"); }
-          }, 600);
-      }).catch(err => { alert("⚠️ 인터넷 연결 오류 또는 구글 주소가 틀렸습니다."); document.getElementById('loading-overlay').style.display = 'none'; });
+          document.getElementById('loading-overlay').style.display = 'none';
+          if(res.status === "SUCCESS") { 
+            studentCache = res.data; 
+            if(res.sys_status === "CLOSED") document.getElementById('closed-overlay').style.display = 'flex'; 
+            else initCamera(); 
+            setInterval(refreshStats, 5000); refreshStats(); 
+          } else { 
+            alert("⚠️ 구글 시트 출석부에 달력이 없거나, 새버전 배포가 되지 않았습니다!"); 
+          }
+      }).catch(err => { 
+        alert("⚠️ 인터넷 연결 오류 또는 구글 주소가 틀렸습니다."); 
+        document.getElementById('loading-overlay').style.display = 'none'; 
+      });
     };
 
     function initCamera() {
@@ -222,10 +222,15 @@
         playBeep('success'); let safeName = maskName(student.name); 
         if(isManual) { updateUI("#10b981", `<span style="font-size: 60pt;">✅</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#10b981; font-size:26pt; font-weight:bold; margin-bottom:15px;">수동 승인 (✅)</div><div style="color:#fca5a5; font-size:15pt; font-weight:bold;">😈 QR을 사용해주세요!</div>`); } 
         else { updateUI("#4CAF50", `<span style="font-size: 60pt;">🟢</span>`, "", `<div style="color:white; font-size:32pt; font-weight:900; margin-bottom:10px;">${studentId} ${safeName}</div><div style="color:#4CAF50; font-size:26pt; font-weight:bold; margin-bottom:10px;">✓ 정상 승인 (🟢)</div><div style="color:#a7f3d0; font-size:18pt; font-weight:bold;">(맛있게 드세요!)</div>`); }
-        student.marked = 1; if(currentStatsDetails) { currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--; let g = studentId.charAt(0); if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; } updateStatsUI(); }
+        
+        // 태블릿의 기억 속에 '식사 완료' 도장 쾅!
+        student.marked = 1; 
+        
+        if(currentStatsDetails) { currentStatsDetails.totalStats.done++; currentStatsDetails.totalStats.left--; let g = studentId.charAt(0); if(currentStatsDetails[g]) { currentStatsDetails[g].done++; currentStatsDetails[g].left--; } updateStatsUI(); }
         fetch(SCRIPT_URL + "?action=" + actionStr + "&id=" + studentId);
       }
-      setTimeout(() => { isScanning = true; }, 1500); 
+      
+      setTimeout(() => { isScanning = true; }, 4000); 
       uiResetTimer = setTimeout(() => { updateUI("yellow", `<div style="font-size: 38pt; font-weight: 900; color: yellow; text-align: center; line-height: 1.2;">🪪<br>QR 대기</div>`, "", ""); }, 5000); 
     }
 

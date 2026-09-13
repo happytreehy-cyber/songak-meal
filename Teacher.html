@@ -128,8 +128,15 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZBLj0pzD0dNU_fAvhF6j6x3Xzl7PL5-yYJabG8oZ45qBKonZa2r-9YsJ7-eJkElY/exec";
     let isSoundEnabled = true; let audioCtx = null;
     let localResetTime = "0"; 
+    let lastUpdatePing = "0"; // ★ 새 데이터를 가볍게 확인하는 열쇠
 
-    window.onload = function() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); refreshData(); setInterval(refreshData, 3000); };
+    // 시작하자마자 한 번 풀로 불러오고, 그 뒤론 가벼운 오토바이(PING)만 띄웁니다!
+    window.onload = function() { 
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+      refreshData(); 
+      startPing(); 
+    };
+    
     window.onclick = function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
 
     function toggleSound() {
@@ -164,20 +171,32 @@
     }
     function closeStatsModal() { document.getElementById('stats-modal').style.display = 'none'; }
 
+    // ★ 2초마다 깃털처럼 가볍게 물어보는 PING 함수 (구글 서버 절대 안 뻗음!)
+    function startPing() {
+      setInterval(() => {
+        fetch(SCRIPT_URL + "?action=PING&t=" + new Date().getTime())
+        .then(r => r.json())
+        .then(res => {
+          if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
+             window.location.reload(true); return;
+          }
+          localResetTime = res.reset_time || "0";
+
+          if (res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
+          else document.getElementById('teacher-closed-overlay').style.display = 'none';
+
+          if (res.last_update !== lastUpdatePing) {
+             lastUpdatePing = res.last_update || "0";
+             refreshData(); // 진짜 새 스캔이 있을 때만 트럭 출발!
+          }
+        }).catch(e => {});
+      }, 2000); 
+    }
+
     function refreshData() {
       let cacheBuster = "&t=" + new Date().getTime();
       fetch(SCRIPT_URL + "?action=GET_TEACHER_DATA" + cacheBuster).then(r => r.json()).then(res => {
           if (res.status === "SUCCESS") {
-            // ★ 오토 싱크(Auto-Sync): 구글 시트에서 초기화 누른 걸 감지하면 스스로 새로고침!
-            if (localResetTime !== "0" && res.reset_time && res.reset_time !== localResetTime) {
-                window.location.reload(true);
-                return;
-            }
-            localResetTime = res.reset_time || "0";
-
-            if (res.teacher_sys_status === "CLOSED") document.getElementById('teacher-closed-overlay').style.display = 'flex';
-            else document.getElementById('teacher-closed-overlay').style.display = 'none';
-
             document.getElementById('stat-total').innerText = res.stats.total; document.getElementById('stat-done').innerText = res.stats.done; document.getElementById('stat-left').innerText = res.stats.left;
             
             let h1 = "", h2 = "", h3 = "";
@@ -192,7 +211,7 @@
             currentStatsDetails = res.details; 
             processLogs(res.blackbox);
           }
-        }).catch(err => console.log("데이터 갱신 중..."));
+        }).catch(err => console.log("데이터 수신 오류"));
     }
 
     function processLogs(logs) {
@@ -223,7 +242,7 @@
           else { playBeep('success'); }
 
           if(!log.status.includes("중복")) {
-            // ★ 사진 절대 경로 + .jpeg / .jpg 완벽 호환 엔진! (엑스박스 절대 차단)
+            // ★ .jpeg 와 .jpg 완벽 호환 시스템! 엑스박스 절대 차단!
             let photoHtml = `<img src="https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpeg" class="student-photo" onerror="if(this.getAttribute('data-fail')!=='1'){this.setAttribute('data-fail','1'); this.src='https://happytreehy-cyber.github.io/songak-meal/${log.id}.jpg';}else{this.outerHTML='<div class=\\'student-photo\\'>👤</div>';}">`;
             let faceCard = `<div class="student-card ${allergyClass} ${unauthClass}"><div class="newest-badge">🔥 방금 스캔</div><button class="btn-close-card" onclick="removeCard(this)">✖</button>${badgeHtml}${photoHtml}<div class="student-info"><div class="student-id">${log.id}</div><div class="student-name">${log.name}</div>${allergyClass ? `<div class="student-note">알레르기 주의</div>` : ""}</div></div>`;
             newFaces.unshift(faceCard); 
